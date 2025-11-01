@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=dev
+    volumes:
+      - venv_cache:/app/.venv
+    develop:
+      watch:
+        - path: .
+          action: sync
+          target: /app
+
+  test:
+    build:
+      context: .
+      target: dev
+    command: uv run pytest -v
+    volumes:
+      - .:/app
+
+volumes:
+  venv_cache:
