@@ -5,7 +5,10 @@ description = "AIDE Data Contract Service Ingestion Level"
 readme = "README.md"
 requires-python = ">=3.13.9"
 dependencies = [
+    "alembic>=1.17.1",
     "fastapi[standard]>=0.120.4",
+    "pydantic-settings>=2.11.0",
+    "sqlalchemy>=2.0.44",
 ]
 
 [dependency-groups]
