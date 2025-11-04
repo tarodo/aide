@@ -14,6 +14,8 @@ services:
         - path: .
           action: sync
           target: /app
+    depends_on:
+      - db
 
   db:
     image: postgres:17
@@ -25,12 +27,16 @@ services:
       - db_data:/var/lib/postgresql/data
 
   test:
+    profiles:
+      - test
     build:
       context: .
       target: dev
     command: uv run pytest -v
     volumes:
       - .:/app
+    depends_on:
+      - db
 
 volumes:
   venv_cache:

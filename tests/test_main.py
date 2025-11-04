@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from aide.main import app
+from backend.main import app
 import os
 
 print(os.getcwd())
