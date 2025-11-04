@@ -19,11 +19,11 @@ test:
 	uv run pytest -v
 
 # Local run
-local_run:
+run:
 	uv run uvicorn aide.main:app --host 0.0.0.0 --port 8001 --reload
 
 # Docker run
-run:
+up:
 	docker compose up -d --build
 
 stop:

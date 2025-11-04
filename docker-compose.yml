@@ -15,6 +15,15 @@ services:
           action: sync
           target: /app
 
+  db:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./db.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
   test:
     build:
       context: .
@@ -25,3 +34,4 @@ services:
 
 volumes:
   venv_cache:
+  db_data:
