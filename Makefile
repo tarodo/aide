@@ -17,6 +17,9 @@ format:
 test:
 	uv run pytest -v
 
+docker test:
+	docker compose run test
+
 # Local run
 run:
 	uv run uvicorn backend.main:app --host 0.0.0.0 --port 8001 --reload
