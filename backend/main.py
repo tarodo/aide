@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
 
+from backend.api.v1 import users as v1_users
 from backend.core.log_conf import setup_logging
 from backend.core.settings import settings
 
@@ -55,6 +56,14 @@ async def logging_middleware(request: Request, call_next):
             process_time=round(process_time, 4),
         )
         raise
+
+
+api_v1_prefix = "/api/v1"
+app.include_router(
+    v1_users.router,
+    prefix=f"{api_v1_prefix}/users",
+    tags=["Users"],
+)
 
 
 @app.get("/")

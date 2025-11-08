@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from backend.core.security import get_password_hash
 from backend.db.uow import UnitOfWork
 from backend.models import User
-from backend.schemas.user import UserCreate
+from backend.schemas.user import UserCreate, UserRead
 
 
 class UserService:
@@ -13,7 +13,7 @@ class UserService:
     Service for user-related business logic.
     """
 
-    async def create_user(self, uow: UnitOfWork, user_in: UserCreate) -> User:
+    async def create_user(self, uow: UnitOfWork, user_in: UserCreate) -> UserRead:
         """
         Create a new user.
         """
@@ -31,11 +31,17 @@ class UserService:
             db_user.created_by = db_user.id
             db_user.updated_by = db_user.id
 
-            return await uow.users.create(obj_in=db_user)
+            db_user = await uow.users.create(obj_in=db_user)
+            # Convert to Pydantic schema while session is still active
+            return UserRead.model_validate(db_user)
 
-    async def get_user(self, uow: UnitOfWork, user_id: uuid.UUID) -> User | None:
+    async def get_user(self, uow: UnitOfWork, user_id: uuid.UUID) -> UserRead | None:
         """
         Get a user by ID.
         """
         async with uow:
-            return await uow.users.get(user_id)
+            db_user = await uow.users.get(user_id)
+            if db_user:
+                # Convert to Pydantic schema while session is still active
+                return UserRead.model_validate(db_user)
+            return None

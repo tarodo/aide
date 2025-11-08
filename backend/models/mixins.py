@@ -20,5 +20,9 @@ class TimestampMixin:
 class UserTrackingMixin:
     """Mixin for created_by and updated_by fields."""
 
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), index=True, nullable=True
+    )
+    updated_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), index=True, nullable=True
+    )
