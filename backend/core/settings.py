@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     LOG_RENDERER: str = "console"
     REQUEST_ID_HEADER: str = "X-Request-ID"
     ENV: str = "dev"
+    FIRST_SUPERUSER_EMAIL: str | None = None
+    FIRST_SUPERUSER_PASSWORD: str | None = None
+    FIRST_SUPERUSER_FULL_NAME: str | None = None
 
     # CORS settings
     CORS_ORIGINS: List[str] = ["*"]  # Comma-separated list of origins, or "*" for all

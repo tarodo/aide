@@ -1,5 +1,6 @@
 import time
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,18 +8,50 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from backend.api.v1 import users as v1_users
+from backend.db.uow import UnitOfWork
 from backend.core.log_conf import setup_logging
 from backend.core.settings import settings
 from backend.services.exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from backend.services.user import UserService
 
 setup_logging()
 
 logger = structlog.get_logger(__name__)
 
-app = FastAPI()
+
+async def _ensure_initial_superuser() -> None:
+    if not settings.FIRST_SUPERUSER_EMAIL or not settings.FIRST_SUPERUSER_PASSWORD:
+        logger.warning("FIRST_SUPERUSER_EMAIL or FIRST_SUPERUSER_PASSWORD not set")
+        return
+
+    user_service = UserService()
+    uow = UnitOfWork()
+
+    try:
+        superuser = await user_service.ensure_initial_superuser(
+            uow=uow,
+            email=settings.FIRST_SUPERUSER_EMAIL,
+            password=settings.FIRST_SUPERUSER_PASSWORD,
+            full_name=settings.FIRST_SUPERUSER_FULL_NAME,
+        )
+        logger.info("Initial superuser ready", email=superuser.email)
+    except Exception:
+        logger.exception(
+            "Failed to ensure initial superuser",
+            email=settings.FIRST_SUPERUSER_EMAIL,
+        )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await _ensure_initial_superuser()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.exception_handler(UserNotFoundError)

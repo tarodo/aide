@@ -1,6 +1,6 @@
 import uuid
 
-from backend.core.security import get_password_hash
+from backend.core.security import get_password_hash, verify_password
 from backend.db.uow import UnitOfWork
 from backend.models import User
 from backend.schemas.user import UserCreate, UserRead
@@ -41,3 +41,49 @@ class UserService:
                 raise UserNotFoundError()
             # Convert to Pydantic schema while session is still active
             return UserRead.model_validate(db_user)
+
+    async def ensure_initial_superuser(
+        self,
+        uow: UnitOfWork,
+        *,
+        email: str,
+        password: str,
+        full_name: str | None = None,
+    ) -> UserRead:
+        """
+        Ensure the initial superuser exists, creating or upgrading as needed.
+        """
+        async with uow:
+            db_user = await uow.users.get_by_email(email=email)
+            if db_user:
+                updated = False
+                if not db_user.is_superuser:
+                    db_user.is_superuser = True
+                    updated = True
+                if not db_user.is_active:
+                    db_user.is_active = True
+                    updated = True
+                if full_name and full_name != db_user.full_name:
+                    db_user.full_name = full_name
+                    updated = True
+                if not verify_password(password, db_user.hashed_password):
+                    db_user.hashed_password = get_password_hash(password)
+                    updated = True
+
+                if updated:
+                    db_user.updated_by = db_user.id
+                    db_user = await uow.users.update(db_obj=db_user)
+                return UserRead.model_validate(db_user)
+
+            hashed_password = get_password_hash(password)
+            superuser = User(
+                email=email,
+                hashed_password=hashed_password,
+                full_name=full_name,
+                is_active=True,
+                is_superuser=True,
+            )
+            superuser.created_by = superuser.id
+            superuser.updated_by = superuser.id
+            superuser = await uow.users.create(obj_in=superuser)
+            return UserRead.model_validate(superuser)
