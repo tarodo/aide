@@ -1,18 +1,42 @@
 import time
 import uuid
-from fastapi import FastAPI, Request
+
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import structlog
 
 from backend.api.v1 import users as v1_users
 from backend.core.log_conf import setup_logging
 from backend.core.settings import settings
+from backend.services.exceptions import (
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 
 setup_logging()
 
 logger = structlog.get_logger(__name__)
 
 app = FastAPI()
+
+
+@app.exception_handler(UserNotFoundError)
+async def user_not_found_exception_handler(request: Request, exc: UserNotFoundError):
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": "User not found"},
+    )
+
+
+@app.exception_handler(UserAlreadyExistsError)
+async def user_already_exists_exception_handler(
+    request: Request, exc: UserAlreadyExistsError
+):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": "The user with this email already exists in the system."},
+    )
 
 
 app.add_middleware(

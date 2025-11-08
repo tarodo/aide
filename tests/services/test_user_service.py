@@ -2,11 +2,11 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
 
 from backend.models import User
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
+from backend.services.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 
 class _MockUsers:
@@ -104,11 +104,9 @@ async def test_create_user_duplicate_email(
     mock_uow.users.get_by_email.return_value = db_user
 
     # Act & Assert
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(UserAlreadyExistsError):
         await user_service.create_user(uow=mock_uow, user_in=user_create_schema)
 
-    assert exc_info.value.status_code == 400
-    assert "already exists" in exc_info.value.detail
     mock_uow.users.create.assert_not_awaited()
 
 
@@ -129,6 +127,8 @@ async def test_get_user_not_found(user_service: UserService, mock_uow: AsyncMock
     """Test getting a non-existent user by ID."""
     mock_uow.users.get.return_value = None
     user_id = uuid.uuid4()
-    result = await user_service.get_user(uow=mock_uow, user_id=user_id)
-    assert result is None
+
+    with pytest.raises(UserNotFoundError):
+        await user_service.get_user(uow=mock_uow, user_id=user_id)
+
     mock_uow.users.get.assert_awaited_once_with(user_id)

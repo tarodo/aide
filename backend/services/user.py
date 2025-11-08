@@ -1,11 +1,10 @@
 import uuid
 
-from fastapi import HTTPException, status
-
 from backend.core.security import get_password_hash
 from backend.db.uow import UnitOfWork
 from backend.models import User
 from backend.schemas.user import UserCreate, UserRead
+from backend.services.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 
 class UserService:
@@ -22,10 +21,7 @@ class UserService:
 
         async with uow:
             if await uow.users.get_by_email(user_in.email):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="The user with this email already exists in the system.",
-                )
+                raise UserAlreadyExistsError()
 
             db_user = User(**user_data, hashed_password=hashed_password)
             db_user.created_by = db_user.id
@@ -35,13 +31,13 @@ class UserService:
             # Convert to Pydantic schema while session is still active
             return UserRead.model_validate(db_user)
 
-    async def get_user(self, uow: UnitOfWork, user_id: uuid.UUID) -> UserRead | None:
+    async def get_user(self, uow: UnitOfWork, user_id: uuid.UUID) -> UserRead:
         """
         Get a user by ID.
         """
         async with uow:
             db_user = await uow.users.get(user_id)
-            if db_user:
-                # Convert to Pydantic schema while session is still active
-                return UserRead.model_validate(db_user)
-            return None
+            if not db_user:
+                raise UserNotFoundError()
+            # Convert to Pydantic schema while session is still active
+            return UserRead.model_validate(db_user)

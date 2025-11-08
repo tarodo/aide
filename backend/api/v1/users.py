@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from backend.db.uow import UnitOfWork
 from backend.schemas.user import UserCreate, UserRead
@@ -39,10 +39,4 @@ async def get_user(
     """
     Get a user by their ID.
     """
-    user = await user_service.get_user(uow=uow, user_id=user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    return user
+    return await user_service.get_user(uow=uow, user_id=user_id)
