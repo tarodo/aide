@@ -41,3 +41,6 @@ alembic-gen:
 	fi
 %:
 	@:
+
+alembic-head:
+	docker compose run --rm app uv run alembic -c backend/alembic.ini upgrade head
