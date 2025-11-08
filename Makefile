@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: check test-local test-docker format run stop up
+.PHONY: check test-local test-docker format run stop up alembic-gen
 
 # Full check - for CI or before push
 check:
@@ -30,3 +30,14 @@ up:
 
 stop:
 	docker compose down
+
+# Alembic migrations
+alembic-gen:
+	@if [ -n "$(MSG)" ]; then \
+		docker compose run --rm app uv run alembic -c backend/alembic.ini revision --autogenerate -m "$(MSG)"; \
+	else \
+		MSG="$$(echo $(filter-out $@,$(MAKECMDGOALS)))"; \
+		docker compose run --rm app uv run alembic -c backend/alembic.ini revision --autogenerate -m "$$MSG"; \
+	fi
+%:
+	@:
