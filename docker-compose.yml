@@ -46,7 +46,7 @@ services:
       target: dev
     environment:
       - DATABASE_URL=postgresql+asyncpg://aide:aide@db-test:5432/aide_test
-    command: uv run pytest -v
+    command: uv run pytest -v --cov=backend tests/
     depends_on:
       - db-test
 
