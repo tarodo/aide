@@ -52,7 +52,11 @@ app.add_middleware(
 async def logging_middleware(request: Request, call_next):
     structlog.contextvars.clear_contextvars()
     request_id = request.headers.get(settings.REQUEST_ID_HEADER, str(uuid.uuid4()))
-    structlog.contextvars.bind_contextvars(request_id=request_id)
+    structlog.contextvars.bind_contextvars(
+        request_id=request_id,
+        user_agent=request.headers.get("user-agent"),
+        referer=request.headers.get("referer"),
+    )
 
     start_time = time.perf_counter()
     logger.info(
