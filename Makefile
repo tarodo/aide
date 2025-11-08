@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: check test format
+.PHONY: check test-local test-docker format run stop up
 
 # Full check - for CI or before push
 check:
@@ -14,11 +14,11 @@ format:
 	uv run ruff check . --fix
 
 # Only tests
-test:
+test-local:
 	uv run pytest -v
 
-docker test:
-	docker compose run test
+test-docker:
+	docker compose run --rm test
 
 # Local run
 run:

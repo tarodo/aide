@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     CORS_METHODS: List[str] = ["*"]  # Comma-separated list of methods, or "*" for all
     CORS_HEADERS: List[str] = ["*"]  # Comma-separated list of headers, or "*" for all
 
+    # Database settings
+    DATABASE_URL: str = "postgresql://postgres:aide@localhost:5432/aide"
+
     @staticmethod
     def _parse_list_or_wildcard(v: str | List[str]) -> List[str]:
         if isinstance(v, list):
