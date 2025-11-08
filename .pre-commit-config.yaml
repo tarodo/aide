@@ -28,8 +28,8 @@ repos:
         pass_filenames: true
 
       - id: pytest
-        name: pytest
-        entry: uv run pytest -q
+        name: pytest (docker)
+        entry: make test-docker
         language: system
         pass_filenames: false
         always_run: true

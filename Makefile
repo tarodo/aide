@@ -18,6 +18,7 @@ test-local:
 	uv run pytest -v
 
 test-docker:
+	docker compose build test
 	docker compose run --rm test
 
 # Local run

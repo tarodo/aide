@@ -27,18 +27,30 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  db-test:
+    image: postgres:17
+    ports:
+      - "5433:5432"
+    env_file:
+      - ./db.env
+    environment:
+      - POSTGRES_DB=aide_test
+    volumes:
+      - db_test_data:/var/lib/postgresql/data
+
   test:
     profiles:
       - test
     build:
       context: .
       target: dev
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://aide:aide@db-test:5432/aide_test
     command: uv run pytest -v
-    volumes:
-      - .:/app
     depends_on:
-      - db
+      - db-test
 
 volumes:
   venv_cache:
   db_data:
+  db_test_data:
