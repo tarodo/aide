@@ -31,7 +31,7 @@ def run_migrations():
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def transactional_session() -> AsyncGenerator[None, None]:
+async def transactional_session() -> AsyncGenerator[AsyncSession, None]:
     """
     This fixture wraps each test in a transaction and rolls it back.
     It also overrides the app's UoW to use this single transaction-bound session.
@@ -50,7 +50,7 @@ async def transactional_session() -> AsyncGenerator[None, None]:
 
     app.dependency_overrides[UnitOfWork] = uow_override
 
-    yield
+    yield session
 
     # Teardown - rollback transaction, then close session and connection
     await trans.rollback()
