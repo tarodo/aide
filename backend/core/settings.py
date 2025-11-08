@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     CORS_HEADERS: List[str] = ["*"]  # Comma-separated list of headers, or "*" for all
 
     # Database settings
-    DATABASE_URL: str = "postgresql://postgres:aide@localhost:5432/aide"
+    DATABASE_URL: str = "postgresql+asyncpg://aide:aide@db:5432/aide"
 
     @staticmethod
     def _parse_list_or_wildcard(v: str | List[str]) -> List[str]:

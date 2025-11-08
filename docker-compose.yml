@@ -9,6 +9,7 @@ services:
       - ENV=dev
     volumes:
       - venv_cache:/app/.venv
+      - ./backend:/app/backend
     develop:
       watch:
         - path: .

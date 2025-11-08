@@ -20,3 +20,6 @@ wheels/
 .coverage.*.*.*.*.*.*
 
 *.env
+
+architecture/
+tasks/
