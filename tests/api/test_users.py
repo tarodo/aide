@@ -6,6 +6,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
 from backend.models import User
@@ -141,7 +142,7 @@ class TestUserAPI:
             "/api/v1/users/", json=user_data, headers=superuser_token_headers
         )
         assert response.status_code == 400
-        assert "already exists" in response.json()["detail"]
+        assert response.json()["error_code"] == errors.USER_ALREADY_EXISTS
 
     async def test_get_user_by_id_success(
         self,
@@ -174,7 +175,7 @@ class TestUserAPI:
             f"/api/v1/users/{non_existent_uuid}", headers=superuser_token_headers
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "User not found"
+        assert response.json()["error_code"] == errors.USER_NOT_FOUND
 
     async def test_get_me_success(
         self,

@@ -16,12 +16,12 @@ def setup_logging():
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
         structlog.processors.UnicodeDecoder(),
     ]
 
     if settings.LOG_RENDERER == "json":
         processors = shared_processors + [
+            structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ]
     else:

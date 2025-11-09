@@ -4,10 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from backend.core import errors
+from backend.core.exceptions import AppException
 from backend.models import User
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
-from backend.services.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 
 class _MockUsers:
@@ -133,10 +134,11 @@ async def test_create_user_duplicate_email(
     mock_uow.users.get_by_email.return_value = db_user
     creator_id = uuid.uuid4()
     # Act & Assert
-    with pytest.raises(UserAlreadyExistsError):
+    with pytest.raises(AppException) as exc_info:
         await user_service.create_user(
             uow=mock_uow, user_in=user_create_schema, creator_id=creator_id
         )
+    assert exc_info.value.error_code == errors.USER_ALREADY_EXISTS
 
     mock_uow.users.create.assert_not_awaited()
 
@@ -159,8 +161,9 @@ async def test_get_user_not_found(user_service: UserService, mock_uow: AsyncMock
     mock_uow.users.get.return_value = None
     user_id = uuid.uuid4()
 
-    with pytest.raises(UserNotFoundError):
+    with pytest.raises(AppException) as exc_info:
         await user_service.get_user(uow=mock_uow, user_id=user_id)
+    assert exc_info.value.error_code == errors.USER_NOT_FOUND
 
     mock_uow.users.get.assert_awaited_once_with(user_id)
 

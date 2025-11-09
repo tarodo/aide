@@ -1,10 +1,11 @@
 import uuid
 
+from backend.core import errors
+from backend.core.exceptions import AppException
 from backend.core.security import get_password_hash, verify_password
 from backend.db.uow import UnitOfWork
 from backend.models import User
 from backend.schemas.user import UserCreate, UserRead
-from backend.services.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 
 class UserService:
@@ -23,7 +24,7 @@ class UserService:
 
         async with uow:
             if await uow.users.get_by_email(user_in.email):
-                raise UserAlreadyExistsError()
+                raise AppException(errors.USER_ALREADY_EXISTS)
 
             db_user = User(
                 **user_data,
@@ -41,7 +42,7 @@ class UserService:
         async with uow:
             db_user = await uow.users.get(user_id)
             if not db_user:
-                raise UserNotFoundError()
+                raise AppException(errors.USER_NOT_FOUND)
             # Convert to Pydantic schema while session is still active
             return UserRead.model_validate(db_user)
 

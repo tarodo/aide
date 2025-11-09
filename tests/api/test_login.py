@@ -4,6 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
 from backend.models import User
@@ -80,7 +81,7 @@ class TestLoginAPI:
         # Assert
         assert response.status_code == 401
         response_data = response.json()
-        assert response_data["detail"] == "Incorrect email or password"
+        assert response_data["error_code"] == errors.INVALID_CREDENTIALS
 
     async def test_login_failure_user_not_found(self, async_client: AsyncClient):
         """Test login with an email that does not exist."""
@@ -98,4 +99,4 @@ class TestLoginAPI:
         # Assert
         assert response.status_code == 401
         response_data = response.json()
-        assert response_data["detail"] == "Incorrect email or password"
+        assert response_data["error_code"] == errors.INVALID_CREDENTIALS
