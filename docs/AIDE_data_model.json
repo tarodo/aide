@@ -1124,7 +1124,7 @@
           "unique": true,
           "nullable": false,
           "createdAt": 1755108662279,
-          "comments": "RDBMS; KAFKA; STORAGE; DWH; SFTP; OTHER"
+          "comments": "RDBMS; MESSAGE_BROKER; OBJECT_STORAGE; DATA_WAREHOUSE; FILE_STORAGE; OTHER"
         },
         {
           "id": "96",
