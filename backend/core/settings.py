@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Database settings
     DATABASE_URL: str = "postgresql+asyncpg://aide:aide@db:5432/aide"
 
+    # JWT settings
+    JWT_SECRET_KEY: str = "a_super_secret_key_that_should_be_in_env"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     @staticmethod
     def _parse_list_or_wildcard(v: str | List[str]) -> List[str]:
         if isinstance(v, list):
