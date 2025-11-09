@@ -12,7 +12,9 @@ class UserService:
     Service for user-related business logic.
     """
 
-    async def create_user(self, uow: UnitOfWork, user_in: UserCreate) -> UserRead:
+    async def create_user(
+        self, uow: UnitOfWork, user_in: UserCreate, creator_id: uuid.UUID
+    ) -> UserRead:
         """
         Create a new user.
         """
@@ -23,10 +25,13 @@ class UserService:
             if await uow.users.get_by_email(user_in.email):
                 raise UserAlreadyExistsError()
 
-            db_user = User(**user_data, hashed_password=hashed_password)
-
+            db_user = User(
+                **user_data,
+                hashed_password=hashed_password,
+                created_by=creator_id,
+                updated_by=creator_id,
+            )
             db_user = await uow.users.create(obj_in=db_user)
-            # Convert to Pydantic schema while session is still active
             return UserRead.model_validate(db_user)
 
     async def get_user(self, uow: UnitOfWork, user_id: uuid.UUID) -> UserRead:

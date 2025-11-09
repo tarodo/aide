@@ -100,9 +100,12 @@ async def test_create_user_success(
     # Arrange
     mock_uow.users.get_by_email.return_value = None
     mock_uow.users.create.return_value = db_user
+    creator_id = uuid.uuid4()
 
     # Act
-    result = await user_service.create_user(uow=mock_uow, user_in=user_create_schema)
+    result = await user_service.create_user(
+        uow=mock_uow, user_in=user_create_schema, creator_id=creator_id
+    )
 
     # Assert
     mock_uow.users.get_by_email.assert_awaited_once_with(user_create_schema.email)
@@ -111,6 +114,8 @@ async def test_create_user_success(
     created_user_arg = mock_uow.users.create.call_args.kwargs["obj_in"]
     assert created_user_arg.email == user_create_schema.email
     assert created_user_arg.hashed_password == "hashed_password_string"
+    assert created_user_arg.created_by == creator_id
+    assert created_user_arg.updated_by == creator_id
     assert isinstance(result, UserRead)
     assert result.email == db_user.email
     assert result.id == db_user.id
@@ -126,10 +131,12 @@ async def test_create_user_duplicate_email(
     """Test user creation with a duplicate email."""
     # Arrange
     mock_uow.users.get_by_email.return_value = db_user
-
+    creator_id = uuid.uuid4()
     # Act & Assert
     with pytest.raises(UserAlreadyExistsError):
-        await user_service.create_user(uow=mock_uow, user_in=user_create_schema)
+        await user_service.create_user(
+            uow=mock_uow, user_in=user_create_schema, creator_id=creator_id
+        )
 
     mock_uow.users.create.assert_not_awaited()
 

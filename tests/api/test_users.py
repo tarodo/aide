@@ -146,12 +146,12 @@ class TestUserAPI:
     async def test_get_user_by_id_success(
         self,
         async_client: AsyncClient,
+        superuser_token_headers: dict,
         normal_user: User,
-        normal_user_token_headers: dict,
     ):
         """Test getting a user by ID successfully."""
         response = await async_client.get(
-            f"/api/v1/users/{normal_user.id}", headers=normal_user_token_headers
+            f"/api/v1/users/{normal_user.id}", headers=superuser_token_headers
         )
         assert response.status_code == 200
         response_data = response.json()
@@ -166,12 +166,12 @@ class TestUserAPI:
         assert response.status_code == 401
 
     async def test_get_user_not_found(
-        self, async_client: AsyncClient, normal_user_token_headers: dict
+        self, async_client: AsyncClient, superuser_token_headers: dict
     ):
         """Test getting a non-existent user by ID."""
         non_existent_uuid = uuid.uuid4()
         response = await async_client.get(
-            f"/api/v1/users/{non_existent_uuid}", headers=normal_user_token_headers
+            f"/api/v1/users/{non_existent_uuid}", headers=superuser_token_headers
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "User not found"

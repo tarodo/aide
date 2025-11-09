@@ -21,12 +21,15 @@ async def create_user(
     user_in: UserCreate,
     uow: UnitOfWork = Depends(UnitOfWork),
     user_service: UserService = Depends(UserService),
-    _current_superuser: User = Depends(get_current_superuser),
+    current_superuser: User = Depends(get_current_superuser),
 ) -> UserRead:
     """
     Create a new user. Requires superuser privileges.
     """
-    return await user_service.create_user(uow=uow, user_in=user_in)
+    creator_id = current_superuser.id
+    return await user_service.create_user(
+        uow=uow, user_in=user_in, creator_id=creator_id
+    )
 
 
 @router.get("/me", response_model=UserRead, summary="Get current user")
@@ -48,9 +51,9 @@ async def get_user(
     user_id: uuid.UUID,
     uow: UnitOfWork = Depends(UnitOfWork),
     user_service: UserService = Depends(UserService),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(get_current_superuser),
 ) -> UserRead:
     """
-    Get a user by their ID. Requires authentication.
+    Get a user by their ID. Requires superuser privileges.
     """
     return await user_service.get_user(uow=uow, user_id=user_id)
