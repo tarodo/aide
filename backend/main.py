@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
 
+from backend.api.v1 import login as v1_login
 from backend.api.v1 import users as v1_users
 from backend.db.uow import UnitOfWork
 from backend.core.log_conf import setup_logging
@@ -128,6 +129,12 @@ app.include_router(
     v1_users.router,
     prefix=f"{api_v1_prefix}/users",
     tags=["Users"],
+)
+
+app.include_router(
+    v1_login.router,
+    prefix=f"{api_v1_prefix}/login",
+    tags=["Login"],
 )
 
 
