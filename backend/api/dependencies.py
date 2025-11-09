@@ -38,6 +38,12 @@ async def get_current_user(
         user = await uow.users.get(uuid.UUID(token_data.user_id))
         if user is None or not user.is_active:
             raise credentials_exception
+        # Access attributes while session is active to prevent DetachedInstanceError
+        _ = user.is_superuser
+        # Expunge to detach from session, making attributes accessible after session closes
+        session = getattr(uow, "session", None)
+        if session is not None:
+            session.expunge(user)
         return user
 
 

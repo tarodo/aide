@@ -2,8 +2,11 @@ from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.security import get_password_hash
 from backend.main import app
+from backend.models import User
 
 
 @pytest.mark.asyncio
@@ -21,7 +24,11 @@ class TestLoginAPI:
             yield client
 
     @pytest.fixture
-    async def test_user_credentials(self, async_client: AsyncClient) -> dict:
+    async def test_user_credentials(
+        self,
+        transactional_session: AsyncSession,
+        async_client: AsyncClient,
+    ) -> dict:
         """
         Create a user for login tests and return their credentials.
         """
@@ -30,10 +37,15 @@ class TestLoginAPI:
             "password": "a_secure_password",
             "full_name": "Login Test User",
         }
-        response = await async_client.post("/api/v1/users/", json=user_data)
-        assert (
-            response.status_code == 201
-        ), f"Failed to create user for testing: {response.status_code} {response.text}"
+        user = User(
+            email=user_data["email"],
+            hashed_password=get_password_hash(user_data["password"]),
+            full_name=user_data["full_name"],
+            is_active=True,
+            is_superuser=False,
+        )
+        transactional_session.add(user)
+        await transactional_session.flush()
         return {"username": user_data["email"], "password": user_data["password"]}
 
     async def test_login_success(
