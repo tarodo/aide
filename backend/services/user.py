@@ -24,8 +24,6 @@ class UserService:
                 raise UserAlreadyExistsError()
 
             db_user = User(**user_data, hashed_password=hashed_password)
-            db_user.created_by = db_user.id
-            db_user.updated_by = db_user.id
 
             db_user = await uow.users.create(obj_in=db_user)
             # Convert to Pydantic schema while session is still active
@@ -76,14 +74,16 @@ class UserService:
                 return UserRead.model_validate(db_user)
 
             hashed_password = get_password_hash(password)
+            superuser_id = uuid.uuid4()
             superuser = User(
+                id=superuser_id,
                 email=email,
                 hashed_password=hashed_password,
                 full_name=full_name,
                 is_active=True,
                 is_superuser=True,
             )
-            superuser.created_by = superuser.id
-            superuser.updated_by = superuser.id
+            superuser.created_by = superuser_id
+            superuser.updated_by = superuser_id
             superuser = await uow.users.create(obj_in=superuser)
             return UserRead.model_validate(superuser)

@@ -27,8 +27,12 @@ async def _ensure_initial_superuser() -> None:
         logger.warning("FIRST_SUPERUSER_EMAIL or FIRST_SUPERUSER_PASSWORD not set")
         return
 
-    user_service = UserService()
-    uow = UnitOfWork()
+    try:
+        user_service = UserService()
+        uow = UnitOfWork()
+    except Exception:
+        logger.exception("Failed to create user service or unit of work")
+        return
 
     try:
         superuser = await user_service.ensure_initial_superuser(

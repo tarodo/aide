@@ -27,8 +27,9 @@ run:
 
 # Docker run
 up:
-	docker compose up --build
-
+	docker compose up --build -d
+	docker compose run --rm app uv run alembic -c backend/alembic.ini upgrade head
+	docker compose run --rm app python -m backend.scripts.ensure_superuser
 stop:
 	docker compose down
 

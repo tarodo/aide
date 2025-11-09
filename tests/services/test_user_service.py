@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -52,6 +53,7 @@ def user_create_schema() -> UserCreate:
 def db_user() -> User:
     """Fixture for a database User model object."""
     user_id = uuid.uuid4()
+    now = datetime.now(UTC)
     return User(
         id=user_id,
         email="test@example.com",
@@ -61,6 +63,8 @@ def db_user() -> User:
         is_superuser=False,
         created_by=user_id,
         updated_by=user_id,
+        created_at=now,
+        updated_at=now,
     )
 
 
@@ -68,6 +72,7 @@ def db_user() -> User:
 def db_superuser() -> User:
     """Fixture for a superuser model object."""
     user_id = uuid.uuid4()
+    now = datetime.now(UTC)
     return User(
         id=user_id,
         email="admin@example.com",
@@ -77,6 +82,8 @@ def db_superuser() -> User:
         is_superuser=True,
         created_by=user_id,
         updated_by=user_id,
+        created_at=now,
+        updated_at=now,
     )
 
 

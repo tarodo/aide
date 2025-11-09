@@ -2,6 +2,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+from backend.schemas.mixins import TimestampMixin, UserTrackingMixin
+
 
 class UserBase(BaseModel):
     """Base user schema."""
@@ -23,7 +25,7 @@ class UserUpdate(BaseModel):
     full_name: str | None = None
 
 
-class UserRead(UserBase):
+class UserRead(UserBase, TimestampMixin, UserTrackingMixin):
     """Schema for reading user data."""
 
     id: uuid.UUID
