@@ -2,14 +2,39 @@ import uuid
 
 from fastapi import APIRouter, Depends, status
 
-from backend.api.dependencies import get_current_user, get_current_superuser
+from backend.api.dependencies import (
+    PaginationParams,
+    get_current_user,
+    get_current_superuser,
+    get_pagination_params,
+)
 from backend.db.uow import UnitOfWork
 from backend.models import User
 from backend.schemas.error import ErrorResponse
+from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
 
 router = APIRouter()
+
+
+@router.get(
+    "/",
+    response_model=Page[UserRead],
+    summary="Get all users (paginated)",
+    dependencies=[Depends(get_current_superuser)],
+)
+async def get_all_users(
+    uow: UnitOfWork = Depends(UnitOfWork),
+    user_service: UserService = Depends(UserService),
+    pagination: PaginationParams = Depends(get_pagination_params),
+) -> Page[UserRead]:
+    """
+    Get a paginated list of all users. Requires superuser privileges.
+    """
+    return await user_service.get_users_paginated(
+        uow=uow, page=pagination.page, size=pagination.size
+    )
 
 
 @router.post(

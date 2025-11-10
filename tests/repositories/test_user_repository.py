@@ -114,6 +114,44 @@ async def test_get_multi(
 
 
 @pytest.mark.asyncio
+async def test_get_multi_paginated(
+    user_repository: UserRepository, mock_session: AsyncMock, test_user: User
+):
+    """Test the get_multi_paginated method."""
+    # Arrange
+    # Mock for the count query
+    mock_total_result = MagicMock()
+    mock_total_result.scalar_one.return_value = 10
+
+    # Mock for the items query
+    mock_items_result = MagicMock()
+    mock_items_result.scalars.return_value.all.return_value = [test_user]
+
+    # Set the side_effect for session.execute
+    mock_session.execute.side_effect = [mock_total_result, mock_items_result]
+
+    # Act
+    items, total = await user_repository.get_multi_paginated(skip=5, limit=5)
+
+    # Assert
+    assert total == 10
+    assert items == [test_user]
+    assert mock_session.execute.call_count == 2
+
+    # Check count query
+    count_call_args = mock_session.execute.call_args_list[0][0]
+    count_stmt = str(count_call_args[0])
+    assert "count(*)" in count_stmt.lower()
+    assert "users" in count_stmt.lower()
+
+    # Check items query
+    items_call_args = mock_session.execute.call_args_list[1][0]
+    items_stmt = str(items_call_args[0])
+    assert "offset" in items_stmt.lower()
+    assert "limit" in items_stmt.lower()
+
+
+@pytest.mark.asyncio
 async def test_create(
     user_repository: UserRepository, mock_session: AsyncMock, test_user: User
 ):

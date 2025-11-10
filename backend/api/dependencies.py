@@ -1,7 +1,8 @@
 import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
@@ -11,6 +12,22 @@ from backend.models import User
 from backend.schemas.token import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login")
+
+
+@dataclass(frozen=True)
+class PaginationParams:
+    page: int
+    size: int
+
+
+def get_pagination_params(
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(50, ge=1, le=100, description="Page size"),
+) -> PaginationParams:
+    """
+    Dependency to parse and validate pagination query parameters.
+    """
+    return PaginationParams(page=page, size=size)
 
 
 async def get_current_user(

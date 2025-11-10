@@ -7,6 +7,7 @@ import pytest
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.models import User
+from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
 
@@ -16,6 +17,7 @@ class _MockUsers:
         self.get_by_email: AsyncMock = AsyncMock()
         self.get: AsyncMock = AsyncMock()
         self.create: AsyncMock = AsyncMock()
+        self.get_multi_paginated: AsyncMock = AsyncMock()
         self.update: AsyncMock = AsyncMock()
 
 
@@ -166,6 +168,30 @@ async def test_get_user_not_found(user_service: UserService, mock_uow: AsyncMock
     assert exc_info.value.error_code == errors.USER_NOT_FOUND
 
     mock_uow.users.get.assert_awaited_once_with(user_id)
+
+
+@pytest.mark.asyncio
+async def test_get_users_paginated(
+    user_service: UserService, mock_uow: _MockUnitOfWork, db_user: User
+):
+    """Test getting a paginated list of users."""
+    # Arrange
+    mock_uow.users.get_multi_paginated.return_value = ([db_user], 1)
+    page, size = 1, 10
+
+    # Act
+    result = await user_service.get_users_paginated(uow=mock_uow, page=page, size=size)
+
+    # Assert
+    mock_uow.users.get_multi_paginated.assert_awaited_once_with(skip=0, limit=size)
+    assert isinstance(result, Page)
+    assert result.total == 1
+    assert result.page == page
+    assert result.size == size
+    assert result.pages == 1
+    assert len(result.items) == 1
+    assert result.items[0].id == db_user.id
+    assert isinstance(result.items[0], UserRead)
 
 
 @pytest.mark.asyncio

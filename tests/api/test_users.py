@@ -66,6 +66,24 @@ async def superuser_token_headers(
     return {"Authorization": f"Bearer {token}"}
 
 
+@pytest_asyncio.fixture
+async def multiple_users(transactional_session: AsyncSession) -> list[User]:
+    """Fixture for multiple users for pagination tests."""
+    users = []
+    for i in range(15):
+        user = User(
+            email=f"user{i}@example.com",
+            hashed_password="password",
+            full_name=f"User {i}",
+            is_active=True,
+            is_superuser=False,
+        )
+        users.append(user)
+    transactional_session.add_all(users)
+    await transactional_session.commit()
+    return users
+
+
 @pytest.mark.asyncio
 class TestUserAPI:
     """
@@ -197,4 +215,61 @@ class TestUserAPI:
     async def test_get_me_unauthorized(self, async_client: AsyncClient):
         """Test the /me endpoint without authentication fails."""
         response = await async_client.get("/api/v1/users/me")
+        assert response.status_code == 401
+
+    async def test_get_all_users_paginated_success(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        multiple_users: list[User],
+        superuser: User,
+        normal_user: User,
+    ):
+        """Test successful retrieval of paginated users by a superuser."""
+        response = await async_client.get(
+            "/api/v1/users/", headers=superuser_token_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # 15 from multiple_users, 1 superuser, 1 normal_user
+        assert data["total"] == 17
+        assert data["page"] == 1
+        assert data["size"] == 50
+        assert len(data["items"]) == 17
+        assert data["pages"] == 1
+
+    async def test_get_all_users_paginated_with_params(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        multiple_users: list[User],
+        superuser: User,
+        normal_user: User,
+    ):
+        """Test pagination with page and size query parameters."""
+        response = await async_client.get(
+            "/api/v1/users/?page=2&size=5", headers=superuser_token_headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 17
+        assert data["page"] == 2
+        assert data["size"] == 5
+        assert len(data["items"]) == 5
+        assert data["pages"] == 4  # ceil(17/5)
+
+    async def test_get_all_users_paginated_forbidden_for_normal_user(
+        self, async_client: AsyncClient, normal_user_token_headers: dict
+    ):
+        """Test that a normal user cannot list all users."""
+        response = await async_client.get(
+            "/api/v1/users/", headers=normal_user_token_headers
+        )
+        assert response.status_code == 403
+
+    async def test_get_all_users_paginated_unauthorized(
+        self, async_client: AsyncClient
+    ):
+        """Test that an unauthenticated user cannot list all users."""
+        response = await async_client.get("/api/v1/users/")
         assert response.status_code == 401

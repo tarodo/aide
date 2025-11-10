@@ -1,3 +1,4 @@
+import math
 import uuid
 
 from backend.core import errors
@@ -5,6 +6,7 @@ from backend.core.exceptions import AppException
 from backend.core.security import get_password_hash, verify_password
 from backend.db.uow import UnitOfWork
 from backend.models import User
+from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 
 
@@ -45,6 +47,25 @@ class UserService:
                 raise AppException(errors.USER_NOT_FOUND)
             # Convert to Pydantic schema while session is still active
             return UserRead.model_validate(db_user)
+
+    async def get_users_paginated(
+        self, uow: UnitOfWork, *, page: int, size: int
+    ) -> Page[UserRead]:
+        """
+        Get a paginated list of users.
+        """
+        skip = (page - 1) * size
+        async with uow:
+            items, total = await uow.users.get_multi_paginated(skip=skip, limit=size)
+            pages = math.ceil(total / size) if size > 0 else 0
+
+            return Page[UserRead](
+                items=[UserRead.model_validate(item) for item in items],
+                total=total,
+                page=page,
+                size=size,
+                pages=pages,
+            )
 
     async def ensure_initial_superuser(
         self,

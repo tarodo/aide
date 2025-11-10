@@ -26,6 +26,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        exclude: ^tests/
 
       - id: pytest
         name: pytest (docker)
