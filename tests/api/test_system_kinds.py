@@ -62,7 +62,7 @@ class TestSystemKindAPI:
     ):
         data = {"code": "KAFKA", "name": "Apache Kafka"}
         response = await async_client.post(
-            "/api/v1/system_kinds/", json=data, headers=superuser_token_headers
+            "/api/v1/system-kinds/", json=data, headers=superuser_token_headers
         )
         assert response.status_code == 201
         assert response.json()["code"] == "KAFKA"
@@ -75,7 +75,7 @@ class TestSystemKindAPI:
     ):
         data = {"code": test_system_kind.code, "name": "Another RDBMS"}
         response = await async_client.post(
-            "/api/v1/system_kinds/", json=data, headers=superuser_token_headers
+            "/api/v1/system-kinds/", json=data, headers=superuser_token_headers
         )
         assert response.status_code == 400
         assert response.json()["error_code"] == errors.SYSTEM_KIND_ALREADY_EXISTS
@@ -87,7 +87,7 @@ class TestSystemKindAPI:
         test_system_kind: SystemKind,
     ):
         response = await async_client.get(
-            f"/api/v1/system_kinds/{test_system_kind.id}",
+            f"/api/v1/system-kinds/{test_system_kind.id}",
             headers=superuser_token_headers,
         )
         assert response.status_code == 200
@@ -100,7 +100,7 @@ class TestSystemKindAPI:
         test_system_kind: SystemKind,
     ):
         response = await async_client.get(
-            "/api/v1/system_kinds/", headers=superuser_token_headers
+            "/api/v1/system-kinds/", headers=superuser_token_headers
         )
         assert response.status_code == 200
         data = response.json()
@@ -115,7 +115,7 @@ class TestSystemKindAPI:
     ):
         update_data = {"name": "Updated RDBMS Name"}
         response = await async_client.put(
-            f"/api/v1/system_kinds/{test_system_kind.id}",
+            f"/api/v1/system-kinds/{test_system_kind.id}",
             json=update_data,
             headers=superuser_token_headers,
         )
@@ -130,7 +130,7 @@ class TestSystemKindAPI:
         test_system_kind: SystemKind,
     ):
         response = await async_client.delete(
-            f"/api/v1/system_kinds/{test_system_kind.id}",
+            f"/api/v1/system-kinds/{test_system_kind.id}",
             headers=superuser_token_headers,
         )
         assert response.status_code == 200
@@ -138,7 +138,7 @@ class TestSystemKindAPI:
 
         # Verify it's gone
         response = await async_client.get(
-            f"/api/v1/system_kinds/{test_system_kind.id}",
+            f"/api/v1/system-kinds/{test_system_kind.id}",
             headers=superuser_token_headers,
         )
         assert response.status_code == 404

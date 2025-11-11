@@ -150,7 +150,7 @@ app.include_router(
 
 app.include_router(
     v1_system_kinds.router,
-    prefix=f"{api_v1_prefix}/system_kinds",
+    prefix=f"{api_v1_prefix}/system-kinds",
     tags=["System Kinds"],
 )
 
