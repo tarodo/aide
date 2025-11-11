@@ -14,9 +14,17 @@ from fastapi import status
 from pydantic import BaseModel
 
 # Error code constants
+UNAUTHORIZED = "UNAUTHORIZED"
+FORBIDDEN = "FORBIDDEN"
 USER_NOT_FOUND = "USER_NOT_FOUND"
 INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
 USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS"
+SYSTEM_KIND_NOT_FOUND = "SYSTEM_KIND_NOT_FOUND"
+SYSTEM_KIND_ALREADY_EXISTS = "SYSTEM_KIND_ALREADY_EXISTS"
+SYSTEM_FLAVOR_NOT_FOUND = "SYSTEM_FLAVOR_NOT_FOUND"
+SYSTEM_FLAVOR_ALREADY_EXISTS = "SYSTEM_FLAVOR_ALREADY_EXISTS"
+DATA_TYPE_NOT_FOUND = "DATA_TYPE_NOT_FOUND"
+DATA_TYPE_ALREADY_EXISTS = "DATA_TYPE_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -29,6 +37,14 @@ class ResponsesMapping(Protocol):
 
 # Mapping of error codes to (HTTP Status Code, Detail Message)
 ERROR_MAP = {
+    UNAUTHORIZED: (
+        status.HTTP_401_UNAUTHORIZED,
+        "Unauthorized.",
+    ),
+    FORBIDDEN: (
+        status.HTTP_403_FORBIDDEN,
+        "Forbidden.",
+    ),
     USER_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The requested user was not found.",
@@ -40,6 +56,30 @@ ERROR_MAP = {
     USER_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A user with this email already exists.",
+    ),
+    SYSTEM_KIND_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested system kind was not found.",
+    ),
+    SYSTEM_KIND_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A system kind with this code already exists.",
+    ),
+    SYSTEM_FLAVOR_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested system flavor was not found.",
+    ),
+    SYSTEM_FLAVOR_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A system flavor with this code already exists.",
+    ),
+    DATA_TYPE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested data type was not found.",
+    ),
+    DATA_TYPE_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A data type with this code already exists for the given system flavor.",
     ),
 }
 

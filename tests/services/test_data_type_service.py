@@ -1,0 +1,241 @@
+import uuid
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+
+import pytest
+
+from backend.core import errors
+from backend.core.exceptions import AppException
+from backend.models.data_type import DataType
+from backend.models.system_flavor import SystemFlavor
+from backend.schemas.data_type import (
+    DataTypeCreate,
+    DataTypeRead,
+    DataTypeUpdate,
+)
+from backend.schemas.pagination import Page
+from backend.services.data_type import DataTypeService
+
+
+class _MockDataTypes:
+    def __init__(self) -> None:
+        self.get_by_system_flavor_and_code: AsyncMock = AsyncMock()
+        self.get: AsyncMock = AsyncMock()
+        self.create: AsyncMock = AsyncMock()
+        self.update: AsyncMock = AsyncMock()
+        self.delete: AsyncMock = AsyncMock()
+        self.get_multi_paginated: AsyncMock = AsyncMock()
+
+
+class _MockSystemFlavors:
+    def __init__(self) -> None:
+        self.get: AsyncMock = AsyncMock()
+
+
+class _MockUnitOfWork:
+    def __init__(self) -> None:
+        self.data_types = _MockDataTypes()
+        self.system_flavors = _MockSystemFlavors()
+
+    async def __aenter__(self) -> "_MockUnitOfWork":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        return None
+
+
+@pytest.fixture
+def mock_uow() -> _MockUnitOfWork:
+    """Fixture for a mocked UnitOfWork."""
+    return _MockUnitOfWork()
+
+
+@pytest.fixture
+def data_type_service() -> DataTypeService:
+    """Fixture for a DataTypeService instance."""
+    return DataTypeService()
+
+
+@pytest.fixture
+def db_system_flavor() -> SystemFlavor:
+    """Fixture for a database SystemFlavor model object."""
+    return SystemFlavor(
+        id=uuid.uuid4(), code="POSTGRESQL", name="PostgreSQL", kind_id=uuid.uuid4()
+    )
+
+
+@pytest.fixture
+def data_type_create_schema(db_system_flavor: SystemFlavor) -> DataTypeCreate:
+    """Fixture for a DataTypeCreate schema object."""
+    return DataTypeCreate(
+        system_flavor_id=db_system_flavor.id,
+        code="VARCHAR",
+        params_schema={"length": {"type": "integer"}},
+        render_template="VARCHAR({{ length }})",
+    )
+
+
+@pytest.fixture
+def db_data_type(db_system_flavor: SystemFlavor) -> DataType:
+    """Fixture for a database DataType model object."""
+    user_id = uuid.uuid4()
+    now = datetime.now(UTC)
+    return DataType(
+        id=uuid.uuid4(),
+        system_flavor_id=db_system_flavor.id,
+        code="VARCHAR",
+        params_schema={"length": {"type": "integer"}},
+        render_template="VARCHAR({{ length }})",
+        created_by=user_id,
+        updated_by=user_id,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@pytest.mark.asyncio
+class TestDataTypeService:
+    async def test_create_data_type_success(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        data_type_create_schema: DataTypeCreate,
+        db_data_type: DataType,
+        db_system_flavor: SystemFlavor,
+    ):
+        mock_uow.data_types.get_by_system_flavor_and_code.return_value = None
+        mock_uow.system_flavors.get.return_value = db_system_flavor
+        mock_uow.data_types.create.return_value = db_data_type
+        creator_id = uuid.uuid4()
+
+        result = await data_type_service.create_data_type(
+            uow=mock_uow,
+            data_type_in=data_type_create_schema,
+            creator_id=creator_id,
+        )
+
+        mock_uow.data_types.get_by_system_flavor_and_code.assert_awaited_once_with(
+            data_type_create_schema.system_flavor_id, data_type_create_schema.code
+        )
+        mock_uow.system_flavors.get.assert_awaited_once_with(
+            data_type_create_schema.system_flavor_id
+        )
+        mock_uow.data_types.create.assert_awaited_once()
+        created_arg = mock_uow.data_types.create.call_args.kwargs["obj_in"]
+        assert created_arg.code == data_type_create_schema.code
+        assert created_arg.created_by == creator_id
+        assert isinstance(result, DataTypeRead)
+        assert result.code == db_data_type.code
+
+    async def test_create_data_type_duplicate(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        data_type_create_schema: DataTypeCreate,
+        db_data_type: DataType,
+    ):
+        mock_uow.data_types.get_by_system_flavor_and_code.return_value = db_data_type
+
+        with pytest.raises(AppException) as exc_info:
+            await data_type_service.create_data_type(
+                uow=mock_uow,
+                data_type_in=data_type_create_schema,
+                creator_id=uuid.uuid4(),
+            )
+        assert exc_info.value.error_code == errors.DATA_TYPE_ALREADY_EXISTS
+
+    async def test_create_data_type_flavor_not_found(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        data_type_create_schema: DataTypeCreate,
+    ):
+        mock_uow.data_types.get_by_system_flavor_and_code.return_value = None
+        mock_uow.system_flavors.get.return_value = None
+
+        with pytest.raises(AppException) as exc_info:
+            await data_type_service.create_data_type(
+                uow=mock_uow,
+                data_type_in=data_type_create_schema,
+                creator_id=uuid.uuid4(),
+            )
+        assert exc_info.value.error_code == errors.SYSTEM_FLAVOR_NOT_FOUND
+
+    async def test_get_data_type_success(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        mock_uow.data_types.get.return_value = db_data_type
+        result = await data_type_service.get_data_type(
+            uow=mock_uow, data_type_id=db_data_type.id
+        )
+        assert isinstance(result, DataTypeRead)
+        assert result.id == db_data_type.id
+
+    async def test_get_data_type_not_found(
+        self, data_type_service: DataTypeService, mock_uow: _MockUnitOfWork
+    ):
+        mock_uow.data_types.get.return_value = None
+        with pytest.raises(AppException) as exc_info:
+            await data_type_service.get_data_type(
+                uow=mock_uow, data_type_id=uuid.uuid4()
+            )
+        assert exc_info.value.error_code == errors.DATA_TYPE_NOT_FOUND
+
+    async def test_get_data_types_paginated(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        mock_uow.data_types.get_multi_paginated.return_value = ([db_data_type], 1)
+        result = await data_type_service.get_data_types_paginated(
+            uow=mock_uow, page=1, size=10
+        )
+        assert isinstance(result, Page)
+        assert result.total == 1
+        assert len(result.items) == 1
+        assert result.items[0].id == db_data_type.id
+
+    async def test_update_data_type_success(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        update_schema = DataTypeUpdate(code="TEXT")
+        mock_uow.data_types.get.return_value = db_data_type
+        mock_uow.data_types.get_by_system_flavor_and_code.return_value = None
+        mock_uow.data_types.update.return_value = db_data_type
+        updater_id = uuid.uuid4()
+
+        result = await data_type_service.update_data_type(
+            uow=mock_uow,
+            data_type_id=db_data_type.id,
+            data_type_in=update_schema,
+            updater_id=updater_id,
+        )
+
+        mock_uow.data_types.update.assert_awaited_once()
+        updated_arg = mock_uow.data_types.update.call_args.kwargs["db_obj"]
+        assert updated_arg.code == "TEXT"
+        assert updated_arg.updated_by == updater_id
+        assert result.code == "TEXT"
+
+    async def test_delete_data_type_success(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        mock_uow.data_types.get.return_value = db_data_type
+        mock_uow.data_types.delete.return_value = db_data_type
+
+        result = await data_type_service.delete_data_type(
+            uow=mock_uow, data_type_id=db_data_type.id
+        )
+
+        mock_uow.data_types.delete.assert_awaited_once_with(db_obj=db_data_type)
+        assert result.id == db_data_type.id
