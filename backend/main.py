@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from backend.api.v1 import login as v1_login
+from backend.api.v1 import system_kinds as v1_system_kinds
 from backend.api.v1 import users as v1_users
 from backend.core.errors import ERROR_MAP
 from backend.core.exceptions import AppException
@@ -143,6 +144,12 @@ app.include_router(
     v1_login.router,
     prefix=f"{api_v1_prefix}/login",
     tags=["Login"],
+)
+
+app.include_router(
+    v1_system_kinds.router,
+    prefix=f"{api_v1_prefix}/system_kinds",
+    tags=["System Kinds"],
 )
 
 
