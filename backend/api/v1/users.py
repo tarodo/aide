@@ -8,9 +8,13 @@ from backend.api.dependencies import (
     get_current_superuser,
     get_pagination_params,
 )
+from backend.core.errors import (
+    USER_ALREADY_EXISTS,
+    USER_NOT_FOUND,
+    build_error_responses,
+)
 from backend.db.uow import UnitOfWork
 from backend.models import User
-from backend.schemas.error import ErrorResponse
 from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
@@ -49,10 +53,7 @@ async def get_all_users(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user (admin only)",
     responses={
-        status.HTTP_400_BAD_REQUEST: {
-            "model": ErrorResponse,
-            "description": "User with this email already exists.",
-        },
+        **build_error_responses(USER_ALREADY_EXISTS),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
@@ -94,10 +95,7 @@ async def get_current_user_me(
     response_model=UserRead,
     summary="Get a user by ID",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "model": ErrorResponse,
-            "description": "The requested user was not found.",
-        },
+        **build_error_responses(USER_NOT_FOUND),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
