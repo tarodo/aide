@@ -21,6 +21,8 @@ SYSTEM_KIND_NOT_FOUND = "SYSTEM_KIND_NOT_FOUND"
 SYSTEM_KIND_ALREADY_EXISTS = "SYSTEM_KIND_ALREADY_EXISTS"
 SYSTEM_FLAVOR_NOT_FOUND = "SYSTEM_FLAVOR_NOT_FOUND"
 SYSTEM_FLAVOR_ALREADY_EXISTS = "SYSTEM_FLAVOR_ALREADY_EXISTS"
+DATA_TYPE_NOT_FOUND = "DATA_TYPE_NOT_FOUND"
+DATA_TYPE_ALREADY_EXISTS = "DATA_TYPE_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -60,6 +62,14 @@ ERROR_MAP = {
     SYSTEM_FLAVOR_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A system flavor with this code already exists.",
+    ),
+    DATA_TYPE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested data type was not found.",
+    ),
+    DATA_TYPE_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A data type with this code already exists for the given system flavor.",
     ),
 }
 

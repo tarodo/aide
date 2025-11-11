@@ -20,6 +20,7 @@ class SystemFlavor(Base, MetaDataMixin):
         UUID(as_uuid=True), ForeignKey("system_kinds.id"), nullable=False
     )
     kind = relationship("SystemKind", back_populates="flavors")
+    data_types = relationship("DataType", back_populates="system_flavor")
 
     def __repr__(self) -> str:
         return f"SystemFlavor(id={self.id}, code={self.code}, name={self.name})"

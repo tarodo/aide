@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
 
+from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import login as v1_login
 from backend.api.v1 import system_flavors as v1_system_flavors
 from backend.api.v1 import system_kinds as v1_system_kinds
@@ -157,6 +158,12 @@ app.include_router(
     v1_system_flavors.router,
     prefix=f"{api_v1_prefix}/system-flavors",
     tags=["System Flavors"],
+)
+
+app.include_router(
+    v1_data_types.router,
+    prefix=f"{api_v1_prefix}/data-types",
+    tags=["Data Types"],
 )
 
 
