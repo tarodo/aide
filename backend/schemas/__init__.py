@@ -1,3 +1,8 @@
+from .system_flavor import (
+    SystemFlavorCreate,
+    SystemFlavorRead,
+    SystemFlavorUpdate,
+)
 from .system_kind import SystemKindCreate, SystemKindRead, SystemKindUpdate
 from .user import UserCreate, UserRead, UserUpdate
 
@@ -8,4 +13,7 @@ __all__ = [
     "SystemKindCreate",
     "SystemKindRead",
     "SystemKindUpdate",
+    "SystemFlavorCreate",
+    "SystemFlavorRead",
+    "SystemFlavorUpdate",
 ]

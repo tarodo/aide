@@ -19,6 +19,8 @@ INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
 USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS"
 SYSTEM_KIND_NOT_FOUND = "SYSTEM_KIND_NOT_FOUND"
 SYSTEM_KIND_ALREADY_EXISTS = "SYSTEM_KIND_ALREADY_EXISTS"
+SYSTEM_FLAVOR_NOT_FOUND = "SYSTEM_FLAVOR_NOT_FOUND"
+SYSTEM_FLAVOR_ALREADY_EXISTS = "SYSTEM_FLAVOR_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -50,6 +52,14 @@ ERROR_MAP = {
     SYSTEM_KIND_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A system kind with this code already exists.",
+    ),
+    SYSTEM_FLAVOR_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested system flavor was not found.",
+    ),
+    SYSTEM_FLAVOR_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A system flavor with this code already exists.",
     ),
 }
 

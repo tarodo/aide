@@ -1,5 +1,11 @@
 from .auth_service import AuthService
+from .system_flavor import SystemFlavorService
 from .system_kind import SystemKindService
 from .user import UserService
 
-__all__ = ["AuthService", "UserService", "SystemKindService"]
+__all__ = [
+    "AuthService",
+    "UserService",
+    "SystemKindService",
+    "SystemFlavorService",
+]
