@@ -7,7 +7,11 @@ Each error code is associated with a default HTTP status code and a
 user-facing detail message.
 """
 
+from collections import defaultdict
+from typing import Any, Dict, Iterable, Protocol, Tuple, Type, cast
+
 from fastapi import status
+from pydantic import BaseModel
 
 # Error code constants
 USER_NOT_FOUND = "USER_NOT_FOUND"
@@ -15,6 +19,15 @@ INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
 USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS"
 SYSTEM_KIND_NOT_FOUND = "SYSTEM_KIND_NOT_FOUND"
 SYSTEM_KIND_ALREADY_EXISTS = "SYSTEM_KIND_ALREADY_EXISTS"
+
+ErrorInfo = Tuple[int, str]
+
+
+class ResponsesMapping(Protocol):
+    def keys(self) -> Iterable[int | str]: ...
+
+    def __getitem__(self, __key: int | str) -> Dict[str, Any]: ...
+
 
 # Mapping of error codes to (HTTP Status Code, Detail Message)
 ERROR_MAP = {
@@ -39,3 +52,63 @@ ERROR_MAP = {
         "A system kind with this code already exists.",
     ),
 }
+
+
+def build_error_responses(
+    *error_codes: str,
+    error_schema: Type[BaseModel] | None = None,
+) -> ResponsesMapping:
+    """
+    Turn a list of registered error codes into a FastAPI `responses` mapping.
+
+    Args:
+        *error_codes: Error codes defined in `ERROR_MAP`.
+        error_schema: Optional Pydantic schema to use for the response model.
+            Defaults to `backend.schemas.error.ErrorResponse`.
+
+    Returns:
+        Dict[int, Dict[str, Any]]: A mapping suitable for FastAPI route
+            declarations (status code -> response metadata).
+    """
+
+    if not error_codes:
+        return {}
+
+    if error_schema is None:
+        from backend.schemas.error import ErrorResponse as DefaultErrorResponse
+
+        error_schema = DefaultErrorResponse
+
+    grouped: Dict[int, list[tuple[str, ErrorInfo]]] = defaultdict(list)
+    for code in error_codes:
+        if code not in ERROR_MAP:
+            raise KeyError(
+                f"Unknown error code '{code}'. Register it in ERROR_MAP first."
+            )
+        grouped[ERROR_MAP[code][0]].append((code, ERROR_MAP[code]))
+
+    responses: Dict[int, Dict[str, Any]] = {}
+    for status_code, items in grouped.items():
+        description = (
+            items[0][1][1]
+            if len(items) == 1
+            else " | ".join(f"{code}: {detail}" for code, (_, detail) in items)
+        )
+        examples = {
+            code: {
+                "summary": code,
+                "value": {"error_code": code, "detail": detail},
+            }
+            for code, (_, detail) in items
+        }
+        responses[status_code] = {
+            "model": error_schema,
+            "description": description,
+            "content": {
+                "application/json": {
+                    "examples": examples,
+                },
+            },
+        }
+
+    return cast(ResponsesMapping, responses)
