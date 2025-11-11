@@ -14,6 +14,8 @@ from fastapi import status
 from pydantic import BaseModel
 
 # Error code constants
+UNAUTHORIZED = "UNAUTHORIZED"
+FORBIDDEN = "FORBIDDEN"
 USER_NOT_FOUND = "USER_NOT_FOUND"
 INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
 USER_ALREADY_EXISTS = "USER_ALREADY_EXISTS"
@@ -35,6 +37,14 @@ class ResponsesMapping(Protocol):
 
 # Mapping of error codes to (HTTP Status Code, Detail Message)
 ERROR_MAP = {
+    UNAUTHORIZED: (
+        status.HTTP_401_UNAUTHORIZED,
+        "Unauthorized.",
+    ),
+    FORBIDDEN: (
+        status.HTTP_403_FORBIDDEN,
+        "Forbidden.",
+    ),
     USER_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The requested user was not found.",

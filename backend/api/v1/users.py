@@ -9,6 +9,8 @@ from backend.api.dependencies import (
     get_pagination_params,
 )
 from backend.core.errors import (
+    FORBIDDEN,
+    UNAUTHORIZED,
     USER_ALREADY_EXISTS,
     USER_NOT_FOUND,
     build_error_responses,
@@ -28,10 +30,7 @@ router = APIRouter()
     summary="Get all users (paginated)",
     dependencies=[Depends(get_current_superuser)],
     responses={
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def get_all_users(
@@ -53,11 +52,7 @@ async def get_all_users(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new user (admin only)",
     responses={
-        **build_error_responses(USER_ALREADY_EXISTS),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(USER_ALREADY_EXISTS, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def create_user(
@@ -79,7 +74,7 @@ async def create_user(
     "/me",
     response_model=UserRead,
     summary="Get current user",
-    responses={status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"}},
+    responses={**build_error_responses(UNAUTHORIZED)},
 )
 async def get_current_user_me(
     current_user: User = Depends(get_current_user),
@@ -95,11 +90,7 @@ async def get_current_user_me(
     response_model=UserRead,
     summary="Get a user by ID",
     responses={
-        **build_error_responses(USER_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(USER_NOT_FOUND, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def get_user(

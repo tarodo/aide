@@ -11,6 +11,8 @@ from backend.core.errors import (
     SYSTEM_FLAVOR_ALREADY_EXISTS,
     SYSTEM_FLAVOR_NOT_FOUND,
     SYSTEM_KIND_NOT_FOUND,
+    UNAUTHORIZED,
+    FORBIDDEN,
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
@@ -51,11 +53,9 @@ async def get_all_system_flavors(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new system flavor (admin only)",
     responses={
-        **build_error_responses(SYSTEM_FLAVOR_ALREADY_EXISTS, SYSTEM_KIND_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(
+            SYSTEM_FLAVOR_ALREADY_EXISTS, SYSTEM_KIND_NOT_FOUND, UNAUTHORIZED, FORBIDDEN
+        ),
     },
 )
 async def create_system_flavor(
@@ -78,11 +78,7 @@ async def create_system_flavor(
     response_model=SystemFlavorRead,
     summary="Get a system flavor by ID",
     responses={
-        **build_error_responses(SYSTEM_FLAVOR_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(SYSTEM_FLAVOR_NOT_FOUND, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def get_system_flavor(
@@ -108,11 +104,9 @@ async def get_system_flavor(
             SYSTEM_FLAVOR_NOT_FOUND,
             SYSTEM_FLAVOR_ALREADY_EXISTS,
             SYSTEM_KIND_NOT_FOUND,
+            UNAUTHORIZED,
+            FORBIDDEN,
         ),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
     },
 )
 async def update_system_flavor(
@@ -139,11 +133,7 @@ async def update_system_flavor(
     response_model=SystemFlavorRead,
     summary="Delete a system flavor",
     responses={
-        **build_error_responses(SYSTEM_FLAVOR_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(SYSTEM_FLAVOR_NOT_FOUND, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def delete_system_flavor(

@@ -8,8 +8,10 @@ from backend.api.dependencies import (
     get_pagination_params,
 )
 from backend.core.errors import (
+    FORBIDDEN,
     SYSTEM_KIND_ALREADY_EXISTS,
     SYSTEM_KIND_NOT_FOUND,
+    UNAUTHORIZED,
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
@@ -50,11 +52,7 @@ async def get_all_system_kinds(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new system kind (admin only)",
     responses={
-        **build_error_responses(SYSTEM_KIND_ALREADY_EXISTS),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(SYSTEM_KIND_ALREADY_EXISTS, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def create_system_kind(
@@ -77,11 +75,7 @@ async def create_system_kind(
     response_model=SystemKindRead,
     summary="Get a system kind by ID",
     responses={
-        **build_error_responses(SYSTEM_KIND_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(SYSTEM_KIND_NOT_FOUND, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def get_system_kind(
@@ -103,11 +97,9 @@ async def get_system_kind(
     response_model=SystemKindRead,
     summary="Update a system kind",
     responses={
-        **build_error_responses(SYSTEM_KIND_NOT_FOUND, SYSTEM_KIND_ALREADY_EXISTS),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(
+            SYSTEM_KIND_NOT_FOUND, SYSTEM_KIND_ALREADY_EXISTS, UNAUTHORIZED, FORBIDDEN
+        ),
     },
 )
 async def update_system_kind(
@@ -134,11 +126,7 @@ async def update_system_kind(
     response_model=SystemKindRead,
     summary="Delete a system kind",
     responses={
-        **build_error_responses(SYSTEM_KIND_NOT_FOUND),
-        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "The user doesn't have enough privileges"
-        },
+        **build_error_responses(SYSTEM_KIND_NOT_FOUND, UNAUTHORIZED, FORBIDDEN),
     },
 )
 async def delete_system_kind(
