@@ -7,9 +7,13 @@ from backend.api.dependencies import (
     get_current_superuser,
     get_pagination_params,
 )
+from backend.core.errors import (
+    SYSTEM_KIND_ALREADY_EXISTS,
+    SYSTEM_KIND_NOT_FOUND,
+    build_error_responses,
+)
 from backend.db.uow import UnitOfWork
 from backend.models import User
-from backend.schemas.error import ErrorResponse
 from backend.schemas.pagination import Page
 from backend.schemas.system_kind import (
     SystemKindCreate,
@@ -46,10 +50,7 @@ async def get_all_system_kinds(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new system kind (admin only)",
     responses={
-        status.HTTP_400_BAD_REQUEST: {
-            "model": ErrorResponse,
-            "description": "System kind with this code already exists.",
-        },
+        **build_error_responses(SYSTEM_KIND_ALREADY_EXISTS),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
@@ -76,10 +77,7 @@ async def create_system_kind(
     response_model=SystemKindRead,
     summary="Get a system kind by ID",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "model": ErrorResponse,
-            "description": "The requested system kind was not found.",
-        },
+        **build_error_responses(SYSTEM_KIND_NOT_FOUND),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
@@ -105,14 +103,7 @@ async def get_system_kind(
     response_model=SystemKindRead,
     summary="Update a system kind",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "model": ErrorResponse,
-            "description": "The requested system kind was not found.",
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "model": ErrorResponse,
-            "description": "System kind with this code already exists.",
-        },
+        **build_error_responses(SYSTEM_KIND_NOT_FOUND, SYSTEM_KIND_ALREADY_EXISTS),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
@@ -143,10 +134,7 @@ async def update_system_kind(
     response_model=SystemKindRead,
     summary="Delete a system kind",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "model": ErrorResponse,
-            "description": "The requested system kind was not found.",
-        },
+        **build_error_responses(SYSTEM_KIND_NOT_FOUND),
         status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
         status.HTTP_403_FORBIDDEN: {
             "description": "The user doesn't have enough privileges"
