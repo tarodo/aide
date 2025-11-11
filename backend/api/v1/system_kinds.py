@@ -15,7 +15,7 @@ from backend.services.system_kind import SystemKindService
 router = APIRouter()
 
 crud_router = create_crud_router(
-    service=SystemKindService(),
+    service_dependency=SystemKindService,
     create_schema=SystemKindCreate,
     update_schema=SystemKindUpdate,
     read_schema=SystemKindRead,

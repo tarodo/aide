@@ -16,7 +16,7 @@ from backend.services.system_flavor import SystemFlavorService
 router = APIRouter()
 
 crud_router = create_crud_router(
-    service=SystemFlavorService(),
+    service_dependency=SystemFlavorService,
     create_schema=SystemFlavorCreate,
     update_schema=SystemFlavorUpdate,
     read_schema=SystemFlavorRead,

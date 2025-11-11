@@ -23,11 +23,12 @@ ServiceType = TypeVar("ServiceType", bound=GenericService[Any, Any, Any, Any])
 
 def create_crud_router(
     *,
-    service: ServiceType,
+    service_dependency: Type[ServiceType],
     create_schema: Type[CreateSchemaType],
     update_schema: Type[UpdateSchemaType],
     read_schema: Type[ReadSchemaType],
     entity_name: str,
+    user_dependency: Any = Depends(get_current_superuser),
     get_all_dependencies: Sequence[Any] | None = None,
     create_dependencies: Sequence[Any] | None = None,
     get_one_dependencies: Sequence[Any] | None = None,
@@ -58,6 +59,7 @@ def create_crud_router(
         dependencies=get_all_dependencies,
     )
     async def get_all(
+        service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
         pagination: PaginationParams = Depends(get_pagination_params),
     ) -> Any:
@@ -79,10 +81,11 @@ def create_crud_router(
     )
     async def create(
         obj_in: create_schema,  # type: ignore[valid-type]
+        service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
-        current_superuser: User = Depends(get_current_superuser),
+        current_user: User = user_dependency,
     ) -> Any:
-        creator_id = current_superuser.id
+        creator_id = current_user.id
         return await service.create(uow=uow, obj_in=obj_in, creator_id=creator_id)
 
     @router.get(
@@ -98,6 +101,7 @@ def create_crud_router(
     )
     async def get_one(
         obj_id: uuid.UUID,
+        service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
     ) -> Any:
         return await service.get_by_id(uow=uow, obj_id=obj_id)
@@ -116,10 +120,11 @@ def create_crud_router(
     async def update(
         obj_id: uuid.UUID,
         obj_in: update_schema,  # type: ignore[valid-type]
+        service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
-        current_superuser: User = Depends(get_current_superuser),
+        current_user: User = user_dependency,
     ) -> Any:
-        updater_id = current_superuser.id
+        updater_id = current_user.id
         return await service.update(
             uow=uow, obj_id=obj_id, obj_in=obj_in, updater_id=updater_id
         )
@@ -137,6 +142,7 @@ def create_crud_router(
     )
     async def delete(
         obj_id: uuid.UUID,
+        service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
     ) -> Any:
         return await service.delete(uow=uow, obj_id=obj_id)

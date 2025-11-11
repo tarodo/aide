@@ -16,7 +16,7 @@ from backend.services.data_type import DataTypeService
 router = APIRouter()
 
 crud_router = create_crud_router(
-    service=DataTypeService(),
+    service_dependency=DataTypeService,
     create_schema=DataTypeCreate,
     update_schema=DataTypeUpdate,
     read_schema=DataTypeRead,
