@@ -23,6 +23,12 @@ router = APIRouter()
     response_model=Page[UserRead],
     summary="Get all users (paginated)",
     dependencies=[Depends(get_current_superuser)],
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {
+            "description": "The user doesn't have enough privileges"
+        },
+    },
 )
 async def get_all_users(
     uow: UnitOfWork = Depends(UnitOfWork),
