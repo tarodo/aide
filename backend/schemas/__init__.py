@@ -1,4 +1,5 @@
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
+from .credential_ref import CredentialRefCreate, CredentialRefRead, CredentialRefUpdate
 from .system_flavor import (
     SystemFlavorCreate,
     SystemFlavorRead,
@@ -20,4 +21,7 @@ __all__ = [
     "DataTypeCreate",
     "DataTypeRead",
     "DataTypeUpdate",
+    "CredentialRefCreate",
+    "CredentialRefRead",
+    "CredentialRefUpdate",
 ]
