@@ -21,6 +21,7 @@ class SystemFlavor(Base, MetaDataMixin):
     )
     kind = relationship("SystemKind", back_populates="flavors")
     data_types = relationship("DataType", back_populates="system_flavor")
+    systems = relationship("System", back_populates="flavor")
 
     def __repr__(self) -> str:
         return f"SystemFlavor(id={self.id}, code={self.code}, name={self.name})"

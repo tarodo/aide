@@ -12,6 +12,7 @@ from backend.api.v1 import credential_refs as v1_credential_refs
 from backend.api.v1 import login as v1_login
 from backend.api.v1 import system_flavors as v1_system_flavors
 from backend.api.v1 import system_kinds as v1_system_kinds
+from backend.api.v1 import systems as v1_systems
 from backend.api.v1 import users as v1_users
 from backend.core.errors import ERROR_MAP
 from backend.core.exceptions import AppException
@@ -171,6 +172,12 @@ app.include_router(
     v1_credential_refs.router,
     prefix=f"{api_v1_prefix}/credential-refs",
     tags=["Credential Refs"],
+)
+
+app.include_router(
+    v1_systems.router,
+    prefix=f"{api_v1_prefix}/systems",
+    tags=["Systems"],
 )
 
 

@@ -27,6 +27,8 @@ DATA_TYPE_NOT_FOUND = "DATA_TYPE_NOT_FOUND"
 DATA_TYPE_ALREADY_EXISTS = "DATA_TYPE_ALREADY_EXISTS"
 CREDENTIAL_REF_NOT_FOUND = "CREDENTIAL_REF_NOT_FOUND"
 CREDENTIAL_REF_ALREADY_EXISTS = "CREDENTIAL_REF_ALREADY_EXISTS"
+SYSTEM_NOT_FOUND = "SYSTEM_NOT_FOUND"
+SYSTEM_ALREADY_EXISTS = "SYSTEM_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -90,6 +92,14 @@ ERROR_MAP = {
     CREDENTIAL_REF_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A credential reference with this provider and path already exists.",
+    ),
+    SYSTEM_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested system was not found.",
+    ),
+    SYSTEM_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A system with this code already exists.",
     ),
 }
 

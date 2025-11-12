@@ -1,5 +1,5 @@
 from sqlalchemy import Integer, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
 from backend.models.mixins import MetaDataMixin
@@ -11,6 +11,8 @@ class CredentialRef(Base, MetaDataMixin):
     provider: Mapped[str] = mapped_column(String, nullable=False)
     path: Mapped[str] = mapped_column(String, nullable=False)
     version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    systems = relationship("System", back_populates="credential_ref")
 
     __table_args__ = (
         UniqueConstraint("provider", "path", name="idx_credential_ref_provider_path"),
