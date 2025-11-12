@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from backend.api.dependencies import (
     PaginationParams,
     get_current_superuser,
+    get_current_user,
     get_pagination_params,
 )
 from backend.core.errors import FORBIDDEN, UNAUTHORIZED, build_error_responses
@@ -28,7 +29,6 @@ def create_crud_router(
     update_schema: Type[UpdateSchemaType],
     read_schema: Type[ReadSchemaType],
     entity_name: str,
-    user_dependency: Any = Depends(get_current_superuser),
     get_all_dependencies: Sequence[Any] | None = None,
     create_dependencies: Sequence[Any] | None = None,
     get_one_dependencies: Sequence[Any] | None = None,
@@ -42,11 +42,11 @@ def create_crud_router(
     router = APIRouter()
 
     if get_all_dependencies is None:
-        get_all_dependencies = [Depends(get_current_superuser)]
+        get_all_dependencies = []
     if create_dependencies is None:
         create_dependencies = []
     if get_one_dependencies is None:
-        get_one_dependencies = [Depends(get_current_superuser)]
+        get_one_dependencies = []
     if update_dependencies is None:
         update_dependencies = []
     if delete_dependencies is None:
@@ -83,7 +83,7 @@ def create_crud_router(
         obj_in: create_schema,  # type: ignore[valid-type]
         service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
-        current_user: User = user_dependency,
+        current_user: User = Depends(get_current_user),
     ) -> Any:
         creator_id = current_user.id
         return await service.create(uow=uow, obj_in=obj_in, creator_id=creator_id)
@@ -122,7 +122,7 @@ def create_crud_router(
         obj_in: update_schema,  # type: ignore[valid-type]
         service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
-        current_user: User = user_dependency,
+        current_user: User = Depends(get_current_user),
     ) -> Any:
         updater_id = current_user.id
         return await service.update(
