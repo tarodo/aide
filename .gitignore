@@ -22,5 +22,4 @@ wheels/
 *.env
 .DS_Store
 
-architecture/
 tasks/
