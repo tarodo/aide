@@ -32,6 +32,7 @@ SYSTEM_ALREADY_EXISTS = "SYSTEM_ALREADY_EXISTS"
 DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
 DATASET_ALREADY_EXISTS = "DATASET_ALREADY_EXISTS"
 INVALID_DATASET_KIND = "INVALID_DATASET_KIND"
+DATASET_KIND_MISMATCH = "DATASET_KIND_MISMATCH"
 
 ErrorInfo = Tuple[int, str]
 
@@ -115,6 +116,10 @@ ERROR_MAP = {
     INVALID_DATASET_KIND: (
         status.HTTP_400_BAD_REQUEST,
         "The provided dataset kind is invalid.",
+    ),
+    DATASET_KIND_MISMATCH: (
+        status.HTTP_400_BAD_REQUEST,
+        "Changing the kind of a dataset is not allowed.",
     ),
 }
 

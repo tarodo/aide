@@ -159,14 +159,20 @@ def validate_dataset_read(obj: Any) -> AnyDatasetRead:
     return schema_class.model_validate(obj)  # type: ignore[attr-defined, return-value]
 
 
-# A generic update schema
-class DatasetUpdate(NoteMixin):
+# --- Update Schemas ---
+
+
+class DatasetUpdateBase(NoteMixin):
+    """Base schema for dataset updates, containing common optional fields."""
+
     object_name: str | None = None
     layer: str | None = None
     is_active: bool | None = None
     extra: dict[str, Any] | None = None
 
-    # RDBMS
+
+class DatasetRdbmsUpdate(DatasetUpdateBase):
+    kind: Literal["rdbms"]
     catalog_name: str | None = None
     schema_name: str | None = None
     table_name: str | None = None
@@ -174,27 +180,52 @@ class DatasetUpdate(NoteMixin):
     distribution: list[str] | None = None
     pk_columns: list[str] | None = None
 
-    # Kafka
+
+class DatasetKafkaUpdate(DatasetUpdateBase):
+    kind: Literal["kafka"]
     topic: str | None = None
     format: str | None = None
     partitions: int | None = None
     retention_ms: int | None = None
     key_columns: list[str] | None = None
 
-    # Storage
+
+class DatasetStorageUpdate(DatasetUpdateBase):
+    kind: Literal["storage"]
     path: str | None = None
     file_format: str | None = None
     compression: str | None = None
     partition_by: list[str] | None = None
 
-    # SFTP
+
+class DatasetSftpUpdate(DatasetUpdateBase):
+    kind: Literal["sftp"]
+    path: str | None = None
+    file_format: str | None = None
+    compression: str | None = None
     archive: str | None = None
 
-    # Hive
+
+class DatasetHiveUpdate(DatasetUpdateBase):
+    kind: Literal["hive"]
     catalog_uri: str | None = None
     db_name: str | None = None
+    table_name: str | None = None
     is_external: bool | None = None
+    file_format: str | None = None
     location: str | None = None
     partition_cols: list[str] | None = None
     serde: str | None = None
     tblproperties: dict[str, Any] | None = None
+
+
+AnyDatasetUpdate = Annotated[
+    Union[
+        DatasetRdbmsUpdate,
+        DatasetKafkaUpdate,
+        DatasetStorageUpdate,
+        DatasetSftpUpdate,
+        DatasetHiveUpdate,
+    ],
+    Field(discriminator="kind"),
+]

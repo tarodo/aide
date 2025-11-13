@@ -18,7 +18,7 @@ from backend.repositories.dataset import DatasetRepository
 from backend.schemas.dataset import (
     AnyDatasetCreate,
     AnyDatasetRead,
-    DatasetUpdate,
+    AnyDatasetUpdate,
     validate_dataset_read,
 )
 from backend.services.base import GenericService
@@ -33,7 +33,7 @@ MODEL_MAP = {
 
 
 class DatasetService(
-    GenericService[Dataset, AnyDatasetCreate, DatasetUpdate, AnyDatasetRead]
+    GenericService[Dataset, AnyDatasetCreate, AnyDatasetUpdate, AnyDatasetRead]
 ):
     def __init__(self):
         super().__init__(
@@ -111,7 +111,7 @@ class DatasetService(
         self,
         uow: UnitOfWork,
         db_obj: Dataset,
-        obj_in: DatasetUpdate,
+        obj_in: AnyDatasetUpdate,
         updater_id: uuid.UUID | None,
     ) -> None:
         update_data = obj_in.model_dump(exclude_unset=True)
@@ -129,7 +129,7 @@ class DatasetService(
         self,
         uow: UnitOfWork,
         obj_id: uuid.UUID,
-        obj_in: DatasetUpdate,
+        obj_in: AnyDatasetUpdate,
         updater_id: uuid.UUID | None = None,
     ) -> AnyDatasetRead:
         """Update an existing dataset."""
@@ -140,8 +140,12 @@ class DatasetService(
             if not db_obj:
                 raise AppException(self.not_found_error_code)
 
+            if obj_in.kind != db_obj.kind:
+                raise AppException(errors.DATASET_KIND_MISMATCH)
+
             await self._pre_update(uow, db_obj, obj_in, updater_id)
 
+            update_data.pop("kind", None)
             for field, value in update_data.items():
                 setattr(db_obj, field, value)
 

@@ -1,5 +1,5 @@
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
-from .dataset import AnyDatasetCreate, AnyDatasetRead, DatasetUpdate
+from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
 from .credential_ref import CredentialRefCreate, CredentialRefRead, CredentialRefUpdate
 from .system_flavor import (
     SystemFlavorCreate,
@@ -31,5 +31,5 @@ __all__ = [
     "SystemUpdate",
     "AnyDatasetCreate",
     "AnyDatasetRead",
-    "DatasetUpdate",
+    "AnyDatasetUpdate",
 ]

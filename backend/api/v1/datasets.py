@@ -12,6 +12,7 @@ from backend.api.dependencies import (
 from backend.core.errors import (
     DATASET_ALREADY_EXISTS,
     DATASET_NOT_FOUND,
+    DATASET_KIND_MISMATCH,
     FORBIDDEN,
     INVALID_DATASET_KIND,
     SYSTEM_NOT_FOUND,
@@ -20,7 +21,7 @@ from backend.core.errors import (
 )
 from backend.db.uow import UnitOfWork
 from backend.models import User
-from backend.schemas.dataset import AnyDatasetCreate, AnyDatasetRead, DatasetUpdate
+from backend.schemas.dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
 from backend.schemas.pagination import Page
 from backend.services.dataset import DatasetService
 
@@ -84,20 +85,24 @@ async def get_one(
     return await service.get_by_id(uow=uow, obj_id=obj_id)
 
 
-@router.put(
+@router.patch(
     "/{obj_id}",
     response_model=AnyDatasetRead,
     summary="Update a dataset",
     dependencies=[Depends(get_current_superuser)],
     responses={
         **build_error_responses(
-            DATASET_NOT_FOUND, DATASET_ALREADY_EXISTS, UNAUTHORIZED, FORBIDDEN
+            DATASET_NOT_FOUND,
+            DATASET_ALREADY_EXISTS,
+            DATASET_KIND_MISMATCH,
+            UNAUTHORIZED,
+            FORBIDDEN,
         ),
     },
 )
 async def update(
     obj_id: uuid.UUID,
-    obj_in: DatasetUpdate,
+    obj_in: AnyDatasetUpdate,
     service: DatasetService = Depends(DatasetService),
     uow: UnitOfWork = Depends(UnitOfWork),
     current_user: User = Depends(get_current_user),
