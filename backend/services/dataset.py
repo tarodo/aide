@@ -1,0 +1,167 @@
+import math
+import uuid
+from typing import cast
+
+from backend.core import errors
+from backend.core.exceptions import AppException
+from backend.db.uow import UnitOfWork
+from backend.schemas.pagination import Page
+from backend.models.dataset import (
+    Dataset,
+    DatasetHive,
+    DatasetKafka,
+    DatasetRdbms,
+    DatasetSftp,
+    DatasetStorage,
+)
+from backend.repositories.dataset import DatasetRepository
+from backend.schemas.dataset import (
+    AnyDatasetCreate,
+    AnyDatasetRead,
+    AnyDatasetUpdate,
+    validate_dataset_read,
+)
+from backend.services.base import GenericService
+
+MODEL_MAP = {
+    "rdbms": DatasetRdbms,
+    "kafka": DatasetKafka,
+    "storage": DatasetStorage,
+    "sftp": DatasetSftp,
+    "hive": DatasetHive,
+}
+
+
+class DatasetService(
+    GenericService[Dataset, AnyDatasetCreate, AnyDatasetUpdate, AnyDatasetRead]
+):
+    def __init__(self):
+        super().__init__(
+            model=Dataset,
+            repository=DatasetRepository,
+            read_schema=AnyDatasetRead,
+            not_found_error_code=errors.DATASET_NOT_FOUND,
+        )
+
+    async def _pre_create(
+        self, uow: UnitOfWork, obj_in: AnyDatasetCreate, creator_id: uuid.UUID | None
+    ) -> None:
+        repo = cast(DatasetRepository, self._get_repository(uow.session))
+        if await repo.get_by_system_and_object_name(
+            obj_in.system_id, obj_in.object_name
+        ):
+            raise AppException(errors.DATASET_ALREADY_EXISTS)
+        if not await uow.systems.get(obj_in.system_id):
+            raise AppException(errors.SYSTEM_NOT_FOUND)
+
+    async def create(
+        self,
+        uow: UnitOfWork,
+        obj_in: AnyDatasetCreate,
+        creator_id: uuid.UUID | None = None,
+    ) -> AnyDatasetRead:
+        """Create a new dataset based on its kind."""
+        obj_in_data = obj_in.model_dump()
+        kind = obj_in_data.get("kind")
+        if not isinstance(kind, str):
+            raise AppException(errors.INVALID_DATASET_KIND)
+        model_class = MODEL_MAP.get(kind)
+        if not model_class:
+            raise AppException(errors.INVALID_DATASET_KIND)
+
+        async with uow:
+            await self._pre_create(uow, obj_in, creator_id)
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            db_obj = model_class(**obj_in_data)
+            if creator_id:
+                db_obj.created_by = creator_id
+                db_obj.updated_by = creator_id
+
+            created_obj = await repo.create(obj_in=db_obj)
+            return validate_dataset_read(created_obj)
+
+    async def get_by_id(self, uow: UnitOfWork, obj_id: uuid.UUID) -> AnyDatasetRead:
+        """Get a dataset by its ID."""
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+            return validate_dataset_read(db_obj)
+
+    async def get_paginated(
+        self, uow: UnitOfWork, *, page: int, size: int
+    ) -> Page[AnyDatasetRead]:
+        """Get a paginated list of datasets."""
+        skip = (page - 1) * size
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            items, total = await repo.get_multi_paginated(skip=skip, limit=size)
+            pages = math.ceil(total / size) if size > 0 else 0
+
+            return Page[AnyDatasetRead](
+                items=[validate_dataset_read(item) for item in items],
+                total=total,
+                page=page,
+                size=size,
+                pages=pages,
+            )
+
+    async def _pre_update(
+        self,
+        uow: UnitOfWork,
+        db_obj: Dataset,
+        obj_in: AnyDatasetUpdate,
+        updater_id: uuid.UUID | None,
+    ) -> None:
+        update_data = obj_in.model_dump(exclude_unset=True)
+        if (
+            "object_name" in update_data
+            and update_data["object_name"] != db_obj.object_name
+        ):
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            if await repo.get_by_system_and_object_name(
+                db_obj.system_id, update_data["object_name"]
+            ):
+                raise AppException(errors.DATASET_ALREADY_EXISTS)
+
+    async def update(
+        self,
+        uow: UnitOfWork,
+        obj_id: uuid.UUID,
+        obj_in: AnyDatasetUpdate,
+        updater_id: uuid.UUID | None = None,
+    ) -> AnyDatasetRead:
+        """Update an existing dataset."""
+        update_data = obj_in.model_dump(exclude_unset=True)
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+
+            if obj_in.kind != db_obj.kind:
+                raise AppException(errors.DATASET_KIND_MISMATCH)
+
+            await self._pre_update(uow, db_obj, obj_in, updater_id)
+
+            update_data.pop("kind", None)
+            for field, value in update_data.items():
+                setattr(db_obj, field, value)
+
+            if updater_id and hasattr(db_obj, "updated_by"):
+                setattr(db_obj, "updated_by", updater_id)
+
+            updated_obj = await repo.update(db_obj=db_obj)
+            return validate_dataset_read(updated_obj)
+
+    async def delete(self, uow: UnitOfWork, obj_id: uuid.UUID) -> AnyDatasetRead:
+        """Delete a dataset."""
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+
+            deleted_obj = await repo.delete(db_obj=db_obj)
+            return validate_dataset_read(deleted_obj)

@@ -1,6 +1,14 @@
 from .mixins import TimestampMixin, UserTrackingMixin
-from .data_type import DataType as DataType
 from .credential_ref import CredentialRef as CredentialRef
+from .data_type import DataType as DataType
+from .dataset import (
+    Dataset,
+    DatasetHive,
+    DatasetKafka,
+    DatasetRdbms,
+    DatasetSftp,
+    DatasetStorage,
+)
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
 from .system import System as System
@@ -15,4 +23,10 @@ __all__ = [
     "DataType",
     "CredentialRef",
     "System",
+    "Dataset",
+    "DatasetRdbms",
+    "DatasetKafka",
+    "DatasetStorage",
+    "DatasetSftp",
+    "DatasetHive",
 ]

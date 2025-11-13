@@ -29,6 +29,10 @@ CREDENTIAL_REF_NOT_FOUND = "CREDENTIAL_REF_NOT_FOUND"
 CREDENTIAL_REF_ALREADY_EXISTS = "CREDENTIAL_REF_ALREADY_EXISTS"
 SYSTEM_NOT_FOUND = "SYSTEM_NOT_FOUND"
 SYSTEM_ALREADY_EXISTS = "SYSTEM_ALREADY_EXISTS"
+DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
+DATASET_ALREADY_EXISTS = "DATASET_ALREADY_EXISTS"
+INVALID_DATASET_KIND = "INVALID_DATASET_KIND"
+DATASET_KIND_MISMATCH = "DATASET_KIND_MISMATCH"
 
 ErrorInfo = Tuple[int, str]
 
@@ -100,6 +104,22 @@ ERROR_MAP = {
     SYSTEM_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A system with this code already exists.",
+    ),
+    DATASET_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested dataset was not found.",
+    ),
+    DATASET_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A dataset with this system and object name already exists.",
+    ),
+    INVALID_DATASET_KIND: (
+        status.HTTP_400_BAD_REQUEST,
+        "The provided dataset kind is invalid.",
+    ),
+    DATASET_KIND_MISMATCH: (
+        status.HTTP_400_BAD_REQUEST,
+        "Changing the kind of a dataset is not allowed.",
     ),
 }
 
