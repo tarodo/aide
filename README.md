@@ -92,7 +92,29 @@ make stop
 ```sh
 make format          # Auto-format code (black + ruff)
 make check           # Run linting and type checks
-make test-docker     # Run tests in Docker
 make alembic-gen MSG="migration message"  # Generate new migration
 make alembic-head    # Apply pending migrations
+```
+
+### Testing
+
+The testing setup is optimized to avoid unnecessary Docker image rebuilds, making the test cycle fast and flexible.
+
+**Run all tests:**
+```sh
+make test-docker
+```
+
+**Run specific tests or pass arguments:**
+
+You can pass any `pytest` arguments via the `PYTEST_ARGS` variable.
+```sh
+# Run tests in a specific file
+make test-docker PYTEST_ARGS="tests/api/test_login.py"
+
+# Run tests by keyword matching
+make test-docker PYTEST_ARGS="-k 'test_create_user_success' -vv"
+
+# Rebuild the test image if dependencies have changed (e.g., Dockerfile or pyproject.toml changed)
+make build-test
 ```

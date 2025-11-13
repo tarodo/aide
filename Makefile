@@ -17,9 +17,12 @@ format:
 test-local:
 	uv run pytest -v
 
+PYTEST_ARGS ?= -v --cov=backend tests/
 test-docker:
+	docker compose run --rm test uv run pytest $(PYTEST_ARGS)
+
+build-test:
 	docker compose build test
-	docker compose run --rm test
 
 # Local run
 run:
