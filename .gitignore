@@ -20,6 +20,7 @@ wheels/
 .coverage.*.*.*.*.*.*
 
 *.env
+.DS_Store
 
 architecture/
 tasks/
