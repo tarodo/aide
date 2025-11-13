@@ -5,11 +5,11 @@ This diagram decomposes the **Backend API Container** into its major logical com
 ```mermaid
 graph TD
     subgraph "Backend API Container"
-        A[API Endpoints <br> (FastAPI Routers)]
-        B[Service Layer <br> (Business Logic)]
-        C[Repository Layer <br> (Data Access)]
-        D[Unit of Work <br> (Transaction Management)]
-        E[Domain Models <br> (SQLAlchemy ORM)]
+        A[API Endpoints <br> FastAPI Routers]
+        B[Service Layer <br> Business Logic]
+        C[Repository Layer <br> Data Access]
+        D[Unit of Work <br> Transaction Management]
+        E[Domain Models <br> SQLAlchemy ORM]
     end
 
     user("User") -- "HTTPS Request" --> A
