@@ -1,0 +1,263 @@
+import uuid
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from backend.core import errors
+from backend.core.exceptions import AppException
+from backend.models import System
+from backend.models.dataset import Dataset, DatasetKafka, DatasetRdbms
+from backend.schemas.dataset import (
+    DatasetKafkaCreate,
+    DatasetKafkaRead,
+    DatasetKafkaUpdate,
+    DatasetRdbmsCreate,
+    DatasetRdbmsRead,
+    DatasetRdbmsUpdate,
+)
+from backend.services.dataset import DatasetService
+
+
+class _MockRepository:
+    def __init__(self) -> None:
+        self.get_by_system_and_object_name: AsyncMock = AsyncMock()
+        self.get: AsyncMock = AsyncMock()
+        self.create: AsyncMock = AsyncMock()
+        self.update: AsyncMock = AsyncMock()
+        self.delete: AsyncMock = AsyncMock()
+
+
+class _MockSystems:
+    def __init__(self) -> None:
+        self.get: AsyncMock = AsyncMock()
+
+
+class _MockUnitOfWork:
+    def __init__(self) -> None:
+        self.session = MagicMock()
+        self.systems = _MockSystems()
+
+    async def __aenter__(self) -> "_MockUnitOfWork":
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        return None
+
+
+@pytest.fixture
+def mock_uow() -> _MockUnitOfWork:
+    """Fixture for a mocked UnitOfWork."""
+    return _MockUnitOfWork()
+
+
+@pytest.fixture
+def dataset_service() -> DatasetService:
+    """Fixture for a DatasetService instance."""
+    return DatasetService()
+
+
+@pytest.fixture
+def db_system() -> System:
+    return System(id=uuid.uuid4(), code="SYS1", name="System 1")
+
+
+@pytest.fixture
+def rdbms_create_schema(db_system: System) -> DatasetRdbmsCreate:
+    return DatasetRdbmsCreate(
+        kind="rdbms",
+        system_id=db_system.id,
+        object_name="customers",
+        schema_name="public",
+        table_name="customers",
+    )
+
+
+@pytest.fixture
+def kafka_create_schema(db_system: System) -> DatasetKafkaCreate:
+    return DatasetKafkaCreate(
+        kind="kafka",
+        system_id=db_system.id,
+        object_name="orders",
+        topic="orders_topic",
+        format="json",
+        partitions=3,
+        retention_ms=86400000,
+        key_columns=["order_id"],
+    )
+
+
+@pytest.fixture
+def db_dataset_rdbms(rdbms_create_schema: DatasetRdbmsCreate) -> DatasetRdbms:
+    now = datetime.now(UTC)
+    return DatasetRdbms(
+        id=uuid.uuid4(),
+        kind="rdbms",
+        system_id=rdbms_create_schema.system_id,
+        object_name=rdbms_create_schema.object_name,
+        schema_name=rdbms_create_schema.schema_name,
+        table_name=rdbms_create_schema.table_name,
+        created_at=now,
+        updated_at=now,
+        is_active=True,
+    )
+
+
+@pytest.mark.asyncio
+class TestDatasetService:
+    async def test_create_rdbms_dataset_success(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        rdbms_create_schema: DatasetRdbmsCreate,
+        db_dataset_rdbms: DatasetRdbms,
+        db_system: System,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = None
+        mock_repo.create.return_value = db_dataset_rdbms
+        mock_uow.systems.get.return_value = db_system
+        creator_id = uuid.uuid4()
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            result = await dataset_service.create(
+                uow=mock_uow, obj_in=rdbms_create_schema, creator_id=creator_id
+            )
+
+        mock_repo.get_by_system_and_object_name.assert_awaited_once()
+        mock_uow.systems.get.assert_awaited_once()
+        mock_repo.create.assert_awaited_once()
+        created_arg = mock_repo.create.call_args.kwargs["obj_in"]
+        assert isinstance(created_arg, DatasetRdbms)
+        assert created_arg.created_by == creator_id
+        assert isinstance(result, DatasetRdbmsRead)
+        assert result.kind == "rdbms"
+
+    async def test_create_kafka_dataset_success(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        kafka_create_schema: DatasetKafkaCreate,
+        db_system: System,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = None
+        now = datetime.now(UTC)
+        db_dataset_kafka = DatasetKafka(
+            id=uuid.uuid4(),
+            kind="kafka",
+            system_id=kafka_create_schema.system_id,
+            object_name=kafka_create_schema.object_name,
+            topic=kafka_create_schema.topic,
+            format=kafka_create_schema.format,
+            partitions=kafka_create_schema.partitions,
+            retention_ms=kafka_create_schema.retention_ms,
+            key_columns=kafka_create_schema.key_columns,
+            created_at=now,
+            updated_at=now,
+            is_active=True,
+        )
+        mock_repo.create.return_value = db_dataset_kafka
+        mock_uow.systems.get.return_value = db_system
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            result = await dataset_service.create(
+                uow=mock_uow, obj_in=kafka_create_schema, creator_id=uuid.uuid4()
+            )
+
+        created_arg = mock_repo.create.call_args.kwargs["obj_in"]
+        assert isinstance(created_arg, DatasetKafka)
+        assert isinstance(result, DatasetKafkaRead)
+        assert result.kind == "kafka"
+
+    async def test_create_dataset_already_exists(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        rdbms_create_schema: DatasetRdbmsCreate,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.create(
+                    uow=mock_uow, obj_in=rdbms_create_schema, creator_id=uuid.uuid4()
+                )
+        assert exc_info.value.error_code == errors.DATASET_ALREADY_EXISTS
+
+    async def test_create_dataset_system_not_found(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        rdbms_create_schema: DatasetRdbmsCreate,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = None
+        mock_uow.systems.get.return_value = None
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.create(
+                    uow=mock_uow, obj_in=rdbms_create_schema, creator_id=uuid.uuid4()
+                )
+        assert exc_info.value.error_code == errors.SYSTEM_NOT_FOUND
+
+    async def test_update_dataset_kind_mismatch(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        update_schema = DatasetKafkaUpdate(kind="kafka", topic="some_topic")
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.update(
+                    uow=mock_uow,
+                    obj_id=db_dataset_rdbms.id,
+                    obj_in=update_schema,
+                    updater_id=uuid.uuid4(),
+                )
+        assert exc_info.value.error_code == errors.DATASET_KIND_MISMATCH
+
+    async def test_pre_update_duplicate_object_name(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        update_schema = DatasetRdbmsUpdate(kind="rdbms", object_name="new_name")
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = Dataset(id=uuid.uuid4())
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service._pre_update(
+                    uow=mock_uow,
+                    db_obj=db_dataset_rdbms,
+                    obj_in=update_schema,
+                    updater_id=None,
+                )
+        assert exc_info.value.error_code == errors.DATASET_ALREADY_EXISTS
+
+    async def test_delete_dataset_success(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+        mock_repo.delete.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            result = await dataset_service.delete(
+                uow=mock_uow, obj_id=db_dataset_rdbms.id
+            )
+
+        mock_repo.delete.assert_awaited_once_with(db_obj=db_dataset_rdbms)
+        assert result.id == db_dataset_rdbms.id

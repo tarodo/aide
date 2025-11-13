@@ -48,6 +48,8 @@ services:
       target: dev
     environment:
       - DATABASE_URL=postgresql+asyncpg://aide:aide@db-test:5432/aide_test
+    volumes:
+      - ./backend:/app/backend
     depends_on:
       - db-test
 
