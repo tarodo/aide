@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
+from backend.api.v1 import datasets as v1_datasets
 
 from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import credential_refs as v1_credential_refs
@@ -178,6 +179,12 @@ app.include_router(
     v1_systems.router,
     prefix=f"{api_v1_prefix}/systems",
     tags=["Systems"],
+)
+
+app.include_router(
+    v1_datasets.router,
+    prefix=f"{api_v1_prefix}/datasets",
+    tags=["Datasets"],
 )
 
 
