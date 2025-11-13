@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.repositories.credential_ref import CredentialRefRepository
 from backend.db.session import AsyncSessionLocal
 from backend.repositories.data_type import DataTypeRepository
+from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
 from backend.repositories.system_kind import SystemKindRepository
 from backend.repositories.user import UserRepository
@@ -19,6 +21,8 @@ class UnitOfWork:
         self.system_kinds = SystemKindRepository(self.session)
         self.system_flavors = SystemFlavorRepository(self.session)
         self.data_types = DataTypeRepository(self.session)
+        self.credential_refs = CredentialRefRepository(self.session)
+        self.systems = SystemRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

@@ -11,7 +11,7 @@ class SystemFlavorBase(BaseModel):
     code: str
     name: str
     vendor: str | None = None
-    version: str | None = None
+    versions: list[str] | None = None
     kind_id: uuid.UUID
 
 
@@ -27,7 +27,7 @@ class SystemFlavorUpdate(NoteMixin):
     code: str | None = None
     name: str | None = None
     vendor: str | None = None
-    version: str | None = None
+    versions: list[str] | None = None
     kind_id: uuid.UUID | None = None
 
 

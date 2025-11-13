@@ -69,7 +69,7 @@ def system_flavor_create_schema(db_system_kind: SystemKind) -> SystemFlavorCreat
         code="POSTGRESQL",
         name="PostgreSQL",
         vendor="The PostgreSQL Global Development Group",
-        version="16",
+        versions=["16"],
         kind_id=db_system_kind.id,
     )
 
@@ -84,7 +84,7 @@ def db_system_flavor(db_system_kind: SystemKind) -> SystemFlavor:
         code="POSTGRESQL",
         name="PostgreSQL",
         vendor="The PostgreSQL Global Development Group",
-        version="16",
+        versions=["16"],
         kind_id=db_system_kind.id,
         created_by=user_id,
         updated_by=user_id,

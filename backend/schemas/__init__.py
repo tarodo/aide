@@ -1,10 +1,12 @@
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
+from .credential_ref import CredentialRefCreate, CredentialRefRead, CredentialRefUpdate
 from .system_flavor import (
     SystemFlavorCreate,
     SystemFlavorRead,
     SystemFlavorUpdate,
 )
 from .system_kind import SystemKindCreate, SystemKindRead, SystemKindUpdate
+from .system import SystemCreate, SystemRead, SystemUpdate
 from .user import UserCreate, UserRead, UserUpdate
 
 __all__ = [
@@ -20,4 +22,10 @@ __all__ = [
     "DataTypeCreate",
     "DataTypeRead",
     "DataTypeUpdate",
+    "CredentialRefCreate",
+    "CredentialRefRead",
+    "CredentialRefUpdate",
+    "SystemCreate",
+    "SystemRead",
+    "SystemUpdate",
 ]

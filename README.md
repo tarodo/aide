@@ -68,3 +68,31 @@ aide/
 
 AIDE Metastore v2 transforms data integration into a **governed, automated, and contract-driven** discipline — reducing operational overhead, enforcing consistency, and scaling metadata management for the enterprise.
 
+## ChartDB Model
+```sh
+docker run -p 8003:80 ghcr.io/chartdb/chartdb:latest
+```
+
+## Start Project
+
+### Using Make
+
+**Docker deployment:**
+```sh
+make up
+```
+Builds and starts all services (backend, database, Redis), runs migrations, and creates a superuser.
+
+**Stop services:**
+```sh
+make stop
+```
+
+**Other useful commands:**
+```sh
+make format          # Auto-format code (black + ruff)
+make check           # Run linting and type checks
+make test-docker     # Run tests in Docker
+make alembic-gen MSG="migration message"  # Generate new migration
+make alembic-head    # Apply pending migrations
+```
