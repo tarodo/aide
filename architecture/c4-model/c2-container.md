@@ -5,8 +5,8 @@ This diagram zooms into the AIDE Metastore system, showing its high-level techni
 ```mermaid
 graph TD
     subgraph "AIDE Metastore System"
-        A[Backend API <br> (FastAPI on Docker)]
-        B[Database <br> (PostgreSQL on Docker)]
+        A[Backend API <br> FastAPI on Docker]
+        B[Database <br> PostgreSQL on Docker]
     end
 
     user("Data Engineer / Developer")
