@@ -31,6 +31,7 @@ class DatasetRdbmsDetails(BaseModel):
     is_view: bool | None = False
     distribution: list[str] | None = None
     pk_columns: list[str] | None = None
+    uq_constraints: dict[str, Any] | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -105,6 +106,7 @@ class DatasetHiveDetails(BaseModel):
     partition_cols: list[str] | None = None
     serde: str | None = None
     tblproperties: dict[str, Any] | None = None
+    bkey_columns: list[str] | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -179,6 +181,7 @@ class DatasetRdbmsUpdate(DatasetUpdateBase):
     is_view: bool | None = None
     distribution: list[str] | None = None
     pk_columns: list[str] | None = None
+    uq_constraints: dict[str, Any] | None = None
 
 
 class DatasetKafkaUpdate(DatasetUpdateBase):
@@ -217,6 +220,7 @@ class DatasetHiveUpdate(DatasetUpdateBase):
     partition_cols: list[str] | None = None
     serde: str | None = None
     tblproperties: dict[str, Any] | None = None
+    bkey_columns: list[str] | None = None
 
 
 AnyDatasetUpdate = Annotated[
