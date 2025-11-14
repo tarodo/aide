@@ -24,10 +24,10 @@ class Dataset(Base, MetaDataMixin):
         UUID(as_uuid=True), ForeignKey("systems.id"), nullable=False, index=True
     )
     object_name: Mapped[str] = mapped_column(Text, nullable=False)
-    layer: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    layer: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    kind: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
     system = relationship("System")
 
@@ -58,8 +58,12 @@ class DatasetRdbms(Dataset):
     schema_name: Mapped[str] = mapped_column(Text, nullable=False)
     table_name: Mapped[str] = mapped_column(Text, nullable=False)
     is_view: Mapped[bool | None] = mapped_column(Boolean, default=False)
-    distribution: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    pk_columns: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    distribution: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(255)), nullable=True
+    )
+    pk_columns: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(255)), nullable=True
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "rdbms",
@@ -73,10 +77,10 @@ class DatasetKafka(Dataset):
         UUID(as_uuid=True), ForeignKey("datasets.id"), primary_key=True
     )
     topic: Mapped[str] = mapped_column(Text, nullable=False)
-    format: Mapped[str] = mapped_column(Text, nullable=False)
+    format: Mapped[str] = mapped_column(String(255), nullable=False)
     partitions: Mapped[int] = mapped_column(Integer, nullable=False)
     retention_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    key_columns: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    key_columns: Mapped[list[str]] = mapped_column(ARRAY(String(255)), nullable=False)
 
     __mapper_args__ = {
         "polymorphic_identity": "kafka",
@@ -90,9 +94,11 @@ class DatasetStorage(Dataset):
         UUID(as_uuid=True), ForeignKey("datasets.id"), primary_key=True
     )
     path: Mapped[str] = mapped_column(Text, nullable=False)
-    file_format: Mapped[str] = mapped_column(Text, nullable=False)
-    compression: Mapped[str | None] = mapped_column(Text, nullable=True)
-    partition_by: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    file_format: Mapped[str] = mapped_column(String(255), nullable=False)
+    compression: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    partition_by: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String(255)), nullable=True
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "storage",
@@ -106,8 +112,8 @@ class DatasetSftp(Dataset):
         UUID(as_uuid=True), ForeignKey("datasets.id"), primary_key=True
     )
     path: Mapped[str] = mapped_column(Text, nullable=False)
-    file_format: Mapped[str] = mapped_column(Text, nullable=False)
-    compression: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_format: Mapped[str] = mapped_column(String(255), nullable=False)
+    compression: Mapped[str | None] = mapped_column(String(255), nullable=True)
     archive: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __mapper_args__ = {
@@ -125,10 +131,10 @@ class DatasetHive(Dataset):
     db_name: Mapped[str] = mapped_column(Text, nullable=False)
     table_name: Mapped[str] = mapped_column(Text, nullable=False)
     is_external: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    file_format: Mapped[str] = mapped_column(Text, nullable=False)
+    file_format: Mapped[str] = mapped_column(String(255), nullable=False)
     location: Mapped[str | None] = mapped_column(Text, nullable=True)
     partition_cols: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True
+        ARRAY(String(255)), nullable=True
     )
     serde: Mapped[str | None] = mapped_column(Text, nullable=True)
     tblproperties: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

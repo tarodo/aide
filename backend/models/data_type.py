@@ -15,7 +15,7 @@ class DataType(Base, MetaDataMixin):
     system_flavor_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("system_flavors.id"), nullable=False
     )
-    code: Mapped[str] = mapped_column(String, nullable=False)
+    code: Mapped[str] = mapped_column(String(255), nullable=False)
     params_schema: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     render_template: Mapped[str | None] = mapped_column(Text, nullable=True)
 
