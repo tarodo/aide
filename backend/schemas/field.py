@@ -1,0 +1,38 @@
+import uuid
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from backend.schemas.mixins import MetaDataMixin, NoteMixin
+
+
+class FieldBase(BaseModel):
+    """Base field schema."""
+
+    dataset_id: uuid.UUID
+    name: str
+    path: str | None = None
+    pii_tags: list[str] | None = None
+    extra: dict[str, Any] | None = None
+
+
+class FieldCreate(FieldBase, NoteMixin):
+    """Schema for field creation."""
+
+    pass
+
+
+class FieldUpdate(NoteMixin):
+    """Schema for field update."""
+
+    dataset_id: uuid.UUID | None = None
+    name: str | None = None
+    path: str | None = None
+    pii_tags: list[str] | None = None
+    extra: dict[str, Any] | None = None
+
+
+class FieldRead(FieldBase, MetaDataMixin):
+    """Schema for reading field data."""
+
+    model_config = ConfigDict(from_attributes=True)

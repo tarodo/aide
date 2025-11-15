@@ -1,7 +1,11 @@
 from .auth_service import AuthService
-from .data_type import DataTypeService
+from .cast_rule import CastRuleService
 from .credential_ref import CredentialRefService
+from .data_type import DataTypeService
 from .dataset import DatasetService
+from .dataset_schema import DatasetSchemaService
+from .field import FieldService
+from .field_binding import FieldBindingService
 from .system_flavor import SystemFlavorService
 from .system_kind import SystemKindService
 from .system import SystemService
@@ -16,4 +20,8 @@ __all__ = [
     "CredentialRefService",
     "SystemService",
     "DatasetService",
+    "CastRuleService",
+    "FieldService",
+    "DatasetSchemaService",
+    "FieldBindingService",
 ]

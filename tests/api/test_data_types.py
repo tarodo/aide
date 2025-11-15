@@ -52,7 +52,7 @@ async def test_system_flavor(
     transactional_session: AsyncSession, test_system_kind: SystemKind
 ) -> SystemFlavor:
     sf = SystemFlavor(
-        code="POSTGRESQL_DT", name="PostgreSQL for DT", kind_id=test_system_kind.id
+        code="POSTGRESQL_DT", name="PostgreSQL for DT", kind=test_system_kind
     )
     transactional_session.add(sf)
     await transactional_session.commit()
@@ -65,7 +65,7 @@ async def test_data_type(
     transactional_session: AsyncSession, test_system_flavor: SystemFlavor
 ) -> DataType:
     dt = DataType(
-        system_flavor_id=test_system_flavor.id,
+        system_flavor=test_system_flavor,
         code="VARCHAR",
         params_schema={"length": {"type": "integer"}},
     )
