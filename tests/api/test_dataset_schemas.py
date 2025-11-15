@@ -63,7 +63,7 @@ async def test_dataset(
     transactional_session: AsyncSession, test_system: System
 ) -> Dataset:
     dataset = DatasetRdbms(
-        system_id=test_system.id,
+        system=test_system,
         object_name="customers_table_ds_schema_test",
         schema_name="public",
         table_name="customers",
@@ -80,7 +80,7 @@ async def test_dataset_schema(
     test_dataset: Dataset,
 ) -> DatasetSchema:
     schema = DatasetSchema(
-        dataset_id=test_dataset.id,
+        dataset=test_dataset,
         version_num=1,
         schema={"type": "struct", "fields": []},
     )

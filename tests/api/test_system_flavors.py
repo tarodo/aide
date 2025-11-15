@@ -51,7 +51,7 @@ async def test_system_kind(transactional_session: AsyncSession) -> SystemKind:
 async def test_system_flavor(
     transactional_session: AsyncSession, test_system_kind: SystemKind
 ) -> SystemFlavor:
-    sf = SystemFlavor(code="POSTGRESQL", name="PostgreSQL", kind_id=test_system_kind.id)
+    sf = SystemFlavor(code="POSTGRESQL", name="PostgreSQL", kind=test_system_kind)
     transactional_session.add(sf)
     await transactional_session.commit()
     await transactional_session.refresh(sf)

@@ -4,6 +4,11 @@ from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
 from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
 from .dataset_schema import DatasetSchemaCreate, DatasetSchemaRead, DatasetSchemaUpdate
 from .field import FieldCreate, FieldRead, FieldUpdate
+from .field_binding import (
+    FieldBindingCreate,
+    FieldBindingRead,
+    FieldBindingUpdate,
+)
 from .system_flavor import (
     SystemFlavorCreate,
     SystemFlavorRead,
@@ -44,4 +49,7 @@ __all__ = [
     "DatasetSchemaCreate",
     "DatasetSchemaRead",
     "DatasetSchemaUpdate",
+    "FieldBindingCreate",
+    "FieldBindingRead",
+    "FieldBindingUpdate",
 ]

@@ -9,6 +9,7 @@ from backend.repositories.dataset import DatasetRepository
 from backend.db.session import AsyncSessionLocal
 from backend.repositories.data_type import DataTypeRepository
 from backend.repositories.field import FieldRepository
+from backend.repositories.field_binding import FieldBindingRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
 from backend.repositories.system_kind import SystemKindRepository
@@ -31,6 +32,7 @@ class UnitOfWork:
         self.cast_rules = CastRuleRepository(self.session)
         self.fields = FieldRepository(self.session)
         self.dataset_schemas = DatasetSchemaRepository(self.session)
+        self.field_bindings = FieldBindingRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

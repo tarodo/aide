@@ -39,6 +39,9 @@ FIELD_NOT_FOUND = "FIELD_NOT_FOUND"
 FIELD_ALREADY_EXISTS = "FIELD_ALREADY_EXISTS"
 DATASET_SCHEMA_NOT_FOUND = "DATASET_SCHEMA_NOT_FOUND"
 DATASET_SCHEMA_ALREADY_EXISTS = "DATASET_SCHEMA_ALREADY_EXISTS"
+FIELD_BINDING_NOT_FOUND = "FIELD_BINDING_NOT_FOUND"
+FIELD_BINDING_FIELD_ID_ALREADY_EXISTS = "FIELD_BINDING_FIELD_ID_ALREADY_EXISTS"
+FIELD_BINDING_POSITION_ALREADY_EXISTS = "FIELD_BINDING_POSITION_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -150,6 +153,18 @@ ERROR_MAP = {
     DATASET_SCHEMA_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A schema with this version already exists for the given dataset.",
+    ),
+    FIELD_BINDING_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested field binding was not found.",
+    ),
+    FIELD_BINDING_FIELD_ID_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A binding for this field already exists in the given dataset schema.",
+    ),
+    FIELD_BINDING_POSITION_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A binding for this position already exists in the given dataset schema.",
     ),
 }
 

@@ -5,6 +5,7 @@ from .data_type import DataTypeService
 from .dataset import DatasetService
 from .dataset_schema import DatasetSchemaService
 from .field import FieldService
+from .field_binding import FieldBindingService
 from .system_flavor import SystemFlavorService
 from .system_kind import SystemKindService
 from .system import SystemService
@@ -22,4 +23,5 @@ __all__ = [
     "CastRuleService",
     "FieldService",
     "DatasetSchemaService",
+    "FieldBindingService",
 ]

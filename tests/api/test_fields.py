@@ -63,7 +63,7 @@ async def test_dataset(
     transactional_session: AsyncSession, test_system: System
 ) -> Dataset:
     dataset = DatasetRdbms(
-        system_id=test_system.id,
+        system=test_system,
         object_name="customers_table_field_test",
         schema_name="public",
         table_name="customers",
@@ -80,7 +80,7 @@ async def test_field(
     test_dataset: Dataset,
 ) -> Field:
     field = Field(
-        dataset_id=test_dataset.id,
+        dataset=test_dataset,
         name="id",
     )
     transactional_session.add(field)

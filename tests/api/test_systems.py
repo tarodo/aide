@@ -54,7 +54,7 @@ async def test_system_flavor(
     sf = SystemFlavor(
         code="POSTGRESQL_SYS",
         name="PostgreSQL for Systems",
-        kind_id=test_system_kind.id,
+        kind=test_system_kind,
     )
     transactional_session.add(sf)
     await transactional_session.commit()
@@ -80,8 +80,8 @@ async def test_system(
     s = System(
         code="PROD_DB",
         name="Production Database",
-        flavor_id=test_system_flavor.id,
-        credential_ref_id=test_credential_ref.id,
+        flavor=test_system_flavor,
+        credential_ref=test_credential_ref,
     )
     transactional_session.add(s)
     await transactional_session.commit()

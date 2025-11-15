@@ -53,7 +53,7 @@ async def test_data_type1(
     transactional_session: AsyncSession, test_system_flavor: SystemFlavor
 ) -> DataType:
     dt = DataType(
-        system_flavor_id=test_system_flavor.id,
+        system_flavor=test_system_flavor,
         code="INTEGER_CR",
         params_schema={},
     )
@@ -68,7 +68,7 @@ async def test_data_type2(
     transactional_session: AsyncSession, test_system_flavor: SystemFlavor
 ) -> DataType:
     dt = DataType(
-        system_flavor_id=test_system_flavor.id,
+        system_flavor=test_system_flavor,
         code="BIGINT_CR",
         params_schema={},
     )
@@ -85,8 +85,8 @@ async def test_cast_rule(
     test_data_type2: DataType,
 ) -> CastRule:
     cr = CastRule(
-        source_data_type_id=test_data_type1.id,
-        target_data_type_id=test_data_type2.id,
+        source_data_type=test_data_type1,
+        target_data_type=test_data_type2,
         param_mapping={},
         safety="safe",
     )

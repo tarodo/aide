@@ -11,6 +11,7 @@ from .dataset import (
 )
 from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
+from .field_binding import FieldBinding as FieldBinding
 from .mixins import TimestampMixin, UserTrackingMixin
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
@@ -36,4 +37,5 @@ __all__ = [
     "CastSafety",
     "Field",
     "DatasetSchema",
+    "FieldBinding",
 ]
