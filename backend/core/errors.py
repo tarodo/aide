@@ -35,6 +35,8 @@ INVALID_DATASET_KIND = "INVALID_DATASET_KIND"
 DATASET_KIND_MISMATCH = "DATASET_KIND_MISMATCH"
 CAST_RULE_NOT_FOUND = "CAST_RULE_NOT_FOUND"
 CAST_RULE_ALREADY_EXISTS = "CAST_RULE_ALREADY_EXISTS"
+FIELD_NOT_FOUND = "FIELD_NOT_FOUND"
+FIELD_ALREADY_EXISTS = "FIELD_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -130,6 +132,14 @@ ERROR_MAP = {
     CAST_RULE_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A cast rule with this source and target data type already exists.",
+    ),
+    FIELD_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested field was not found.",
+    ),
+    FIELD_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A field with this name already exists for the given dataset.",
     ),
 }
 

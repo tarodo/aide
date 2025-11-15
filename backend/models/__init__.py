@@ -1,4 +1,3 @@
-from .mixins import TimestampMixin, UserTrackingMixin
 from .credential_ref import CredentialRef as CredentialRef
 from .cast_rule import CastRule, CastSafety
 from .data_type import DataType as DataType
@@ -10,6 +9,8 @@ from .dataset import (
     DatasetSftp,
     DatasetStorage,
 )
+from .field import Field as Field
+from .mixins import TimestampMixin, UserTrackingMixin
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
 from .system import System as System
@@ -32,4 +33,5 @@ __all__ = [
     "DatasetHive",
     "CastRule",
     "CastSafety",
+    "Field",
 ]

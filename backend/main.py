@@ -6,11 +6,12 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
-from backend.api.v1 import cast_rules as v1_cast_rules
-from backend.api.v1 import datasets as v1_datasets
 
-from backend.api.v1 import data_types as v1_data_types
+from backend.api.v1 import cast_rules as v1_cast_rules
 from backend.api.v1 import credential_refs as v1_credential_refs
+from backend.api.v1 import data_types as v1_data_types
+from backend.api.v1 import datasets as v1_datasets
+from backend.api.v1 import fields as v1_fields
 from backend.api.v1 import login as v1_login
 from backend.api.v1 import system_flavors as v1_system_flavors
 from backend.api.v1 import system_kinds as v1_system_kinds
@@ -192,6 +193,12 @@ app.include_router(
     v1_cast_rules.router,
     prefix=f"{api_v1_prefix}/cast-rules",
     tags=["Cast Rules"],
+)
+
+app.include_router(
+    v1_fields.router,
+    prefix=f"{api_v1_prefix}/fields",
+    tags=["Fields"],
 )
 
 
