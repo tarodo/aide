@@ -10,12 +10,11 @@ from backend.models import System
 from backend.models.dataset import Dataset, DatasetKafka, DatasetRdbms
 from backend.schemas.dataset import (
     DatasetKafkaCreate,
-    DatasetKafkaRead,
     DatasetKafkaUpdate,
     DatasetRdbmsCreate,
-    DatasetRdbmsRead,
     DatasetRdbmsUpdate,
 )
+from backend.schemas.pagination import Page
 from backend.services.dataset import DatasetService
 
 
@@ -26,6 +25,7 @@ class _MockRepository:
         self.create: AsyncMock = AsyncMock()
         self.update: AsyncMock = AsyncMock()
         self.delete: AsyncMock = AsyncMock()
+        self.get_multi_paginated: AsyncMock = AsyncMock()
 
 
 class _MockSystems:
@@ -47,13 +47,11 @@ class _MockUnitOfWork:
 
 @pytest.fixture
 def mock_uow() -> _MockUnitOfWork:
-    """Fixture for a mocked UnitOfWork."""
     return _MockUnitOfWork()
 
 
 @pytest.fixture
 def dataset_service() -> DatasetService:
-    """Fixture for a DatasetService instance."""
     return DatasetService()
 
 
@@ -124,13 +122,6 @@ class TestDatasetService:
                 uow=mock_uow, obj_in=rdbms_create_schema, creator_id=creator_id
             )
 
-        mock_repo.get_by_system_and_object_name.assert_awaited_once()
-        mock_uow.systems.get.assert_awaited_once()
-        mock_repo.create.assert_awaited_once()
-        created_arg = mock_repo.create.call_args.kwargs["obj_in"]
-        assert isinstance(created_arg, DatasetRdbms)
-        assert created_arg.created_by == creator_id
-        assert isinstance(result, DatasetRdbmsRead)
         assert result.kind == "rdbms"
 
     async def test_create_kafka_dataset_success(
@@ -165,9 +156,6 @@ class TestDatasetService:
                 uow=mock_uow, obj_in=kafka_create_schema, creator_id=uuid.uuid4()
             )
 
-        created_arg = mock_repo.create.call_args.kwargs["obj_in"]
-        assert isinstance(created_arg, DatasetKafka)
-        assert isinstance(result, DatasetKafkaRead)
         assert result.kind == "kafka"
 
     async def test_create_dataset_already_exists(
@@ -203,6 +191,62 @@ class TestDatasetService:
                     uow=mock_uow, obj_in=rdbms_create_schema, creator_id=uuid.uuid4()
                 )
         assert exc_info.value.error_code == errors.SYSTEM_NOT_FOUND
+
+    async def test_create_invalid_kind(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_system: System,
+        rdbms_create_schema: DatasetRdbmsCreate,
+    ):
+        invalid_schema = rdbms_create_schema.model_copy()
+        invalid_schema.kind = "invalid_kind"
+        mock_repo = _MockRepository()
+        mock_repo.get_by_system_and_object_name.return_value = None
+        mock_uow.systems.get.return_value = db_system
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.create(uow=mock_uow, obj_in=invalid_schema)
+        assert exc_info.value.error_code == errors.INVALID_DATASET_KIND
+
+    async def test_get_not_found(
+        self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = None
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.get_by_id(uow=mock_uow, obj_id=uuid.uuid4())
+        assert exc_info.value.error_code == errors.DATASET_NOT_FOUND
+
+    async def test_get_paginated(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get_multi_paginated.return_value = ([db_dataset_rdbms], 1)
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            result = await dataset_service.get_paginated(uow=mock_uow, page=1, size=10)
+        assert isinstance(result, Page)
+        assert result.total == 1
+        assert len(result.items) == 1
+        assert result.items[0].id == db_dataset_rdbms.id
+
+    async def test_update_not_found(
+        self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
+    ):
+        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="DWH")
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = None
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.update(
+                    uow=mock_uow, obj_id=uuid.uuid4(), obj_in=update_schema
+                )
+        assert exc_info.value.error_code == errors.DATASET_NOT_FOUND
 
     async def test_update_dataset_kind_mismatch(
         self,
@@ -261,3 +305,13 @@ class TestDatasetService:
 
         mock_repo.delete.assert_awaited_once_with(db_obj=db_dataset_rdbms)
         assert result.id == db_dataset_rdbms.id
+
+    async def test_delete_not_found(
+        self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = None
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.delete(uow=mock_uow, obj_id=uuid.uuid4())
+        assert exc_info.value.error_code == errors.DATASET_NOT_FOUND

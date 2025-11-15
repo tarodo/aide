@@ -1,8 +1,8 @@
 {
   "id": "0",
-  "name": "AIDE Model",
-  "createdAt": "2025-10-31T16:30:23.564Z",
-  "updatedAt": "2025-10-31T16:30:38.737Z",
+  "name": "AIDE V2 Base",
+  "createdAt": "2025-11-14T17:14:17.452Z",
+  "updatedAt": "2025-11-14T17:14:42.885Z",
   "databaseType": "postgresql",
   "tables": [
     {
@@ -133,14 +133,14 @@
       "isView": false,
       "createdAt": 1755107206928,
       "order": 6,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "12",
-      "name": "dataset",
+      "name": "cast_rule",
       "schema": "public",
-      "x": 2633.116054200592,
-      "y": -2302.5518996144415,
+      "x": 2589.7622728955903,
+      "y": -1845.5923477735107,
       "fields": [
         {
           "id": "13",
@@ -156,7 +156,7 @@
         },
         {
           "id": "14",
-          "name": "system_id",
+          "name": "source_data_type_id",
           "type": {
             "id": "uuid",
             "name": "uuid"
@@ -168,20 +168,81 @@
         },
         {
           "id": "15",
-          "name": "kind",
+          "name": "target_data_type_id",
           "type": {
-            "id": "varchar",
-            "name": "varchar"
+            "id": "uuid",
+            "name": "uuid"
           },
           "primaryKey": false,
-          "unique": true,
+          "unique": false,
           "nullable": false,
-          "createdAt": 1755107206928,
-          "comments": "system_kind_code"
+          "createdAt": 1755107206928
         },
         {
           "id": "16",
-          "name": "object_name",
+          "name": "param_mapping",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "17",
+          "name": "safety",
+          "type": {
+            "id": "cast_safety",
+            "name": "cast_safety"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        }
+      ],
+      "indexes": [
+        {
+          "id": "18",
+          "name": "idx_cast_rule_source_data_type_id_target_data_type_id",
+          "unique": true,
+          "fieldIds": [
+            "14",
+            "15"
+          ],
+          "createdAt": 1755107206928
+        }
+      ],
+      "color": "#8eb7ff",
+      "isView": false,
+      "createdAt": 1755107206928,
+      "order": 5,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "19",
+      "name": "dataset_sftp",
+      "schema": "public",
+      "x": 2955.169993827577,
+      "y": -2781.359950620613,
+      "fields": [
+        {
+          "id": "20",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "21",
+          "name": "path",
           "type": {
             "id": "text",
             "name": "text"
@@ -192,32 +253,46 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "17",
-          "name": "layer",
+          "id": "22",
+          "name": "file_format",
           "type": {
-            "id": "varchar",
-            "name": "varchar"
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1755107206928,
+          "comments": "xml, json, csv"
+        },
+        {
+          "id": "23",
+          "name": "compression",
+          "type": {
+            "id": "text",
+            "name": "text"
           },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
-          "createdAt": 1755366845697,
-          "comments": "layer_enum (SOURCE / RAW / STAGE / ODS / DWH / MART)"
+          "createdAt": 1755107206928,
+          "comments": "gzip/zstd/zip/tar/7z/none"
         },
         {
-          "id": "18",
-          "name": "is_active",
+          "id": "24",
+          "name": "archive",
           "type": {
-            "id": "boolean",
-            "name": "boolean"
+            "id": "text",
+            "name": "text"
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
+          "nullable": true,
+          "createdAt": 1755107206928,
+          "comments": "zip/7z"
         },
         {
-          "id": "19",
+          "id": "25",
           "name": "extra",
           "type": {
             "id": "json",
@@ -231,30 +306,30 @@
       ],
       "indexes": [
         {
-          "id": "20",
+          "id": "26",
           "name": "idx_dataset_system_id_schema_name_object_name",
           "unique": true,
           "fieldIds": [
-            "14",
-            "16"
+            "21",
+            "23"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "21",
+          "id": "27",
           "name": "idx_dataset_system_id",
           "unique": false,
           "fieldIds": [
-            "14"
+            "21"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "22",
+          "id": "28",
           "name": "idx_dataset_kind_layer",
           "unique": false,
           "fieldIds": [
-            "15"
+            "22"
           ],
           "createdAt": 1755107206928
         }
@@ -263,17 +338,311 @@
       "isView": false,
       "createdAt": 1755107206928,
       "order": 6,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "23",
+      "id": "29",
+      "name": "system_flavor",
+      "schema": "public",
+      "x": 1750.838421594904,
+      "y": -2106.546128063278,
+      "fields": [
+        {
+          "id": "30",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1755108542890
+        },
+        {
+          "id": "31",
+          "name": "kind_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755109329000
+        },
+        {
+          "id": "32",
+          "name": "code",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1755108662279,
+          "comments": "apache_kafka, confluent_kafka, hdfs, s3, abfs"
+        },
+        {
+          "id": "33",
+          "name": "name",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755108684672
+        },
+        {
+          "id": "34",
+          "name": "vendor",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755110073456
+        },
+        {
+          "id": "35",
+          "name": "versions",
+          "type": {
+            "id": "array",
+            "name": "array"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1761842668223
+        }
+      ],
+      "indexes": [],
+      "color": "#4dee8a",
+      "isView": false,
+      "createdAt": 1755108542890,
+      "order": 28,
+      "parentAreaId": null,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "36",
+      "name": "dataset_storage",
+      "schema": "public",
+      "x": 2955.169993827577,
+      "y": -2501.359950620613,
+      "fields": [
+        {
+          "id": "37",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "38",
+          "name": "path",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "39",
+          "name": "file_format",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1755107206928,
+          "comments": "parquet, xml, json, csv"
+        },
+        {
+          "id": "40",
+          "name": "compression",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928,
+          "comments": "gzip/zstd/zip/tar/7z/none"
+        },
+        {
+          "id": "41",
+          "name": "partition_by",
+          "type": {
+            "id": "array",
+            "name": "array"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928,
+          "comments": "\n"
+        },
+        {
+          "id": "42",
+          "name": "extra",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928
+        }
+      ],
+      "indexes": [
+        {
+          "id": "43",
+          "name": "idx_dataset_system_id_schema_name_object_name",
+          "unique": true,
+          "fieldIds": [
+            "38",
+            "40"
+          ],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "44",
+          "name": "idx_dataset_system_id",
+          "unique": false,
+          "fieldIds": [
+            "38"
+          ],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "45",
+          "name": "idx_dataset_kind_layer",
+          "unique": false,
+          "fieldIds": [
+            "39"
+          ],
+          "createdAt": 1755107206928
+        }
+      ],
+      "color": "#ff9f74",
+      "isView": false,
+      "createdAt": 1755107206928,
+      "order": 6,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "46",
+      "name": "dataset_schema",
+      "schema": "public",
+      "x": 2975.169993827577,
+      "y": -1821.3599506206126,
+      "fields": [
+        {
+          "id": "47",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "48",
+          "name": "dataset_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "49",
+          "name": "version_num",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "50",
+          "name": "schema",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755449309207
+        },
+        {
+          "id": "51",
+          "name": "extra",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755449337223
+        }
+      ],
+      "indexes": [
+        {
+          "id": "52",
+          "name": "idx_dataset_schema_version_dataset_id_version_num",
+          "unique": true,
+          "fieldIds": [
+            "48",
+            "49"
+          ],
+          "createdAt": 1755107206928
+        }
+      ],
+      "color": "#8eb7ff",
+      "isView": false,
+      "createdAt": 1755107206928,
+      "order": 7,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "53",
       "name": "field_binding",
       "schema": "public",
       "x": 3354.3879871737554,
       "y": -1808.9007294427786,
       "fields": [
         {
-          "id": "24",
+          "id": "54",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -285,7 +654,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "25",
+          "id": "55",
           "name": "field_id",
           "type": {
             "id": "uuid",
@@ -297,7 +666,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "26",
+          "id": "56",
           "name": "dataset_schema_id",
           "type": {
             "id": "uuid",
@@ -309,7 +678,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "27",
+          "id": "57",
           "name": "position",
           "type": {
             "id": "int",
@@ -321,7 +690,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "28",
+          "id": "58",
           "name": "is_nullable",
           "type": {
             "id": "boolean",
@@ -333,7 +702,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "29",
+          "id": "59",
           "name": "data_type_id",
           "type": {
             "id": "uuid",
@@ -345,7 +714,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "30",
+          "id": "60",
           "name": "type_params",
           "type": {
             "id": "json",
@@ -359,31 +728,31 @@
       ],
       "indexes": [
         {
-          "id": "31",
+          "id": "61",
           "name": "idx_field_binding_dataset_schema_version_id_field_id",
           "unique": true,
           "fieldIds": [
-            "26",
-            "25"
+            "56",
+            "55"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "32",
+          "id": "62",
           "name": "idx_field_binding_dataset_schema_version_id_position",
           "unique": true,
           "fieldIds": [
-            "26",
-            "27"
+            "56",
+            "57"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "33",
+          "id": "63",
           "name": "ix_field_binding_dtype",
           "unique": false,
           "fieldIds": [
-            "29"
+            "59"
           ],
           "createdAt": 1755107206928
         }
@@ -392,358 +761,17 @@
       "isView": false,
       "createdAt": 1755107206928,
       "order": 9,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "34",
-      "name": "credential_ref",
-      "schema": "public",
-      "x": 1749.747129933256,
-      "y": -2394.9751137864296,
-      "fields": [
-        {
-          "id": "35",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "36",
-          "name": "provider",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "37",
-          "name": "path",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "38",
-          "name": "version",
-          "type": {
-            "id": "int",
-            "name": "int"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206927
-        }
-      ],
-      "indexes": [
-        {
-          "id": "39",
-          "name": "idx_credential_ref_provider_path",
-          "unique": true,
-          "fieldIds": [
-            "36",
-            "37"
-          ],
-          "createdAt": 1755107206927
-        }
-      ],
-      "color": "#ff6363",
-      "isView": false,
-      "createdAt": 1755107206927,
-      "order": 0,
-      "parentAreaId": null,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "40",
-      "name": "system",
-      "schema": "public",
-      "x": 2195.169993827577,
-      "y": -2341.359950620613,
-      "fields": [
-        {
-          "id": "41",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "42",
-          "name": "code",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "43",
-          "name": "name",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "44",
-          "name": "credential_ref_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "45",
-          "name": "flavor_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "46",
-          "name": "is_active",
-          "type": {
-            "id": "boolean",
-            "name": "boolean"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206927
-        },
-        {
-          "id": "47",
-          "name": "tags",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928,
-          "comments": "array"
-        },
-        {
-          "id": "48",
-          "name": "extra",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928
-        }
-      ],
-      "indexes": [
-        {
-          "id": "49",
-          "name": "ux_system_code",
-          "unique": true,
-          "fieldIds": [
-            "42"
-          ],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "50",
-          "name": "ix_system_kind_env",
-          "unique": false,
-          "fieldIds": [],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "51",
-          "name": "ix_system_tags",
-          "unique": false,
-          "fieldIds": [
-            "47"
-          ],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "52",
-          "name": "ix_system_config",
-          "unique": false,
-          "fieldIds": [],
-          "createdAt": 1755107206928
-        }
-      ],
-      "color": "#ff6b8a",
-      "isView": false,
-      "createdAt": 1755107206928,
-      "order": 1,
-      "expanded": true,
-      "parentAreaId": null,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "53",
-      "name": "dataset_storage",
-      "schema": "public",
-      "x": 2955.169993827577,
-      "y": -2501.359950620613,
-      "fields": [
-        {
-          "id": "54",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "55",
-          "name": "path",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "56",
-          "name": "file_format",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": true,
-          "nullable": false,
-          "createdAt": 1755107206928,
-          "comments": "parquet, xml, json, csv"
-        },
-        {
-          "id": "57",
-          "name": "compression",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928,
-          "comments": "gzip/zstd/zip/tar/7z/none"
-        },
-        {
-          "id": "58",
-          "name": "partition_by",
-          "type": {
-            "id": "array",
-            "name": "array"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928,
-          "comments": "\n"
-        },
-        {
-          "id": "59",
-          "name": "extra",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928
-        }
-      ],
-      "indexes": [
-        {
-          "id": "60",
-          "name": "idx_dataset_system_id_schema_name_object_name",
-          "unique": true,
-          "fieldIds": [
-            "55",
-            "57"
-          ],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "61",
-          "name": "idx_dataset_system_id",
-          "unique": false,
-          "fieldIds": [
-            "55"
-          ],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "62",
-          "name": "idx_dataset_kind_layer",
-          "unique": false,
-          "fieldIds": [
-            "56"
-          ],
-          "createdAt": 1755107206928
-        }
-      ],
-      "color": "#ff9f74",
-      "isView": false,
-      "createdAt": 1755107206928,
-      "order": 6,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "63",
+      "id": "64",
       "name": "dataset_rdbms",
       "schema": "public",
-      "x": 2595.169993827577,
-      "y": -2701.359950620613,
+      "x": 2591.1628506480656,
+      "y": -2704.365308005247,
       "fields": [
         {
-          "id": "64",
+          "id": "65",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -755,7 +783,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "65",
+          "id": "66",
           "name": "catalog_name",
           "type": {
             "id": "text",
@@ -763,11 +791,11 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1755107206928
         },
         {
-          "id": "66",
+          "id": "67",
           "name": "schema_name",
           "type": {
             "id": "text",
@@ -780,7 +808,7 @@
           "comments": ""
         },
         {
-          "id": "67",
+          "id": "68",
           "name": "table_name",
           "type": {
             "id": "text",
@@ -792,7 +820,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "68",
+          "id": "69",
           "name": "is_view",
           "type": {
             "id": "boolean",
@@ -805,7 +833,7 @@
           "comments": ""
         },
         {
-          "id": "69",
+          "id": "70",
           "name": "distribution",
           "type": {
             "id": "array",
@@ -817,7 +845,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "70",
+          "id": "71",
           "name": "pk_colums",
           "type": {
             "id": "array",
@@ -829,7 +857,7 @@
           "createdAt": 1755436652453
         },
         {
-          "id": "71",
+          "id": "72",
           "name": "extra",
           "type": {
             "id": "json",
@@ -843,30 +871,30 @@
       ],
       "indexes": [
         {
-          "id": "72",
+          "id": "73",
           "name": "idx_dataset_system_id_schema_name_object_name",
           "unique": true,
           "fieldIds": [
-            "65",
-            "67"
-          ],
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "73",
-          "name": "idx_dataset_system_id",
-          "unique": false,
-          "fieldIds": [
-            "65"
+            "66",
+            "68"
           ],
           "createdAt": 1755107206928
         },
         {
           "id": "74",
-          "name": "idx_dataset_kind_layer",
+          "name": "idx_dataset_system_id",
           "unique": false,
           "fieldIds": [
             "66"
+          ],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "75",
+          "name": "idx_dataset_kind_layer",
+          "unique": false,
+          "fieldIds": [
+            "67"
           ],
           "createdAt": 1755107206928
         }
@@ -875,17 +903,17 @@
       "isView": false,
       "createdAt": 1755107206928,
       "order": 6,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "75",
-      "name": "field",
+      "id": "76",
+      "name": "data_type",
       "schema": "public",
-      "x": 2975.169993827577,
-      "y": -2121.359950620613,
+      "x": 2214.2110147523654,
+      "y": -1648.9007294427786,
       "fields": [
         {
-          "id": "76",
+          "id": "77",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -897,8 +925,8 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "77",
-          "name": "dataset_id",
+          "id": "78",
+          "name": "system_flavor_id",
           "type": {
             "id": "uuid",
             "name": "uuid"
@@ -909,8 +937,8 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "78",
-          "name": "name",
+          "id": "79",
+          "name": "code",
           "type": {
             "id": "text",
             "name": "text"
@@ -921,8 +949,20 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "79",
-          "name": "path",
+          "id": "80",
+          "name": "params_schema",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "81",
+          "name": "render_template",
           "type": {
             "id": "text",
             "name": "text"
@@ -930,57 +970,33 @@
           "primaryKey": false,
           "unique": false,
           "nullable": true,
-          "createdAt": 1755448908107
-        },
-        {
-          "id": "80",
-          "name": "pii_tag",
-          "type": {
-            "id": "array",
-            "name": "array"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "81",
-          "name": "extra",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928
+          "createdAt": 1755541455453
         }
       ],
       "indexes": [
         {
           "id": "82",
-          "name": "idx_field_dataset_id_name",
+          "name": "idx_data_type_type_system_id_code",
           "unique": true,
           "fieldIds": [
-            "77",
-            "78"
+            "78",
+            "79"
           ],
           "createdAt": 1755107206928
         }
       ],
-      "color": "#8eb7ff",
+      "color": "#ffe374",
       "isView": false,
       "createdAt": 1755107206928,
-      "order": 8,
-      "diagramId": "w0gac180lhiu"
+      "order": 4,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "83",
-      "name": "dataset_sftp",
+      "name": "dataset",
       "schema": "public",
-      "x": 2955.169993827577,
-      "y": -2781.359950620613,
+      "x": 2633.116054200592,
+      "y": -2302.5518996144415,
       "fields": [
         {
           "id": "84",
@@ -996,7 +1012,32 @@
         },
         {
           "id": "85",
-          "name": "path",
+          "name": "system_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "86",
+          "name": "kind",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1755107206928,
+          "comments": "system_kind_code"
+        },
+        {
+          "id": "87",
+          "name": "object_name",
           "type": {
             "id": "text",
             "name": "text"
@@ -1007,46 +1048,32 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "86",
-          "name": "file_format",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": true,
-          "nullable": false,
-          "createdAt": 1755107206928,
-          "comments": "xml, json, csv"
-        },
-        {
-          "id": "87",
-          "name": "compression",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755107206928,
-          "comments": "gzip/zstd/zip/tar/7z/none"
-        },
-        {
           "id": "88",
-          "name": "archive",
+          "name": "layer",
           "type": {
-            "id": "text",
-            "name": "text"
+            "id": "varchar",
+            "name": "varchar"
           },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
-          "createdAt": 1755107206928,
-          "comments": "zip/7z"
+          "createdAt": 1755366845697,
+          "comments": "layer_enum (SOURCE / RAW / STAGE / ODS / DWH / MART)"
         },
         {
           "id": "89",
+          "name": "is_active",
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "90",
           "name": "extra",
           "type": {
             "id": "json",
@@ -1060,7 +1087,7 @@
       ],
       "indexes": [
         {
-          "id": "90",
+          "id": "91",
           "name": "idx_dataset_system_id_schema_name_object_name",
           "unique": true,
           "fieldIds": [
@@ -1070,7 +1097,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "91",
+          "id": "92",
           "name": "idx_dataset_system_id",
           "unique": false,
           "fieldIds": [
@@ -1079,7 +1106,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "92",
+          "id": "93",
           "name": "idx_dataset_kind_layer",
           "unique": false,
           "fieldIds": [
@@ -1092,78 +1119,17 @@
       "isView": false,
       "createdAt": 1755107206928,
       "order": 6,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "93",
-      "name": "system_kind",
+      "id": "94",
+      "name": "field",
       "schema": "public",
-      "x": 1366.7895893358402,
-      "y": -2135.9350623022433,
+      "x": 2975.169993827577,
+      "y": -2121.359950620613,
       "fields": [
-        {
-          "id": "94",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": true,
-          "nullable": false,
-          "createdAt": 1755108542890
-        },
         {
           "id": "95",
-          "name": "code",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": true,
-          "nullable": false,
-          "createdAt": 1755108662279,
-          "comments": "RDBMS; MESSAGE_BROKER; OBJECT_STORAGE; DATA_WAREHOUSE; FILE_STORAGE; OTHER"
-        },
-        {
-          "id": "96",
-          "name": "name",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755108684672
-        }
-      ],
-      "indexes": [
-        {
-          "id": "97",
-          "name": "index_1",
-          "unique": false,
-          "fieldIds": [],
-          "createdAt": 1755109799192
-        }
-      ],
-      "color": "#4dee8a",
-      "isView": false,
-      "createdAt": 1755108542890,
-      "order": 28,
-      "parentAreaId": null,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "98",
-      "name": "dataset_hive",
-      "schema": "public",
-      "x": 2955.169993827577,
-      "y": -3241.359950620613,
-      "fields": [
-        {
-          "id": "99",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -1175,7 +1141,105 @@
           "createdAt": 1755107206928
         },
         {
+          "id": "96",
+          "name": "dataset_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "97",
+          "name": "name",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "98",
+          "name": "path",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755448908107
+        },
+        {
+          "id": "99",
+          "name": "pii_tag",
+          "type": {
+            "id": "array",
+            "name": "array"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928
+        },
+        {
           "id": "100",
+          "name": "extra",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928
+        }
+      ],
+      "indexes": [
+        {
+          "id": "101",
+          "name": "idx_field_dataset_id_name",
+          "unique": true,
+          "fieldIds": [
+            "96",
+            "97"
+          ],
+          "createdAt": 1755107206928
+        }
+      ],
+      "color": "#8eb7ff",
+      "isView": false,
+      "createdAt": 1755107206928,
+      "order": 8,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "102",
+      "name": "dataset_hive",
+      "schema": "public",
+      "x": 2955.169993827577,
+      "y": -3241.359950620613,
+      "fields": [
+        {
+          "id": "103",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "104",
           "name": "catalog_uri",
           "type": {
             "id": "text",
@@ -1187,7 +1251,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "101",
+          "id": "105",
           "name": "db_name",
           "type": {
             "id": "text",
@@ -1200,7 +1264,7 @@
           "comments": ""
         },
         {
-          "id": "102",
+          "id": "106",
           "name": "table_name",
           "type": {
             "id": "text",
@@ -1212,7 +1276,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "103",
+          "id": "107",
           "name": "is_external",
           "type": {
             "id": "boolean",
@@ -1224,7 +1288,7 @@
           "createdAt": 1755107206928
         },
         {
-          "id": "104",
+          "id": "108",
           "name": "file_format",
           "type": {
             "id": "text",
@@ -1236,7 +1300,7 @@
           "createdAt": 1755443571167
         },
         {
-          "id": "105",
+          "id": "109",
           "name": "location",
           "type": {
             "id": "text",
@@ -1248,7 +1312,7 @@
           "createdAt": 1755443586317
         },
         {
-          "id": "106",
+          "id": "110",
           "name": "partition_cols",
           "type": {
             "id": "array",
@@ -1260,7 +1324,7 @@
           "createdAt": 1755443598054
         },
         {
-          "id": "107",
+          "id": "111",
           "name": "serde",
           "type": {
             "id": "text",
@@ -1272,7 +1336,7 @@
           "createdAt": 1755443924353
         },
         {
-          "id": "108",
+          "id": "112",
           "name": "tblproperties",
           "type": {
             "id": "json",
@@ -1284,7 +1348,7 @@
           "createdAt": 1755443935706
         },
         {
-          "id": "109",
+          "id": "113",
           "name": "extra",
           "type": {
             "id": "json",
@@ -1298,30 +1362,30 @@
       ],
       "indexes": [
         {
-          "id": "110",
+          "id": "114",
           "name": "idx_dataset_system_id_schema_name_object_name",
           "unique": true,
           "fieldIds": [
-            "100",
-            "102"
+            "104",
+            "106"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "111",
+          "id": "115",
           "name": "idx_dataset_system_id",
           "unique": false,
           "fieldIds": [
-            "100"
+            "104"
           ],
           "createdAt": 1755107206928
         },
         {
-          "id": "112",
+          "id": "116",
           "name": "idx_dataset_kind_layer",
           "unique": false,
           "fieldIds": [
-            "101"
+            "105"
           ],
           "createdAt": 1755107206928
         }
@@ -1331,17 +1395,17 @@
       "createdAt": 1755107206928,
       "order": 6,
       "expanded": true,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "113",
-      "name": "system_flavor",
+      "id": "117",
+      "name": "system_kind",
       "schema": "public",
-      "x": 1750.838421594904,
-      "y": -2106.546128063278,
+      "x": 1366.7895893358402,
+      "y": -2135.9350623022433,
       "fields": [
         {
-          "id": "114",
+          "id": "118",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -1353,19 +1417,7 @@
           "createdAt": 1755108542890
         },
         {
-          "id": "115",
-          "name": "kind_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755109329000
-        },
-        {
-          "id": "116",
+          "id": "119",
           "name": "code",
           "type": {
             "id": "text",
@@ -1375,10 +1427,10 @@
           "unique": true,
           "nullable": false,
           "createdAt": 1755108662279,
-          "comments": "apache_kafka, confluent_kafka, hdfs, s3, abfs"
+          "comments": "RDBMS; KAFKA; STORAGE; DWH; SFTP; OTHER"
         },
         {
-          "id": "117",
+          "id": "120",
           "name": "name",
           "type": {
             "id": "text",
@@ -1388,49 +1440,33 @@
           "unique": false,
           "nullable": false,
           "createdAt": 1755108684672
-        },
-        {
-          "id": "118",
-          "name": "vendor",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755110073456
-        },
-        {
-          "id": "119",
-          "name": "version",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1761842668223
         }
       ],
-      "indexes": [],
+      "indexes": [
+        {
+          "id": "121",
+          "name": "index_1",
+          "unique": false,
+          "fieldIds": [],
+          "createdAt": 1755109799192
+        }
+      ],
       "color": "#4dee8a",
       "isView": false,
       "createdAt": 1755108542890,
       "order": 28,
       "parentAreaId": null,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "120",
-      "name": "cast_rule",
+      "id": "122",
+      "name": "system",
       "schema": "public",
-      "x": 2589.7622728955903,
-      "y": -1845.5923477735107,
+      "x": 2195.169993827577,
+      "y": -2341.359950620613,
       "fields": [
         {
-          "id": "121",
+          "id": "123",
           "name": "id",
           "type": {
             "id": "uuid",
@@ -1439,194 +1475,10 @@
           "primaryKey": true,
           "unique": false,
           "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "122",
-          "name": "source_data_type_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "123",
-          "name": "target_data_type_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
+          "createdAt": 1755107206927
         },
         {
           "id": "124",
-          "name": "param_mapping",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "125",
-          "name": "safety",
-          "type": {
-            "id": "cast_safety",
-            "name": "cast_safety"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        }
-      ],
-      "indexes": [
-        {
-          "id": "126",
-          "name": "idx_cast_rule_source_data_type_id_target_data_type_id",
-          "unique": true,
-          "fieldIds": [
-            "122",
-            "123"
-          ],
-          "createdAt": 1755107206928
-        }
-      ],
-      "color": "#8eb7ff",
-      "isView": false,
-      "createdAt": 1755107206928,
-      "order": 5,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "127",
-      "name": "dataset_schema",
-      "schema": "public",
-      "x": 2975.169993827577,
-      "y": -1821.3599506206126,
-      "fields": [
-        {
-          "id": "128",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "129",
-          "name": "dataset_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "130",
-          "name": "version_num",
-          "type": {
-            "id": "integer",
-            "name": "integer"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "131",
-          "name": "schema",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755449309207
-        },
-        {
-          "id": "132",
-          "name": "extra",
-          "type": {
-            "id": "json",
-            "name": "json"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1755449337223
-        }
-      ],
-      "indexes": [
-        {
-          "id": "133",
-          "name": "idx_dataset_schema_version_dataset_id_version_num",
-          "unique": true,
-          "fieldIds": [
-            "129",
-            "130"
-          ],
-          "createdAt": 1755107206928
-        }
-      ],
-      "color": "#8eb7ff",
-      "isView": false,
-      "createdAt": 1755107206928,
-      "order": 7,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "134",
-      "name": "data_type",
-      "schema": "public",
-      "x": 2214.2110147523654,
-      "y": -1648.9007294427786,
-      "fields": [
-        {
-          "id": "135",
-          "name": "id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "136",
-          "name": "system_flavor_id",
-          "type": {
-            "id": "uuid",
-            "name": "uuid"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1755107206928
-        },
-        {
-          "id": "137",
           "name": "code",
           "type": {
             "id": "text",
@@ -1635,23 +1487,59 @@
           "primaryKey": false,
           "unique": false,
           "nullable": false,
-          "createdAt": 1755107206928
+          "createdAt": 1755107206927
         },
         {
-          "id": "138",
-          "name": "params_schema",
+          "id": "125",
+          "name": "name",
           "type": {
-            "id": "json",
-            "name": "json"
+            "id": "text",
+            "name": "text"
           },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "126",
+          "name": "credential_ref_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
           "createdAt": 1755107206928
         },
         {
-          "id": "139",
-          "name": "render_template",
+          "id": "127",
+          "name": "flavor_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "128",
+          "name": "is_active",
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "129",
+          "name": "tags",
           "type": {
             "id": "text",
             "name": "text"
@@ -1659,266 +1547,378 @@
           "primaryKey": false,
           "unique": false,
           "nullable": true,
-          "createdAt": 1755541455453
+          "createdAt": 1755107206928,
+          "comments": "array"
+        },
+        {
+          "id": "130",
+          "name": "extra",
+          "type": {
+            "id": "json",
+            "name": "json"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206928
+        }
+      ],
+      "indexes": [
+        {
+          "id": "131",
+          "name": "ux_system_code",
+          "unique": true,
+          "fieldIds": [
+            "124"
+          ],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "132",
+          "name": "ix_system_kind_env",
+          "unique": false,
+          "fieldIds": [],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "133",
+          "name": "ix_system_tags",
+          "unique": false,
+          "fieldIds": [
+            "129"
+          ],
+          "createdAt": 1755107206928
+        },
+        {
+          "id": "134",
+          "name": "ix_system_config",
+          "unique": false,
+          "fieldIds": [],
+          "createdAt": 1755107206928
+        }
+      ],
+      "color": "#ff6b8a",
+      "isView": false,
+      "createdAt": 1755107206928,
+      "order": 1,
+      "expanded": true,
+      "parentAreaId": null,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "135",
+      "name": "credential_ref",
+      "schema": "public",
+      "x": 1749.747129933256,
+      "y": -2394.9751137864296,
+      "fields": [
+        {
+          "id": "136",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "137",
+          "name": "provider",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "138",
+          "name": "path",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1755107206927
+        },
+        {
+          "id": "139",
+          "name": "version",
+          "type": {
+            "id": "int",
+            "name": "int"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1755107206927
         }
       ],
       "indexes": [
         {
           "id": "140",
-          "name": "idx_data_type_type_system_id_code",
+          "name": "idx_credential_ref_provider_path",
           "unique": true,
           "fieldIds": [
-            "136",
-            "137"
+            "137",
+            "138"
           ],
-          "createdAt": 1755107206928
+          "createdAt": 1755107206927
         }
       ],
-      "color": "#ffe374",
+      "color": "#ff6363",
       "isView": false,
-      "createdAt": 1755107206928,
-      "order": 4,
-      "diagramId": "w0gac180lhiu"
+      "createdAt": 1755107206927,
+      "order": 0,
+      "parentAreaId": null,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
     {
       "id": "141",
-      "name": "data_type_id_fk",
+      "name": "credential_ref_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "134",
+      "sourceTableId": "135",
       "targetSchema": "public",
-      "targetTableId": "23",
-      "sourceFieldId": "135",
-      "targetFieldId": "29",
+      "targetTableId": "122",
+      "sourceFieldId": "136",
+      "targetFieldId": "126",
       "sourceCardinality": "one",
-      "targetCardinality": "many",
-      "createdAt": 1755541739100,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "one",
+      "createdAt": 1763134945425,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "142",
       "name": "data_type_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "134",
+      "sourceTableId": "76",
       "targetSchema": "public",
-      "targetTableId": "120",
-      "sourceFieldId": "135",
-      "targetFieldId": "123",
+      "targetTableId": "12",
+      "sourceFieldId": "77",
+      "targetFieldId": "15",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1755577040261,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "143",
       "name": "data_type_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "134",
+      "sourceTableId": "76",
       "targetSchema": "public",
-      "targetTableId": "120",
-      "sourceFieldId": "135",
-      "targetFieldId": "122",
+      "targetTableId": "12",
+      "sourceFieldId": "77",
+      "targetFieldId": "14",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1755577036645,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "144",
-      "name": "dataset_id_fk",
+      "name": "data_type_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "76",
       "targetSchema": "public",
-      "targetTableId": "1",
-      "sourceFieldId": "13",
-      "targetFieldId": "2",
+      "targetTableId": "53",
+      "sourceFieldId": "77",
+      "targetFieldId": "59",
       "sourceCardinality": "one",
-      "targetCardinality": "one",
-      "createdAt": 1755436514823,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "many",
+      "createdAt": 1755541739100,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "145",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "53",
-      "sourceFieldId": "13",
-      "targetFieldId": "54",
+      "targetTableId": "102",
+      "sourceFieldId": "84",
+      "targetFieldId": "103",
       "sourceCardinality": "one",
       "targetCardinality": "one",
-      "createdAt": 1755446965188,
-      "diagramId": "w0gac180lhiu"
+      "createdAt": 1755443971486,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "146",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "63",
-      "sourceFieldId": "13",
-      "targetFieldId": "64",
+      "targetTableId": "94",
+      "sourceFieldId": "84",
+      "targetFieldId": "96",
       "sourceCardinality": "one",
-      "targetCardinality": "one",
-      "createdAt": 1755367894347,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "many",
+      "createdAt": 1755447073720,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "147",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "75",
-      "sourceFieldId": "13",
-      "targetFieldId": "77",
+      "targetTableId": "64",
+      "sourceFieldId": "84",
+      "targetFieldId": "65",
       "sourceCardinality": "one",
-      "targetCardinality": "many",
-      "createdAt": 1755447073720,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "one",
+      "createdAt": 1755367894347,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "148",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "83",
-      "sourceFieldId": "13",
-      "targetFieldId": "84",
+      "targetTableId": "19",
+      "sourceFieldId": "84",
+      "targetFieldId": "20",
       "sourceCardinality": "one",
       "targetCardinality": "one",
       "createdAt": 1755444585912,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "149",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "127",
-      "sourceFieldId": "13",
-      "targetFieldId": "129",
+      "targetTableId": "36",
+      "sourceFieldId": "84",
+      "targetFieldId": "37",
       "sourceCardinality": "one",
-      "targetCardinality": "many",
-      "createdAt": 1755449180077,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "one",
+      "createdAt": 1755446965188,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "150",
       "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "12",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "98",
-      "sourceFieldId": "13",
-      "targetFieldId": "99",
+      "targetTableId": "46",
+      "sourceFieldId": "84",
+      "targetFieldId": "48",
       "sourceCardinality": "one",
-      "targetCardinality": "one",
-      "createdAt": 1755443971486,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "many",
+      "createdAt": 1755449180077,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "151",
-      "name": "dataset_schema_id_fk",
+      "name": "dataset_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "127",
+      "sourceTableId": "83",
       "targetSchema": "public",
-      "targetTableId": "23",
-      "sourceFieldId": "128",
-      "targetFieldId": "26",
+      "targetTableId": "1",
+      "sourceFieldId": "84",
+      "targetFieldId": "2",
       "sourceCardinality": "one",
-      "targetCardinality": "many",
-      "createdAt": 1755541732687,
-      "diagramId": "w0gac180lhiu"
+      "targetCardinality": "one",
+      "createdAt": 1755436514823,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "152",
-      "name": "field_id_fk",
+      "name": "dataset_schema_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "75",
+      "sourceTableId": "46",
       "targetSchema": "public",
-      "targetTableId": "23",
-      "sourceFieldId": "76",
-      "targetFieldId": "25",
+      "targetTableId": "53",
+      "sourceFieldId": "47",
+      "targetFieldId": "56",
       "sourceCardinality": "one",
       "targetCardinality": "many",
-      "createdAt": 1755541721950,
-      "diagramId": "w0gac180lhiu"
+      "createdAt": 1755541732687,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "153",
-      "name": "system_credential_ref_id_fk",
+      "name": "field_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "40",
+      "sourceTableId": "94",
       "targetSchema": "public",
-      "targetTableId": "34",
-      "sourceFieldId": "44",
-      "targetFieldId": "35",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1755109649187,
-      "diagramId": "w0gac180lhiu"
+      "targetTableId": "53",
+      "sourceFieldId": "95",
+      "targetFieldId": "55",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1755541721950,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "154",
-      "name": "system_engine_id_fk",
+      "name": "system_flavor_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "40",
+      "sourceTableId": "29",
       "targetSchema": "public",
-      "targetTableId": "113",
-      "sourceFieldId": "45",
-      "targetFieldId": "114",
-      "sourceCardinality": "many",
+      "targetTableId": "122",
+      "sourceFieldId": "30",
+      "targetFieldId": "127",
+      "sourceCardinality": "one",
       "targetCardinality": "one",
-      "createdAt": 1755109556375,
-      "diagramId": "w0gac180lhiu"
+      "createdAt": 1763134952431,
+      "diagramId": "w0gac180t7j1"
     },
     {
       "id": "155",
-      "name": "system_engine_kind_id_fk",
-      "sourceSchema": "public",
-      "sourceTableId": "113",
-      "targetSchema": "public",
-      "targetTableId": "93",
-      "sourceFieldId": "115",
-      "targetFieldId": "94",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1755109551686,
-      "diagramId": "w0gac180lhiu"
-    },
-    {
-      "id": "156",
       "name": "system_flavor_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "113",
+      "sourceTableId": "29",
       "targetSchema": "public",
-      "targetTableId": "134",
-      "sourceFieldId": "114",
-      "targetFieldId": "136",
+      "targetTableId": "76",
+      "sourceFieldId": "30",
+      "targetFieldId": "78",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1755541542036,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "157",
+      "id": "156",
       "name": "system_id_fk",
       "sourceSchema": "public",
-      "sourceTableId": "40",
+      "sourceTableId": "122",
       "targetSchema": "public",
-      "targetTableId": "12",
-      "sourceFieldId": "41",
-      "targetFieldId": "14",
+      "targetTableId": "83",
+      "sourceFieldId": "123",
+      "targetFieldId": "85",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1755359637665,
-      "diagramId": "w0gac180lhiu"
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "157",
+      "name": "system_kind_id_fk",
+      "sourceSchema": "public",
+      "sourceTableId": "117",
+      "targetSchema": "public",
+      "targetTableId": "29",
+      "sourceFieldId": "118",
+      "targetFieldId": "31",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1763134939700,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "dependencies": [],
