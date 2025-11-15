@@ -1,5 +1,6 @@
 from .mixins import TimestampMixin, UserTrackingMixin
 from .credential_ref import CredentialRef as CredentialRef
+from .cast_rule import CastRule, CastSafety
 from .data_type import DataType as DataType
 from .dataset import (
     Dataset,
@@ -29,4 +30,6 @@ __all__ = [
     "DatasetStorage",
     "DatasetSftp",
     "DatasetHive",
+    "CastRule",
+    "CastSafety",
 ]

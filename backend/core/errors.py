@@ -33,6 +33,8 @@ DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
 DATASET_ALREADY_EXISTS = "DATASET_ALREADY_EXISTS"
 INVALID_DATASET_KIND = "INVALID_DATASET_KIND"
 DATASET_KIND_MISMATCH = "DATASET_KIND_MISMATCH"
+CAST_RULE_NOT_FOUND = "CAST_RULE_NOT_FOUND"
+CAST_RULE_ALREADY_EXISTS = "CAST_RULE_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -120,6 +122,14 @@ ERROR_MAP = {
     DATASET_KIND_MISMATCH: (
         status.HTTP_400_BAD_REQUEST,
         "Changing the kind of a dataset is not allowed.",
+    ),
+    CAST_RULE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested cast rule was not found.",
+    ),
+    CAST_RULE_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A cast rule with this source and target data type already exists.",
     ),
 }
 

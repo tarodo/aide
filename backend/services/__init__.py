@@ -1,5 +1,6 @@
 from .auth_service import AuthService
 from .data_type import DataTypeService
+from .cast_rule import CastRuleService
 from .credential_ref import CredentialRefService
 from .dataset import DatasetService
 from .system_flavor import SystemFlavorService
@@ -16,4 +17,5 @@ __all__ = [
     "CredentialRefService",
     "SystemService",
     "DatasetService",
+    "CastRuleService",
 ]

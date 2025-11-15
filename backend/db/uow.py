@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.repositories.cast_rule import CastRuleRepository
 from backend.repositories.dataset import DatasetRepository
 from backend.repositories.credential_ref import CredentialRefRepository
 from backend.db.session import AsyncSessionLocal
@@ -25,6 +26,7 @@ class UnitOfWork:
         self.credential_refs = CredentialRefRepository(self.session)
         self.systems = SystemRepository(self.session)
         self.datasets = DatasetRepository(self.session)
+        self.cast_rules = CastRuleRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

@@ -1,5 +1,6 @@
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
 from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
+from .cast_rule import CastRuleCreate, CastRuleRead, CastRuleUpdate
 from .credential_ref import CredentialRefCreate, CredentialRefRead, CredentialRefUpdate
 from .system_flavor import (
     SystemFlavorCreate,
@@ -32,4 +33,7 @@ __all__ = [
     "AnyDatasetCreate",
     "AnyDatasetRead",
     "AnyDatasetUpdate",
+    "CastRuleCreate",
+    "CastRuleRead",
+    "CastRuleUpdate",
 ]

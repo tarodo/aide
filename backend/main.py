@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
+from backend.api.v1 import cast_rules as v1_cast_rules
 from backend.api.v1 import datasets as v1_datasets
 
 from backend.api.v1 import data_types as v1_data_types
@@ -185,6 +186,12 @@ app.include_router(
     v1_datasets.router,
     prefix=f"{api_v1_prefix}/datasets",
     tags=["Datasets"],
+)
+
+app.include_router(
+    v1_cast_rules.router,
+    prefix=f"{api_v1_prefix}/cast-rules",
+    tags=["Cast Rules"],
 )
 
 
