@@ -37,6 +37,8 @@ CAST_RULE_NOT_FOUND = "CAST_RULE_NOT_FOUND"
 CAST_RULE_ALREADY_EXISTS = "CAST_RULE_ALREADY_EXISTS"
 FIELD_NOT_FOUND = "FIELD_NOT_FOUND"
 FIELD_ALREADY_EXISTS = "FIELD_ALREADY_EXISTS"
+DATASET_SCHEMA_NOT_FOUND = "DATASET_SCHEMA_NOT_FOUND"
+DATASET_SCHEMA_ALREADY_EXISTS = "DATASET_SCHEMA_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -140,6 +142,14 @@ ERROR_MAP = {
     FIELD_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A field with this name already exists for the given dataset.",
+    ),
+    DATASET_SCHEMA_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested dataset schema was not found.",
+    ),
+    DATASET_SCHEMA_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A schema with this version already exists for the given dataset.",
     ),
 }
 

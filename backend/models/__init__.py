@@ -9,6 +9,7 @@ from .dataset import (
     DatasetSftp,
     DatasetStorage,
 )
+from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
 from .mixins import TimestampMixin, UserTrackingMixin
 from .system_flavor import SystemFlavor as SystemFlavor
@@ -34,4 +35,5 @@ __all__ = [
     "CastRule",
     "CastSafety",
     "Field",
+    "DatasetSchema",
 ]

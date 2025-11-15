@@ -3,6 +3,7 @@ from .cast_rule import CastRuleService
 from .credential_ref import CredentialRefService
 from .data_type import DataTypeService
 from .dataset import DatasetService
+from .dataset_schema import DatasetSchemaService
 from .field import FieldService
 from .system_flavor import SystemFlavorService
 from .system_kind import SystemKindService
@@ -20,4 +21,5 @@ __all__ = [
     "DatasetService",
     "CastRuleService",
     "FieldService",
+    "DatasetSchemaService",
 ]
