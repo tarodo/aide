@@ -1,21 +1,21 @@
-# Анализ модели данных AIDE Metastore v2
+# AIDE Metastore v2 Data Model Analysis
 
-**Дата:** 2026-04-06
-**Источники:** `backend/models/`, `architecture/data-model-documentation.md`, `docs/AIDE_data_model.json`
-
----
-
-## 1. Обзор
-
-Модель данных AIDE Metastore v2 — нормализованная реляционная схема из **16 таблиц** (включая 5 полиморфных подтаблиц для датасетов). Организована вокруг трех ключевых подсистем:
-
-1. **Система типов** — классификация и определение типов данных
-2. **Система данных** — описание платформ и датасетов
-3. **Версионирование схем** — эволюция структуры датасетов
+**Date:** 2026-04-06
+**Sources:** `backend/models/`, `architecture/data-model-documentation.md`, `docs/AIDE_data_model.json`
 
 ---
 
-## 2. ER-диаграмма
+## 1. Overview
+
+The AIDE Metastore v2 data model is a normalized relational schema consisting of **16 tables** (including 5 polymorphic subtables for datasets). It is organized around three key subsystems:
+
+1. **Type system** — classification and definition of data types
+2. **Data system** — description of platforms and datasets
+3. **Schema versioning** — evolution of dataset structures
+
+---
+
+## 2. ER Diagram
 
 ```mermaid
 erDiagram
@@ -127,9 +127,9 @@ erDiagram
 
 ---
 
-## 3. Подсистема типов
+## 3. Type Subsystem
 
-### Цепочка: SystemKind → SystemFlavor → DataType → CastRule
+### Chain: SystemKind -> SystemFlavor -> DataType -> CastRule
 
 ```
 SystemKind (RDBMS, MESSAGE_QUEUE, STORAGE, ...)
@@ -141,32 +141,32 @@ SystemFlavor (PostgreSQL, MySQL, Kafka, S3, Hive, ...)
 DataType (VARCHAR, BIGINT, DECIMAL, AVRO, ...)
     |                    |
     v                    v
-CastRule (source → target с safety и param_mapping)
+CastRule (source -> target with safety and param_mapping)
 ```
 
-**Назначение:** Описание всей иерархии технологий и нативных типов данных.
+**Purpose:** Describes the entire hierarchy of technologies and native data types.
 
-### Параметрическая система типов
+### Parametric Type System
 
-Ключевая особенность модели — **параметрические типы данных**. Каждый `DataType` описывается тремя компонентами:
+A key feature of the model is **parametric data types**. Each `DataType` is described by three components:
 
-| Компонент | Таблица.Колонка | Назначение |
-|-----------|----------------|------------|
-| `params_schema` | `data_types.params_schema` | JSON Schema, определяющая параметры типа |
-| `render_template` | `data_types.render_template` | Jinja2-шаблон для генерации финальной строки типа |
-| `type_params` | `field_bindings.type_params` | Конкретные значения параметров для инстанса |
-| `param_mapping` | `cast_rules.param_mapping` | Формулы маппинга параметров при кастинге |
+| Component | Table.Column | Purpose |
+|-----------|-------------|---------|
+| `params_schema` | `data_types.params_schema` | JSON Schema defining the type parameters |
+| `render_template` | `data_types.render_template` | Jinja2 template for generating the final type string |
+| `type_params` | `field_bindings.type_params` | Specific parameter values for the instance |
+| `param_mapping` | `cast_rules.param_mapping` | Parameter mapping formulas for casting |
 
-**Пример для PostgreSQL DECIMAL:**
+**Example for PostgreSQL DECIMAL:**
 
 ```
 params_schema:    {"properties": {"precision": {"type": "integer"}, "scale": {"type": "integer"}}}
 render_template:  DECIMAL({{ precision }}, {{ scale }})
 type_params:      {"precision": 10, "scale": 2}
-Результат:        DECIMAL(10, 2)
+Result:           DECIMAL(10, 2)
 ```
 
-**Пример маппинга Oracle NUMBER → PostgreSQL DECIMAL:**
+**Example mapping Oracle NUMBER -> PostgreSQL DECIMAL:**
 
 ```json
 {
@@ -175,33 +175,33 @@ type_params:      {"precision": 10, "scale": 2}
 }
 ```
 
-### CastRule — классификация безопасности
+### CastRule — Safety Classification
 
-| Уровень | Значение | Пример |
-|---------|----------|--------|
-| `IMPLICIT` | Автоматический каст без потерь | INTEGER → BIGINT |
-| `SAFE` | Без потерь, но требует явного преобразования | VARCHAR → INTEGER |
-| `UNSAFE` | Возможна потеря данных | BIGINT → INTEGER |
+| Level | Meaning | Example |
+|-------|---------|---------|
+| `IMPLICIT` | Automatic lossless cast | INTEGER -> BIGINT |
+| `SAFE` | Lossless but requires explicit conversion | VARCHAR -> INTEGER |
+| `UNSAFE` | Potential data loss | BIGINT -> INTEGER |
 
 ---
 
-## 4. Подсистема данных
+## 4. Data Subsystem
 
-### Цепочка: System → Dataset → Field
+### Chain: System -> Dataset -> Field
 
 ```
-System (конкретный инстанс: "prod-postgres-01", "kafka-cluster-eu")
+System (specific instance: "prod-postgres-01", "kafka-cluster-eu")
     |
     v
-Dataset (таблица, топик, файл, ...)
+Dataset (table, topic, file, ...)
     |
     v
-Field (логическое поле: "customer_email", "order_total")
+Field (logical field: "customer_email", "order_total")
 ```
 
-### Полиморфные датасеты
+### Polymorphic Datasets
 
-Dataset использует **joined table inheritance** (table-per-class) через дискриминатор `kind`:
+Dataset uses **joined table inheritance** (table-per-class) via the `kind` discriminator:
 
 ```mermaid
 graph TD
@@ -212,8 +212,8 @@ graph TD
     D --> H[dataset_hive]
 ```
 
-| Подтип | Специфичные поля |
-|--------|-----------------|
+| Subtype | Specific Fields |
+|---------|----------------|
 | `dataset_rdbms` | catalog_name, schema_name, table_name, is_view, pk_columns, uq_constraints |
 | `dataset_kafka` | topic, format, partitions, retention_ms, key_columns |
 | `dataset_storage` | path, file_format, compression, partition_by |
@@ -222,9 +222,9 @@ graph TD
 
 ---
 
-## 5. Подсистема версионирования схем
+## 5. Schema Versioning Subsystem
 
-### Цепочка: Dataset → DatasetSchema → FieldBinding → (Field + DataType)
+### Chain: Dataset -> DatasetSchema -> FieldBinding -> (Field + DataType)
 
 ```
 Dataset
@@ -235,128 +235,128 @@ Dataset
     |       +--> FieldBinding
     |       +--> ...
     |
-    +--> Field (логическое определение: name, path, pii_tags)
+    +--> Field (logical definition: name, path, pii_tags)
 ```
 
-**Ключевая идея:** Логические `Field` определяются один раз. `FieldBinding` связывает конкретное поле с конкретной версией схемы, задавая позицию, тип данных и nullability. Это позволяет:
+**Key idea:** Logical `Field` entities are defined once. `FieldBinding` links a specific field to a specific schema version, defining position, data type, and nullability. This allows:
 
-- Отслеживать эволюцию схемы
-- Иметь один Field в разных версиях с разными типами
-- Фиксировать позицию колонки для каждой версии
+- Tracking schema evolution
+- Having one Field in different versions with different types
+- Fixing column position for each version
 
-### Уникальные ограничения FieldBinding
+### FieldBinding Unique Constraints
 
-- `(field_id, dataset_schema_id)` — поле может быть только раз в одной версии схемы
-- `(position, dataset_schema_id)` — позиция уникальна в рамках версии
+- `(field_id, dataset_schema_id)` — a field can appear only once in a schema version
+- `(position, dataset_schema_id)` — position is unique within a version
 
 ---
 
-## 6. Общие паттерны (MetaDataMixin)
+## 6. Common Patterns (MetaDataMixin)
 
-Все доменные таблицы наследуют `MetaDataMixin`:
+All domain tables inherit from `MetaDataMixin`:
 
-| Колонка | Тип | Назначение |
-|---------|-----|------------|
+| Column | Type | Purpose |
+|--------|------|---------|
 | `id` | UUID | Primary key (auto-generated) |
-| `created_at` | DateTime | Время создания (server default) |
-| `updated_at` | DateTime | Время обновления (server default) |
-| `created_by` | UUID | ID создателя (nullable) |
-| `updated_by` | UUID | ID последнего редактора (nullable) |
-| `note` | Text | Произвольная заметка |
+| `created_at` | DateTime | Creation time (server default) |
+| `updated_at` | DateTime | Update time (server default) |
+| `created_by` | UUID | Creator ID (nullable) |
+| `updated_by` | UUID | Last editor ID (nullable) |
+| `note` | Text | Arbitrary note |
 
 ---
 
-## 7. Анализ сильных сторон
+## 7. Strengths Analysis
 
-### 7.1. Нормализация
-Модель хорошо нормализована (3NF). Каждая сущность имеет четкую ответственность. Нет дублирования данных.
+### 7.1. Normalization
+The model is well normalized (3NF). Each entity has a clear responsibility. No data duplication.
 
-### 7.2. Гибкость через JSONB
-- `params_schema` — валидация параметров типов
-- `type_params` — конкретные значения параметров
-- `param_mapping` — формулы преобразования
-- `extra` — расширяемость без миграций
-- `uq_constraints` — произвольные ограничения
+### 7.2. Flexibility via JSONB
+- `params_schema` — type parameter validation
+- `type_params` — specific parameter values
+- `param_mapping` — conversion formulas
+- `extra` — extensibility without migrations
+- `uq_constraints` — arbitrary constraints
 
-### 7.3. Параметрическая система типов
-Мощный механизм для описания любых типов данных с параметрами и шаблонами рендеринга. Позволяет кодифицировать правила преобразования между системами.
+### 7.3. Parametric Type System
+A powerful mechanism for describing any data types with parameters and rendering templates. Allows codifying conversion rules between systems.
 
-### 7.4. Версионирование схем
-Разделение на логические поля (`fields`) и их привязку к версиям схем (`field_bindings`) — правильный подход для отслеживания эволюции.
+### 7.4. Schema Versioning
+Separating logical fields (`fields`) from their binding to schema versions (`field_bindings`) is the correct approach for tracking evolution.
 
-### 7.5. PII-теги
-Поле `pii_tags` на `fields` — хороший задел для governance и compliance.
+### 7.5. PII Tags
+The `pii_tags` field on `fields` is a good foundation for governance and compliance.
 
-### 7.6. Полиморфизм датасетов
-5 подтипов покрывают основные типы источников данных в enterprise-среде.
-
----
-
-## 8. Анализ слабых сторон и рисков
-
-### 8.1. Отсутствие каскадного удаления
-
-Связи между таблицами не имеют `ON DELETE CASCADE`. Удаление `System` не удалит связанные `Dataset`. Это может привести к:
-- Ошибкам при удалении (FK violation)
-- Orphaned records при ручном удалении из БД
-
-**Рекомендация:** Определить стратегию каскадного удаления или внедрить soft delete.
-
-### 8.2. `created_by`/`updated_by` без FK
-
-Колонки `created_by` и `updated_by` — просто UUID без foreign key на `users`. Это значит:
-- Нет referential integrity для аудита
-- Возможны "висячие" ссылки на несуществующих пользователей
-- Невозможно JOIN для получения имени создателя
-
-**Рекомендация:** Добавить FK или принять решение о soft delete для пользователей.
-
-### 8.3. Нет индексов на JSONB-колонки
-
-Колонки `params_schema`, `type_params`, `param_mapping`, `extra` не имеют GIN-индексов. При росте данных запросы по JSONB будут деградировать.
-
-**Рекомендация:** Добавить GIN-индексы на часто запрашиваемые JSONB-поля.
-
-### 8.4. Отсутствие soft delete
-
-Удаление записей необратимо. Нет поля `deleted_at` / `is_deleted`. Это риск для:
-- Аудита и compliance
-- Восстановления случайно удаленных данных
-- Data lineage (потеря исторических связей)
-
-### 8.5. Нет валидации `type_params` на уровне БД
-
-`type_params` в `field_bindings` должен соответствовать `params_schema` в `data_types`, но эта валидация не реализована ни на уровне БД (CHECK constraint), ни в сервисном слое.
-
-**Рекомендация:** Добавить валидацию в `FieldBindingService._pre_create()`.
-
-### 8.6. Нет уникального ограничения для CastRule
-
-В модели `cast_rules` нет уникального ограничения на `(source_data_type_id, target_data_type_id)` на уровне БД (проверка только в сервисе).
-
-### 8.7. Нет связи Dataset ↔ DataType
-
-Нет прямой проверки, что `data_type_id` в `field_binding` принадлежит тому же `system_flavor`, что и система датасета. Теоретически можно привязать PostgreSQL-поле к Kafka-типу.
+### 7.6. Dataset Polymorphism
+5 subtypes cover the main data source types in an enterprise environment.
 
 ---
 
-## 9. Сравнение документации с кодом
+## 8. Weaknesses and Risks Analysis
 
-| Аспект | Документация | Код | Совпадение |
-|--------|-------------|-----|-----------|
-| Таблицы | 16 таблиц описаны | 16 таблиц в моделях | Полное |
-| MetaDataMixin | Описан | Реализован в `models/mixins.py` | Полное |
-| Полиморфизм | 5 подтипов описаны | 5 подтипов реализованы | Полное |
-| params_schema | Описан с примерами | Реализован как JSONB | Полное |
-| render_template | Описан с примерами | Реализован как Text | Полное |
-| cast_rules safety | 3 уровня описаны | Enum с 3 значениями | Полное |
-| dataset_hive | Не описан в деталях в документации | Полностью реализован | Код опережает документацию |
-| Уникальные ограничения | Частично описаны | Реализованы в миграции 8 | Код опережает документацию |
+### 8.1. No Cascade Deletion
 
-**Вывод:** Документация модели данных (`architecture/data-model-documentation.md`) в целом **соответствует коду**, но отстает по последним изменениям (Hive, business keys).
+Relationships between tables lack `ON DELETE CASCADE`. Deleting a `System` won't delete related `Dataset` records. This can lead to:
+- Errors on deletion (FK violation)
+- Orphaned records when manually deleting from the database
+
+**Recommendation:** Define a cascade deletion strategy or implement soft delete.
+
+### 8.2. `created_by`/`updated_by` Without FK
+
+The `created_by` and `updated_by` columns are plain UUIDs without a foreign key to `users`. This means:
+- No referential integrity for auditing
+- Possible dangling references to non-existent users
+- Cannot JOIN to get the creator's name
+
+**Recommendation:** Add FK or decide on soft delete for users.
+
+### 8.3. No Indexes on JSONB Columns
+
+Columns `params_schema`, `type_params`, `param_mapping`, `extra` have no GIN indexes. As data grows, JSONB queries will degrade.
+
+**Recommendation:** Add GIN indexes on frequently queried JSONB fields.
+
+### 8.4. No Soft Delete
+
+Record deletion is irreversible. No `deleted_at` / `is_deleted` field. This is a risk for:
+- Auditing and compliance
+- Recovering accidentally deleted data
+- Data lineage (loss of historical relationships)
+
+### 8.5. No `type_params` Validation at the DB Level
+
+`type_params` in `field_bindings` should conform to `params_schema` in `data_types`, but this validation is implemented neither at the DB level (CHECK constraint) nor in the service layer.
+
+**Recommendation:** Add validation in `FieldBindingService._pre_create()`.
+
+### 8.6. No Unique Constraint for CastRule
+
+The `cast_rules` model has no unique constraint on `(source_data_type_id, target_data_type_id)` at the DB level (check exists only in the service).
+
+### 8.7. No Dataset <-> DataType Relationship
+
+There is no direct check that the `data_type_id` in `field_binding` belongs to the same `system_flavor` as the dataset's system. Theoretically, a PostgreSQL field could be bound to a Kafka type.
 
 ---
 
-## 10. Резюме
+## 9. Documentation vs Code Comparison
 
-Модель данных AIDE Metastore v2 — **хорошо продуманная и нормализованная** схема для управления метаданными. Ключевые достоинства: параметрическая система типов, полиморфные датасеты, версионирование схем. Основные области для улучшения: каскадное удаление, FK для аудита, валидация JSONB, индексы.
+| Aspect | Documentation | Code | Match |
+|--------|--------------|------|-------|
+| Tables | 16 tables described | 16 tables in models | Full |
+| MetaDataMixin | Described | Implemented in `models/mixins.py` | Full |
+| Polymorphism | 5 subtypes described | 5 subtypes implemented | Full |
+| params_schema | Described with examples | Implemented as JSONB | Full |
+| render_template | Described with examples | Implemented as Text | Full |
+| cast_rules safety | 3 levels described | Enum with 3 values | Full |
+| dataset_hive | Not described in detail in docs | Fully implemented | Code ahead of documentation |
+| Unique constraints | Partially described | Implemented in migration 8 | Code ahead of documentation |
+
+**Conclusion:** The data model documentation (`architecture/data-model-documentation.md`) generally **matches the code** but lags behind on recent changes (Hive, business keys).
+
+---
+
+## 10. Summary
+
+The AIDE Metastore v2 data model is a **well-designed and normalized** schema for metadata management. Key strengths: parametric type system, polymorphic datasets, schema versioning. Main areas for improvement: cascade deletion, FK for auditing, JSONB validation, indexes.

@@ -1,234 +1,234 @@
-# Оценка готовности к развитию: AIDE Metastore v2
+# Development Readiness Assessment: AIDE Metastore v2
 
-**Дата:** 2026-04-06
-**Методология:** Оценка зрелости по 7 категориям (шкала 1-10)
-
----
-
-## 1. Оценка зрелости
-
-### Сводная таблица
-
-| Категория | Оценка | Комментарий |
-|-----------|--------|-------------|
-| Архитектура | **8/10** | Чистое разделение слоев, Generic CRUD, async-first. Один из лучших аспектов проекта. |
-| Модель данных | **7/10** | Хорошая нормализация, параметрические типы. Нет каскадов, FK для аудита, валидации JSONB. |
-| Тестирование | **6/10** | 35 тестов, хорошие фикстуры. Нет coverage отчетов, пустые тест-файлы, нет E2E тестов. |
-| Безопасность | **4/10** | JWT реализован, но secret захардкожен, CORS открыт, нет rate limiting. |
-| Инфраструктура / DevOps | **4/10** | Docker есть, но нет CI/CD, production Dockerfile, health checks, мониторинга. |
-| Документация | **7/10** | C4-диаграммы, ADR, guides, data model docs. README расходится с реальностью. |
-| API-дизайн | **7/10** | RESTful, пагинация, error codes. Нет фильтрации, сортировки, batch-операций. |
-| **ИТОГО** | **~6/10** | Хорошая основа, но не готов к production без стабилизации. |
+**Date:** 2026-04-06
+**Methodology:** Maturity assessment across 7 categories (scale 1-10)
 
 ---
 
-## 2. Детальный анализ по категориям
+## 1. Maturity Assessment
 
-### 2.1. Архитектура (8/10)
+### Summary Table
 
-**Сильные стороны:**
-- Четкое разделение: API → Service → Repository → DB
-- GenericService с TypeVar-дженериками уменьшает boilerplate на 70%
-- Unit of Work обеспечивает транзакционную целостность
-- Dependency Injection через FastAPI Depends()
-- Async-first на всех уровнях
+| Category | Score | Comment |
+|----------|-------|---------|
+| Architecture | **8/10** | Clean layer separation, Generic CRUD, async-first. One of the best aspects of the project. |
+| Data Model | **7/10** | Good normalization, parametric types. No cascades, FK for auditing, JSONB validation. |
+| Testing | **6/10** | 35 tests, good fixtures. No coverage reports, empty test files, no E2E tests. |
+| Security | **4/10** | JWT implemented, but secret is hardcoded, CORS is open, no rate limiting. |
+| Infrastructure / DevOps | **4/10** | Docker exists, but no CI/CD, production Dockerfile, health checks, monitoring. |
+| Documentation | **7/10** | C4 diagrams, ADR, guides, data model docs. README diverges from reality. |
+| API Design | **7/10** | RESTful, pagination, error codes. No filtering, sorting, batch operations. |
+| **TOTAL** | **~6/10** | Good foundation, but not production-ready without stabilization. |
 
-**Что довести:**
-- Нет middleware для rate limiting, request throttling
-- Нет event system (pub/sub) для cross-service коммуникации
-- GenericService создает новый UoW для каждой операции — нет композиции транзакций
+---
 
-### 2.2. Модель данных (7/10)
+## 2. Detailed Analysis by Category
 
-**Сильные стороны:**
-- Нормализованная 3NF-схема
-- Параметрическая система типов (params_schema + render_template)
-- Полиморфные датасеты (5 подтипов)
-- Версионирование схем через field_bindings
-- PII-теги на полях
+### 2.1. Architecture (8/10)
 
-**Что довести:**
-- Добавить каскадное удаление или soft delete
-- FK для created_by/updated_by
-- GIN-индексы на JSONB-колонки
-- Валидация type_params против params_schema
-- Проверка соответствия data_type и system_flavor
+**Strengths:**
+- Clear separation: API -> Service -> Repository -> DB
+- GenericService with TypeVar generics reduces boilerplate by 70%
+- Unit of Work ensures transactional integrity
+- Dependency Injection via FastAPI Depends()
+- Async-first at all levels
 
-### 2.3. Тестирование (6/10)
+**What to improve:**
+- No middleware for rate limiting, request throttling
+- No event system (pub/sub) for cross-service communication
+- GenericService creates a new UoW for each operation — no transaction composition
 
-**Сильные стороны:**
-- 35 тестовых файлов покрывают все слои (API, services, repositories, core)
-- Транзакционные фикстуры с auto-rollback
-- Docker-based тестирование с реальной PostgreSQL
+### 2.2. Data Model (7/10)
 
-**Что довести:**
-- Нет coverage отчетов в CI (только локально)
-- Есть пустые тестовые файлы (dataset_schema_service)
-- Нет E2E/интеграционных сценариев (flow: создать систему → датасет → поля → схему)
-- Нет нагрузочного тестирования
-- Нет тестов для edge cases (concurrent modifications, large payloads)
+**Strengths:**
+- Normalized 3NF schema
+- Parametric type system (params_schema + render_template)
+- Polymorphic datasets (5 subtypes)
+- Schema versioning via field_bindings
+- PII tags on fields
 
-### 2.4. Безопасность (4/10)
+**What to improve:**
+- Add cascade deletion or soft delete
+- FK for created_by/updated_by
+- GIN indexes on JSONB columns
+- Validation of type_params against params_schema
+- Check data_type and system_flavor correspondence
 
-**Реализовано:**
-- JWT-аутентификация с bcrypt-хешированием
-- Ролевая модель (user/superuser)
-- Dependency-based авторизация
+### 2.3. Testing (6/10)
 
-**Критические пробелы:**
-- JWT secret с дефолтным значением в коде
+**Strengths:**
+- 35 test files covering all layers (API, services, repositories, core)
+- Transactional fixtures with auto-rollback
+- Docker-based testing with real PostgreSQL
+
+**What to improve:**
+- No coverage reports in CI (local only)
+- Empty test files exist (dataset_schema_service)
+- No E2E/integration scenarios (flow: create system -> dataset -> fields -> schema)
+- No load testing
+- No edge case tests (concurrent modifications, large payloads)
+
+### 2.4. Security (4/10)
+
+**Implemented:**
+- JWT authentication with bcrypt hashing
+- Role model (user/superuser)
+- Dependency-based authorization
+
+**Critical gaps:**
+- JWT secret with default value in code
 - CORS = `["*"]`
-- Нет rate limiting на /login (brute-force)
-- Нет HTTPS enforcement
-- Нет audit log (кто что менял, когда)
-- Нет input sanitization (SQL injection через JSONB?)
-- Нет token revocation (только expiration)
+- No rate limiting on /login (brute-force)
+- No HTTPS enforcement
+- No audit log (who changed what, when)
+- No input sanitization (SQL injection via JSONB?)
+- No token revocation (only expiration)
 
-### 2.5. Инфраструктура / DevOps (4/10)
+### 2.5. Infrastructure / DevOps (4/10)
 
-**Реализовано:**
-- docker-compose для локальной разработки
-- Makefile с полезными командами
+**Implemented:**
+- docker-compose for local development
+- Makefile with useful commands
 - Pre-commit hooks (ruff, black, mypy, pytest)
-- Alembic миграции
+- Alembic migrations
 
-**Критические пробелы:**
-- Нет CI/CD pipeline (GitHub Actions)
-- Нет production Dockerfile (multi-stage, non-root)
-- Нет health/readiness endpoints
-- Redis заявлен, но не реализован
-- Prometheus заявлен, но не реализован
-- Нет backup-стратегии для БД
-- Нет secret management (Vault, AWS SSM)
+**Critical gaps:**
+- No CI/CD pipeline (GitHub Actions)
+- No production Dockerfile (multi-stage, non-root)
+- No health/readiness endpoints
+- Redis claimed but not implemented
+- Prometheus claimed but not implemented
+- No backup strategy for DB
+- No secret management (Vault, AWS SSM)
 
-### 2.6. Документация (7/10)
+### 2.6. Documentation (7/10)
 
-**Реализовано:**
-- C4-диаграммы (System Context, Container, Components)
+**Implemented:**
+- C4 diagrams (System Context, Container, Components)
 - 2 ADR (JWT auth, Service-Repository-UoW)
 - Developer onboarding guide
 - Common patterns guide
 - Data model documentation
 - ChartDB export
 
-**Что довести:**
-- README расходится с реальностью (Redis, Prometheus)
-- Нет API-документации сверх OpenAPI autogeneration
-- Нет runbook для production-операций
-- Нет changelog
+**What to improve:**
+- README diverges from reality (Redis, Prometheus)
+- No API documentation beyond OpenAPI autogeneration
+- No runbook for production operations
+- No changelog
 
-### 2.7. API-дизайн (7/10)
+### 2.7. API Design (7/10)
 
-**Реализовано:**
-- RESTful endpoints для всех сущностей
-- Пагинация (page/size с Page[T] response)
-- Централизованные error codes с OpenAPI-документацией
-- CRUD router generator для boilerplate
+**Implemented:**
+- RESTful endpoints for all entities
+- Pagination (page/size with Page[T] response)
+- Centralized error codes with OpenAPI documentation
+- CRUD router generator for boilerplate
 
-**Что довести:**
-- Нет фильтрации по полям (GET /datasets?system_id=...)
-- Нет сортировки (sort_by, order)
-- Нет batch-операций (создать 10 полей за один запрос)
-- Нет partial response (fields selection)
-- Нет ETag/conditional requests для кеширования
-- Нет versioning strategy (v1 → v2 migration)
-
----
-
-## 3. Фазный план действий
-
-### Фаза 0: Стабилизация (до начала новой разработки)
-
-> **Цель:** Устранить критические проблемы безопасности и расхождения с документацией.
-
-| # | Задача | Приоритет | Effort |
-|---|--------|-----------|--------|
-| 1 | Убрать дефолтный JWT_SECRET_KEY, сделать обязательной env-переменной | КРИТИЧНО | 1h |
-| 2 | Ограничить CORS для production (оставить `["*"]` только для dev) | КРИТИЧНО | 1h |
-| 3 | Обновить README — убрать Redis и Prometheus или пометить как planned | ВЫСОКО | 30min |
-| 4 | Добавить GitHub Actions CI pipeline (lint + type check + test) | ВЫСОКО | 2-4h |
-| 5 | Добавить health check endpoint (`/health`, `/readiness`) | СРЕДНЕ | 1h |
-
-### Фаза 1: Инфраструктура
-
-> **Цель:** Подготовить проект к production-deployment.
-
-| # | Задача | Приоритет | Effort |
-|---|--------|-----------|--------|
-| 6 | Production Dockerfile (multi-stage, non-root user, minimal image) | ВЫСОКО | 2-3h |
-| 7 | Rate limiting на /login (slowapi или middleware) | ВЫСОКО | 2h |
-| 8 | Добавить Prometheus metrics или structured metric logging | СРЕДНЕ | 4-6h |
-| 9 | Добавить Redis для кеширования справочников (system_kinds, flavors) | СРЕДНЕ | 4-6h |
-| 10 | Secret management (env validation, no defaults for secrets) | СРЕДНЕ | 2h |
-| 11 | Database backup strategy (pg_dump cron или managed backups) | СРЕДНЕ | 2h |
-
-### Фаза 2: API улучшения
-
-> **Цель:** Сделать API удобным для реального использования.
-
-| # | Задача | Приоритет | Effort |
-|---|--------|-----------|--------|
-| 12 | Фильтрация для GET endpoints (query params) | ВЫСОКО | 4-6h |
-| 13 | Сортировка для GET endpoints | СРЕДНЕ | 2-3h |
-| 14 | Batch-операции (create_many для fields, field_bindings) | СРЕДНЕ | 4-6h |
-| 15 | Валидация type_params против params_schema | СРЕДНЕ | 3-4h |
-| 16 | Проверка соответствия data_type ↔ system_flavor | СРЕДНЕ | 2-3h |
-| 17 | Audit log (кто, что, когда менял) | СРЕДНЕ | 4-6h |
-
-### Фаза 3: Новые фичи
-
-> **Цель:** Расширение функциональности.
-
-| # | Задача | Описание | Effort |
-|---|--------|----------|--------|
-| 18 | Auto-discovery | Импорт метаданных из реальных систем (RDBMS introspection, Kafka schema registry) | 2-3 нед. |
-| 19 | Data lineage | Описание потоков данных между датасетами (source → target) | 1-2 нед. |
-| 20 | Pipeline contracts | Декларативные описания ETL/ELT пайплайнов | 2-3 нед. |
-| 21 | Frontend / UI | Веб-интерфейс для управления метаданными | 3-4 нед. |
-| 22 | Notifications | Webhooks/events при изменении метаданных | 1 нед. |
-| 23 | RBAC v2 | Гранулярные permissions (per-system, per-dataset) | 1-2 нед. |
+**What to improve:**
+- No field filtering for GET endpoints (GET /datasets?system_id=...)
+- No sorting (sort_by, order)
+- No batch operations (create 10 fields in a single request)
+- No partial response (fields selection)
+- No ETag/conditional requests for caching
+- No versioning strategy (v1 -> v2 migration)
 
 ---
 
-## 4. Риски масштабирования
+## 3. Phased Action Plan
 
-| Риск | Вероятность | Влияние | Митигация |
-|------|------------|---------|-----------|
-| JSONB-запросы деградируют при росте данных | Средняя | Высокое | GIN-индексы, материализованные view |
-| Полиморфные JOIN-ы на datasets замедляются | Низкая | Среднее | `with_polymorphic()` оптимизация, кеширование |
-| Одна БД — single point of failure | Высокая | Критическое | Read replicas, connection pooling (PgBouncer) |
-| Отсутствие кеша увеличивает нагрузку на БД | Средняя | Среднее | Redis для справочников |
-| GenericService создает UoW на каждую операцию | Низкая | Низкое | Рефакторинг для композиции транзакций |
+### Phase 0: Stabilization (before starting new development)
+
+> **Goal:** Address critical security issues and documentation discrepancies.
+
+| # | Task | Priority | Effort |
+|---|------|----------|--------|
+| 1 | Remove default JWT_SECRET_KEY, make it a required env variable | CRITICAL | 1h |
+| 2 | Restrict CORS for production (keep `["*"]` only for dev) | CRITICAL | 1h |
+| 3 | Update README — remove Redis and Prometheus or mark as planned | HIGH | 30min |
+| 4 | Add GitHub Actions CI pipeline (lint + type check + test) | HIGH | 2-4h |
+| 5 | Add health check endpoint (`/health`, `/readiness`) | MEDIUM | 1h |
+
+### Phase 1: Infrastructure
+
+> **Goal:** Prepare the project for production deployment.
+
+| # | Task | Priority | Effort |
+|---|------|----------|--------|
+| 6 | Production Dockerfile (multi-stage, non-root user, minimal image) | HIGH | 2-3h |
+| 7 | Rate limiting on /login (slowapi or middleware) | HIGH | 2h |
+| 8 | Add Prometheus metrics or structured metric logging | MEDIUM | 4-6h |
+| 9 | Add Redis for caching reference data (system_kinds, flavors) | MEDIUM | 4-6h |
+| 10 | Secret management (env validation, no defaults for secrets) | MEDIUM | 2h |
+| 11 | Database backup strategy (pg_dump cron or managed backups) | MEDIUM | 2h |
+
+### Phase 2: API Improvements
+
+> **Goal:** Make the API convenient for real-world use.
+
+| # | Task | Priority | Effort |
+|---|------|----------|--------|
+| 12 | Filtering for GET endpoints (query params) | HIGH | 4-6h |
+| 13 | Sorting for GET endpoints | MEDIUM | 2-3h |
+| 14 | Batch operations (create_many for fields, field_bindings) | MEDIUM | 4-6h |
+| 15 | Validation of type_params against params_schema | MEDIUM | 3-4h |
+| 16 | Check data_type <-> system_flavor correspondence | MEDIUM | 2-3h |
+| 17 | Audit log (who, what, when changed) | MEDIUM | 4-6h |
+
+### Phase 3: New Features
+
+> **Goal:** Expand functionality.
+
+| # | Task | Description | Effort |
+|---|------|-------------|--------|
+| 18 | Auto-discovery | Import metadata from real systems (RDBMS introspection, Kafka schema registry) | 2-3 weeks |
+| 19 | Data lineage | Description of data flows between datasets (source -> target) | 1-2 weeks |
+| 20 | Pipeline contracts | Declarative descriptions of ETL/ELT pipelines | 2-3 weeks |
+| 21 | Frontend / UI | Web interface for metadata management | 3-4 weeks |
+| 22 | Notifications | Webhooks/events on metadata changes | 1 week |
+| 23 | RBAC v2 | Granular permissions (per-system, per-dataset) | 1-2 weeks |
 
 ---
 
-## 5. Рекомендации
+## 4. Scaling Risks
 
-### Немедленно (до любой новой разработки)
+| Risk | Probability | Impact | Mitigation |
+|------|------------|--------|------------|
+| JSONB queries degrade with data growth | Medium | High | GIN indexes, materialized views |
+| Polymorphic JOINs on datasets slow down | Low | Medium | `with_polymorphic()` optimization, caching |
+| Single DB — single point of failure | High | Critical | Read replicas, connection pooling (PgBouncer) |
+| No cache increases DB load | Medium | Medium | Redis for reference data |
+| GenericService creates UoW per operation | Low | Low | Refactoring for transaction composition |
 
-1. **Исправить JWT secret** — убрать дефолтное значение, добавить валидацию
-2. **Ограничить CORS** — раздельная конфигурация для dev и production
-3. **Добавить CI/CD** — GitHub Actions с lint + test на каждый PR
+---
 
-### В ближайшие 2-4 недели
+## 5. Recommendations
+
+### Immediately (before any new development)
+
+1. **Fix JWT secret** — remove default value, add validation
+2. **Restrict CORS** — separate configuration for dev and production
+3. **Add CI/CD** — GitHub Actions with lint + test on every PR
+
+### In the next 2-4 weeks
 
 4. **Production Dockerfile** — multi-stage build
-5. **Rate limiting** — защита от brute-force
-6. **Фильтрация API** — без нее API малополезен для реальных клиентов
-7. **Health checks** — для оркестратора
+5. **Rate limiting** — brute-force protection
+6. **API filtering** — without it, the API is of little use for real clients
+7. **Health checks** — for the orchestrator
 
-### В перспективе 1-3 месяца
+### In the 1-3 month perspective
 
-8. **Auto-discovery** — ключевая ценность продукта
-9. **Data lineage** — описание потоков данных
-10. **Frontend** — визуальное управление метаданными
+8. **Auto-discovery** — key product value
+9. **Data lineage** — data flow description
+10. **Frontend** — visual metadata management
 
 ---
 
-## 6. Заключение
+## 6. Conclusion
 
-AIDE Metastore v2 имеет **сильную архитектурную основу** и **продуманную модель данных**. Проект находится на стадии **MVP/прототипа** — функциональное ядро реализовано, но не готово к production без стабилизации безопасности и инфраструктуры.
+AIDE Metastore v2 has a **strong architectural foundation** and a **well-designed data model**. The project is at the **MVP/prototype** stage — the functional core is implemented but is not production-ready without security and infrastructure stabilization.
 
-**Главная рекомендация:** Завершить **Фазу 0 (стабилизация)** и **Фазу 1 (инфраструктура)** перед началом разработки новых фич. Это обеспечит надежный фундамент для масштабирования.
+**Main recommendation:** Complete **Phase 0 (stabilization)** and **Phase 1 (infrastructure)** before starting development of new features. This will provide a reliable foundation for scaling.
 
-Общая готовность проекта к development: **6/10** — хороший старт, но требуется дисциплинированная работа над техническим долгом перед расширением функциональности.
+Overall project development readiness: **6/10** — a good start, but disciplined work on technical debt is required before expanding functionality.
