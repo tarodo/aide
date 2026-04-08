@@ -25,6 +25,8 @@ class _MockRepository:
         self.create: AsyncMock = AsyncMock()
         self.update: AsyncMock = AsyncMock()
         self.delete: AsyncMock = AsyncMock()
+        self.restore: AsyncMock = AsyncMock()
+        self.get_including_deleted: AsyncMock = AsyncMock()
         self.get_multi_paginated: AsyncMock = AsyncMock()
 
 
@@ -306,6 +308,24 @@ class TestDatasetService:
         mock_repo.delete.assert_awaited_once_with(db_obj=db_dataset_rdbms)
         assert result.id == db_dataset_rdbms.id
 
+    async def test_delete_sets_deleter_id(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        deleter_id = uuid.uuid4()
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+        mock_repo.delete.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            await dataset_service.delete(
+                uow=mock_uow, obj_id=db_dataset_rdbms.id, deleter_id=deleter_id
+            )
+
+        assert db_dataset_rdbms.deleted_by == deleter_id
+
     async def test_delete_not_found(
         self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
     ):
@@ -315,3 +335,37 @@ class TestDatasetService:
             with pytest.raises(AppException) as exc_info:
                 await dataset_service.delete(uow=mock_uow, obj_id=uuid.uuid4())
         assert exc_info.value.error_code == errors.DATASET_NOT_FOUND
+
+    async def test_restore_success(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        db_dataset_rdbms.deleted_at = datetime.now(UTC)
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_dataset_rdbms
+        mock_repo.restore.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            result = await dataset_service.restore(
+                uow=mock_uow, obj_id=db_dataset_rdbms.id, restorer_id=uuid.uuid4()
+            )
+
+        mock_repo.restore.assert_awaited_once_with(db_obj=db_dataset_rdbms)
+        assert result.id == db_dataset_rdbms.id
+
+    async def test_restore_not_deleted_raises(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        db_dataset_rdbms.deleted_at = None
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.restore(uow=mock_uow, obj_id=db_dataset_rdbms.id)
+        assert exc_info.value.error_code == errors.ENTITY_NOT_DELETED

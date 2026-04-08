@@ -24,6 +24,8 @@ class _MockRepository:
         self.create: AsyncMock = AsyncMock()
         self.update: AsyncMock = AsyncMock()
         self.delete: AsyncMock = AsyncMock()
+        self.restore: AsyncMock = AsyncMock()
+        self.get_including_deleted: AsyncMock = AsyncMock()
         self.get_multi_paginated: AsyncMock = AsyncMock()
 
 
@@ -253,3 +255,55 @@ class TestDataTypeService:
 
         mock_repo.delete.assert_awaited_once_with(db_obj=db_data_type)
         assert result.id == db_data_type.id
+
+    async def test_delete_sets_deleter_id(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        deleter_id = uuid.uuid4()
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_data_type
+        mock_repo.delete.return_value = db_data_type
+
+        with patch.object(data_type_service, "_get_repository", return_value=mock_repo):
+            await data_type_service.delete(
+                uow=mock_uow, obj_id=db_data_type.id, deleter_id=deleter_id
+            )
+
+        assert db_data_type.deleted_by == deleter_id
+
+    async def test_restore_success(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        db_data_type.deleted_at = datetime.now(UTC)
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_data_type
+        mock_repo.restore.return_value = db_data_type
+
+        with patch.object(data_type_service, "_get_repository", return_value=mock_repo):
+            result = await data_type_service.restore(
+                uow=mock_uow, obj_id=db_data_type.id, restorer_id=uuid.uuid4()
+            )
+
+        mock_repo.restore.assert_awaited_once_with(db_obj=db_data_type)
+        assert result.id == db_data_type.id
+
+    async def test_restore_not_deleted_raises(
+        self,
+        data_type_service: DataTypeService,
+        mock_uow: _MockUnitOfWork,
+        db_data_type: DataType,
+    ):
+        db_data_type.deleted_at = None
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_data_type
+
+        with patch.object(data_type_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await data_type_service.restore(uow=mock_uow, obj_id=db_data_type.id)
+        assert exc_info.value.error_code == errors.ENTITY_NOT_DELETED

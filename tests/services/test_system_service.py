@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,6 +15,9 @@ class _MockRepository:
     def __init__(self) -> None:
         self.get_by_code: AsyncMock = AsyncMock()
         self.get: AsyncMock = AsyncMock()
+        self.delete: AsyncMock = AsyncMock()
+        self.restore: AsyncMock = AsyncMock()
+        self.get_including_deleted: AsyncMock = AsyncMock()
 
 
 class _MockSystemFlavors:
@@ -28,7 +32,10 @@ class _MockCredentialRefs:
 
 class _MockUnitOfWork:
     def __init__(self) -> None:
-        self.session = MagicMock()
+        self.session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = 0
+        self.session.execute.return_value = mock_result
         self.system_flavors = _MockSystemFlavors()
         self.credential_refs = _MockCredentialRefs()
 
@@ -75,12 +82,16 @@ def system_create_schema(
 
 @pytest.fixture
 def db_system(system_create_schema: SystemCreate) -> System:
+    now = datetime.now(UTC)
     return System(
         id=uuid.uuid4(),
         code=system_create_schema.code,
         name=system_create_schema.name,
         flavor_id=system_create_schema.flavor_id,
         credential_ref_id=system_create_schema.credential_ref_id,
+        is_active=True,
+        created_at=now,
+        updated_at=now,
     )
 
 
@@ -201,3 +212,87 @@ class TestSystemServicePreUpdate:
                     updater_id=None,
                 )
         assert exc_info.value.error_code == errors.CREDENTIAL_REF_NOT_FOUND
+
+
+@pytest.mark.asyncio
+class TestSystemServiceDelete:
+    async def test_delete_success(
+        self,
+        system_service: SystemService,
+        mock_uow: _MockUnitOfWork,
+        db_system: System,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_system
+        mock_repo.delete.return_value = db_system
+
+        with patch.object(system_service, "_get_repository", return_value=mock_repo):
+            result = await system_service.delete(
+                uow=mock_uow, obj_id=db_system.id, deleter_id=uuid.uuid4()
+            )
+
+        mock_repo.delete.assert_awaited_once_with(db_obj=db_system)
+        assert result.id == db_system.id
+
+    async def test_delete_not_found(
+        self, system_service: SystemService, mock_uow: _MockUnitOfWork
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = None
+
+        with patch.object(system_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await system_service.delete(uow=mock_uow, obj_id=uuid.uuid4())
+        assert exc_info.value.error_code == errors.SYSTEM_NOT_FOUND
+
+    async def test_delete_blocked_by_dependent_datasets(
+        self,
+        system_service: SystemService,
+        mock_uow: _MockUnitOfWork,
+        db_system: System,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_system
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = 2
+        mock_uow.session.execute.return_value = mock_result
+
+        with patch.object(system_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await system_service.delete(uow=mock_uow, obj_id=db_system.id)
+        assert exc_info.value.error_code == errors.HAS_DEPENDENT_ENTITIES
+        mock_repo.delete.assert_not_awaited()
+
+    async def test_restore_success(
+        self,
+        system_service: SystemService,
+        mock_uow: _MockUnitOfWork,
+        db_system: System,
+    ):
+        db_system.deleted_at = datetime.now(UTC)
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_system
+        mock_repo.restore.return_value = db_system
+
+        with patch.object(system_service, "_get_repository", return_value=mock_repo):
+            result = await system_service.restore(
+                uow=mock_uow, obj_id=db_system.id, restorer_id=uuid.uuid4()
+            )
+
+        mock_repo.restore.assert_awaited_once_with(db_obj=db_system)
+        assert result.id == db_system.id
+
+    async def test_restore_not_deleted_raises(
+        self,
+        system_service: SystemService,
+        mock_uow: _MockUnitOfWork,
+        db_system: System,
+    ):
+        db_system.deleted_at = None
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_system
+
+        with patch.object(system_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await system_service.restore(uow=mock_uow, obj_id=db_system.id)
+        assert exc_info.value.error_code == errors.ENTITY_NOT_DELETED

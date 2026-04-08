@@ -24,6 +24,8 @@ class _MockRepository:
         self.create: AsyncMock = AsyncMock()
         self.update: AsyncMock = AsyncMock()
         self.delete: AsyncMock = AsyncMock()
+        self.restore: AsyncMock = AsyncMock()
+        self.get_including_deleted: AsyncMock = AsyncMock()
         self.get_multi_paginated: AsyncMock = AsyncMock()
 
 
@@ -273,3 +275,65 @@ class TestSystemFlavorService:
 
         mock_repo.delete.assert_awaited_once_with(db_obj=db_system_flavor)
         assert result.id == db_system_flavor.id
+
+    async def test_delete_blocked_by_dependent_systems(
+        self,
+        system_flavor_service: SystemFlavorService,
+        mock_uow: _MockUnitOfWork,
+        db_system_flavor: SystemFlavor,
+    ):
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_system_flavor
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = 1
+        mock_uow.session.execute.return_value = mock_result
+
+        with patch.object(
+            system_flavor_service, "_get_repository", return_value=mock_repo
+        ):
+            with pytest.raises(AppException) as exc_info:
+                await system_flavor_service.delete(
+                    uow=mock_uow, obj_id=db_system_flavor.id
+                )
+        assert exc_info.value.error_code == errors.HAS_DEPENDENT_ENTITIES
+        mock_repo.delete.assert_not_awaited()
+
+    async def test_restore_success(
+        self,
+        system_flavor_service: SystemFlavorService,
+        mock_uow: _MockUnitOfWork,
+        db_system_flavor: SystemFlavor,
+    ):
+        db_system_flavor.deleted_at = datetime.now(UTC)
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_system_flavor
+        mock_repo.restore.return_value = db_system_flavor
+
+        with patch.object(
+            system_flavor_service, "_get_repository", return_value=mock_repo
+        ):
+            result = await system_flavor_service.restore(
+                uow=mock_uow, obj_id=db_system_flavor.id, restorer_id=uuid.uuid4()
+            )
+
+        mock_repo.restore.assert_awaited_once_with(db_obj=db_system_flavor)
+        assert result.id == db_system_flavor.id
+
+    async def test_restore_not_deleted_raises(
+        self,
+        system_flavor_service: SystemFlavorService,
+        mock_uow: _MockUnitOfWork,
+        db_system_flavor: SystemFlavor,
+    ):
+        db_system_flavor.deleted_at = None
+        mock_repo = _MockRepository()
+        mock_repo.get_including_deleted.return_value = db_system_flavor
+
+        with patch.object(
+            system_flavor_service, "_get_repository", return_value=mock_repo
+        ):
+            with pytest.raises(AppException) as exc_info:
+                await system_flavor_service.restore(
+                    uow=mock_uow, obj_id=db_system_flavor.id
+                )
+        assert exc_info.value.error_code == errors.ENTITY_NOT_DELETED
