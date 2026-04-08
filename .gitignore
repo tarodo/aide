@@ -29,3 +29,5 @@ tasks/
 .idea/
 .vscode/
 .cursor/
+
+docs_temp/
