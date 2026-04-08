@@ -3,7 +3,7 @@ name = "AIDE"
 version = "0.1.0"
 description = "AIDE Data Contract Service Ingestion Level"
 readme = "README.md"
-requires-python = ">=3.13.9"
+requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.17.1",
     "asyncpg>=0.29.0",
@@ -33,6 +33,9 @@ dev = [
 
 [tool.mypy]
 exclude = ["tests/"]
+
+[tool.black]
+target-version = ["py313"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
