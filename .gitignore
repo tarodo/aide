@@ -24,3 +24,8 @@ wheels/
 .DS_Store
 
 tasks/
+
+.claude/
+.idea/
+.vscode/
+.cursor/
