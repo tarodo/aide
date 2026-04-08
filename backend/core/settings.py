@@ -1,6 +1,10 @@
-from typing import List
-from pydantic import field_validator
+from typing import List, Self
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_INSECURE_JWT_DEFAULT = "a_super_secret_key_that_should_be_in_env"
+_MIN_JWT_SECRET_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -13,10 +17,10 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_FULL_NAME: str | None = None
 
     # CORS settings
-    CORS_ORIGINS: List[str] = ["*"]  # Comma-separated list of origins, or "*" for all
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
     CORS_CREDENTIALS: bool = True
-    CORS_METHODS: List[str] = ["*"]  # Comma-separated list of methods, or "*" for all
-    CORS_HEADERS: List[str] = ["*"]  # Comma-separated list of headers, or "*" for all
+    CORS_METHODS: List[str] = ["*"]
+    CORS_HEADERS: List[str] = ["*"]
 
     # Database settings
     DATABASE_URL: str = "postgresql+asyncpg://aide:aide@db:5432/aide"
@@ -42,6 +46,29 @@ class Settings(BaseSettings):
     @property
     def is_dev(self) -> bool:
         return self.ENV.lower() == "dev"
+
+    @model_validator(mode="after")
+    def _check_production_safety(self) -> Self:
+        if self.is_dev:
+            return self
+
+        if (
+            self.JWT_SECRET_KEY == _INSECURE_JWT_DEFAULT
+            or len(self.JWT_SECRET_KEY) < _MIN_JWT_SECRET_LENGTH
+        ):
+            raise ValueError(
+                "JWT_SECRET_KEY must be at least 32 characters and not the "
+                "default value in non-dev environments. "
+                "Generate one with: openssl rand -hex 32"
+            )
+
+        if "*" in self.CORS_ORIGINS and self.CORS_CREDENTIALS:
+            raise ValueError(
+                "CORS_ORIGINS='*' with CORS_CREDENTIALS=true is not allowed "
+                "in non-dev environments. Set explicit origins."
+            )
+
+        return self
 
     # Keep raw env strings (e.g. CORS_ORIGINS=*) and parse them in validators.
     model_config = SettingsConfigDict(

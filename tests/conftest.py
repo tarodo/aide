@@ -7,6 +7,7 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from backend.core.rate_limit import limiter
 from backend.core.settings import settings
 from backend.db.uow import UnitOfWork
 from backend.main import app
@@ -28,6 +29,14 @@ def run_migrations():
     command.upgrade(alembic_cfg, "head")
     yield
     command.downgrade(alembic_cfg, "base")
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    """Reset rate limiter state between tests."""
+    limiter.reset()
+    yield
+    limiter.reset()
 
 
 @pytest_asyncio.fixture(autouse=True)

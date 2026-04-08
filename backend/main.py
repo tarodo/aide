@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import structlog
 
 from backend.api.v1 import cast_rules as v1_cast_rules
@@ -22,6 +24,7 @@ from backend.api.v1 import users as v1_users
 from backend.core.errors import ERROR_MAP
 from backend.core.exceptions import AppException
 from backend.core.log_conf import setup_logging
+from backend.core.rate_limit import limiter
 from backend.core.settings import settings
 from backend.db.uow import UnitOfWork
 from backend.schemas.error import ErrorResponse
@@ -66,6 +69,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.exception_handler(AppException)
