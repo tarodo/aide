@@ -1,6 +1,8 @@
 import uuid
 from typing import cast
 
+from sqlalchemy import func, select
+
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.db.uow import UnitOfWork
@@ -11,11 +13,11 @@ from backend.schemas.credential_ref import (
     CredentialRefRead,
     CredentialRefUpdate,
 )
-from backend.services.base import GenericService
+from backend.services.base import SoftDeleteService
 
 
 class CredentialRefService(
-    GenericService[
+    SoftDeleteService[
         CredentialRef, CredentialRefCreate, CredentialRefUpdate, CredentialRefRead
     ]
 ):
@@ -59,3 +61,18 @@ class CredentialRefService(
         if new_provider != current_provider or new_path != current_path:
             if await repo.get_by_provider_and_path(new_provider, new_path):
                 raise AppException(errors.CREDENTIAL_REF_ALREADY_EXISTS)
+
+    async def _pre_delete(self, uow: UnitOfWork, db_obj: CredentialRef) -> None:
+        from backend.models.system import System
+
+        count_query = (
+            select(func.count())
+            .select_from(System)
+            .where(
+                System.credential_ref_id == db_obj.id,
+                System.deleted_at.is_(None),
+            )
+        )
+        result = await uow.session.execute(count_query)
+        if result.scalar_one() > 0:
+            raise AppException(errors.HAS_DEPENDENT_ENTITIES)

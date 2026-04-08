@@ -1,9 +1,12 @@
 import uuid
 from typing import cast
 
+from sqlalchemy import func, select
+
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.db.uow import UnitOfWork
+from backend.models.dataset import Dataset
 from backend.models.system import System
 from backend.repositories.system import SystemRepository
 from backend.schemas.system import (
@@ -11,10 +14,10 @@ from backend.schemas.system import (
     SystemRead,
     SystemUpdate,
 )
-from backend.services.base import GenericService
+from backend.services.base import SoftDeleteService
 
 
-class SystemService(GenericService[System, SystemCreate, SystemUpdate, SystemRead]):
+class SystemService(SoftDeleteService[System, SystemCreate, SystemUpdate, SystemRead]):
     """
     Service for system related business logic.
     """
@@ -63,3 +66,16 @@ class SystemService(GenericService[System, SystemCreate, SystemUpdate, SystemRea
                 update_data["credential_ref_id"]
             ):
                 raise AppException(errors.CREDENTIAL_REF_NOT_FOUND)
+
+    async def _pre_delete(self, uow: UnitOfWork, db_obj: System) -> None:
+        count_query = (
+            select(func.count())
+            .select_from(Dataset)
+            .where(
+                Dataset.system_id == db_obj.id,
+                Dataset.deleted_at.is_(None),
+            )
+        )
+        result = await uow.session.execute(count_query)
+        if result.scalar_one() > 0:
+            raise AppException(errors.HAS_DEPENDENT_ENTITIES)

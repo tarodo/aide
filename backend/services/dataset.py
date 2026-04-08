@@ -21,7 +21,7 @@ from backend.schemas.dataset import (
     AnyDatasetUpdate,
     validate_dataset_read,
 )
-from backend.services.base import GenericService
+from backend.services.base import SoftDeleteService
 
 MODEL_MAP = {
     "rdbms": DatasetRdbms,
@@ -33,7 +33,7 @@ MODEL_MAP = {
 
 
 class DatasetService(
-    GenericService[Dataset, AnyDatasetCreate, AnyDatasetUpdate, AnyDatasetRead]
+    SoftDeleteService[Dataset, AnyDatasetCreate, AnyDatasetUpdate, AnyDatasetRead]
 ):
     def __init__(self):
         super().__init__(
@@ -155,13 +155,42 @@ class DatasetService(
             updated_obj = await repo.update(db_obj=db_obj)
             return validate_dataset_read(updated_obj)
 
-    async def delete(self, uow: UnitOfWork, obj_id: uuid.UUID) -> AnyDatasetRead:
-        """Delete a dataset."""
+    async def delete(
+        self,
+        uow: UnitOfWork,
+        obj_id: uuid.UUID,
+        deleter_id: uuid.UUID | None = None,
+    ) -> AnyDatasetRead:
+        """Soft-delete a dataset."""
         async with uow:
             repo = cast(DatasetRepository, self._get_repository(uow.session))
             db_obj = await repo.get(obj_id)
             if not db_obj:
                 raise AppException(self.not_found_error_code)
 
+            if deleter_id and hasattr(db_obj, "deleted_by"):
+                setattr(db_obj, "deleted_by", deleter_id)
+
             deleted_obj = await repo.delete(db_obj=db_obj)
             return validate_dataset_read(deleted_obj)
+
+    async def restore(
+        self,
+        uow: UnitOfWork,
+        obj_id: uuid.UUID,
+        restorer_id: uuid.UUID | None = None,
+    ) -> AnyDatasetRead:
+        """Restore a soft-deleted dataset."""
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            db_obj = await repo.get_including_deleted(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+            if not getattr(db_obj, "deleted_at", None):
+                raise AppException(errors.ENTITY_NOT_DELETED)
+
+            if restorer_id and hasattr(db_obj, "updated_by"):
+                setattr(db_obj, "updated_by", restorer_id)
+
+            restored_obj = await repo.restore(db_obj=db_obj)
+            return validate_dataset_read(restored_obj)

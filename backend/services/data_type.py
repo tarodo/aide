@@ -11,11 +11,11 @@ from backend.schemas.data_type import (
     DataTypeRead,
     DataTypeUpdate,
 )
-from backend.services.base import GenericService
+from backend.services.base import SoftDeleteService
 
 
 class DataTypeService(
-    GenericService[DataType, DataTypeCreate, DataTypeUpdate, DataTypeRead]
+    SoftDeleteService[DataType, DataTypeCreate, DataTypeUpdate, DataTypeRead]
 ):
     """
     Service for data type related business logic.

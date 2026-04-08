@@ -50,7 +50,8 @@ async def test_get_by_code(
     call_args = mock_session.execute.call_args[0]
     executed_stmt = call_args[0]
     expected_stmt = select(SystemFlavor).where(
-        SystemFlavor.code == test_system_flavor.code
+        SystemFlavor.code == test_system_flavor.code,
+        SystemFlavor.deleted_at.is_(None),
     )
     assert str(executed_stmt) == str(expected_stmt)
 

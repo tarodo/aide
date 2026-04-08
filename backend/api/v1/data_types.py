@@ -4,6 +4,7 @@ from backend.api.v1.utils.crud_router import create_crud_router
 from backend.core.errors import (
     DATA_TYPE_ALREADY_EXISTS,
     DATA_TYPE_NOT_FOUND,
+    ENTITY_NOT_DELETED,
     SYSTEM_FLAVOR_NOT_FOUND,
 )
 from backend.schemas.data_type import (
@@ -29,6 +30,8 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[DATA_TYPE_NOT_FOUND],
     delete_error_codes=[DATA_TYPE_NOT_FOUND],
+    supports_restore=True,
+    restore_error_codes=[DATA_TYPE_NOT_FOUND, ENTITY_NOT_DELETED],
 )
 
 router.include_router(crud_router)

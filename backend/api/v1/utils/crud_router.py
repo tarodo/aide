@@ -38,6 +38,9 @@ def create_crud_router(
     update_error_codes: List[str] | None = None,
     get_one_error_codes: List[str] | None = None,
     delete_error_codes: List[str] | None = None,
+    supports_restore: bool = False,
+    restore_dependencies: Sequence[Any] | None = None,
+    restore_error_codes: List[str] | None = None,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -51,6 +54,8 @@ def create_crud_router(
         update_dependencies = []
     if delete_dependencies is None:
         delete_dependencies = [Depends(get_current_superuser)]
+    if restore_dependencies is None:
+        restore_dependencies = [Depends(get_current_superuser)]
 
     @router.get(
         "/",
@@ -144,7 +149,31 @@ def create_crud_router(
         obj_id: uuid.UUID,
         service: ServiceType = Depends(service_dependency),
         uow: UnitOfWork = Depends(UnitOfWork),
+        current_user: User = Depends(get_current_user),
     ) -> Any:
-        return await service.delete(uow=uow, obj_id=obj_id)
+        return await service.delete(uow=uow, obj_id=obj_id, deleter_id=current_user.id)
+
+    if supports_restore:
+
+        @router.post(
+            "/{obj_id}/restore",
+            response_model=read_schema,  # type: ignore[valid-type]
+            summary=f"Restore a deleted {entity_name}",
+            dependencies=restore_dependencies,
+            responses={
+                **build_error_responses(
+                    *(restore_error_codes or []), UNAUTHORIZED, FORBIDDEN
+                ),
+            },
+        )
+        async def restore(
+            obj_id: uuid.UUID,
+            service: ServiceType = Depends(service_dependency),
+            uow: UnitOfWork = Depends(UnitOfWork),
+            current_user: User = Depends(get_current_user),
+        ) -> Any:
+            return await service.restore(  # type: ignore[attr-defined]
+                uow=uow, obj_id=obj_id, restorer_id=current_user.id
+            )
 
     return router

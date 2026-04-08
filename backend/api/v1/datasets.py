@@ -13,6 +13,7 @@ from backend.core.errors import (
     DATASET_ALREADY_EXISTS,
     DATASET_NOT_FOUND,
     DATASET_KIND_MISMATCH,
+    ENTITY_NOT_DELETED,
     FORBIDDEN,
     INVALID_DATASET_KIND,
     SYSTEM_NOT_FOUND,
@@ -126,5 +127,26 @@ async def delete(
     obj_id: uuid.UUID,
     service: DatasetService = Depends(DatasetService),
     uow: UnitOfWork = Depends(UnitOfWork),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
-    return await service.delete(uow=uow, obj_id=obj_id)
+    return await service.delete(uow=uow, obj_id=obj_id, deleter_id=current_user.id)
+
+
+@router.post(
+    "/{obj_id}/restore",
+    response_model=AnyDatasetRead,
+    summary="Restore a deleted dataset",
+    dependencies=[Depends(get_current_superuser)],
+    responses={
+        **build_error_responses(
+            DATASET_NOT_FOUND, ENTITY_NOT_DELETED, UNAUTHORIZED, FORBIDDEN
+        ),
+    },
+)
+async def restore(
+    obj_id: uuid.UUID,
+    service: DatasetService = Depends(DatasetService),
+    uow: UnitOfWork = Depends(UnitOfWork),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    return await service.restore(uow=uow, obj_id=obj_id, restorer_id=current_user.id)

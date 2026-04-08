@@ -80,3 +80,70 @@ class BaseRepository(Generic[ModelType]):
         await self.session.delete(db_obj)
         await self.session.flush()
         return db_obj
+
+
+SoftDeleteModelType = TypeVar("SoftDeleteModelType", bound=Base)
+
+
+class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
+    """Repository with soft-delete support. Filters out deleted rows by default."""
+
+    async def get(self, obj_id: Any) -> SoftDeleteModelType | None:
+        query = select(self.model).where(
+            self.model.id == obj_id,  # type: ignore[attr-defined]
+            self.model.deleted_at.is_(None),  # type: ignore[attr-defined]
+        )
+        result = await self.session.execute(query)
+        return result.scalars().first()
+
+    async def get_including_deleted(self, obj_id: Any) -> SoftDeleteModelType | None:
+        return await self.session.get(self.model, obj_id)
+
+    async def get_multi(
+        self, *, skip: int = 0, limit: int = 100
+    ) -> Sequence[SoftDeleteModelType]:
+        query = (
+            select(self.model)
+            .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_multi_paginated(
+        self, *, skip: int = 0, limit: int = 100
+    ) -> tuple[Sequence[SoftDeleteModelType], int]:
+        total_query = (
+            select(func.count())
+            .select_from(self.model)
+            .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
+        )
+        total_result = await self.session.execute(total_query)
+        total = total_result.scalar_one()
+
+        items_query = (
+            select(self.model)
+            .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
+            .order_by(self.model.id)  # type: ignore[attr-defined]
+            .offset(skip)
+            .limit(limit)
+        )
+        items_result = await self.session.execute(items_query)
+        items = items_result.scalars().all()
+        return items, total
+
+    async def delete(self, *, db_obj: SoftDeleteModelType) -> SoftDeleteModelType:
+        db_obj.deleted_at = func.now()  # type: ignore[attr-defined]
+        self.session.add(db_obj)
+        await self.session.flush()
+        await self.session.refresh(db_obj)
+        return db_obj
+
+    async def restore(self, *, db_obj: SoftDeleteModelType) -> SoftDeleteModelType:
+        db_obj.deleted_at = None  # type: ignore[attr-defined]
+        db_obj.deleted_by = None  # type: ignore[attr-defined]
+        self.session.add(db_obj)
+        await self.session.flush()
+        await self.session.refresh(db_obj)
+        return db_obj

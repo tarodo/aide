@@ -13,15 +13,20 @@ class FieldBinding(Base, MetaDataMixin):
     __tablename__ = "field_bindings"
 
     field_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("fields.id"), nullable=False
+        UUID(as_uuid=True), ForeignKey("fields.id", ondelete="CASCADE"), nullable=False
     )
     dataset_schema_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("dataset_schemas.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("dataset_schemas.id", ondelete="CASCADE"),
+        nullable=False,
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     is_nullable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     data_type_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("data_types.id"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("data_types.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     type_params: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 

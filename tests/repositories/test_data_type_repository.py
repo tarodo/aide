@@ -54,6 +54,7 @@ async def test_get_by_system_flavor_and_code(
     expected_stmt = select(DataType).where(
         DataType.system_flavor_id == test_data_type.system_flavor_id,
         DataType.code == test_data_type.code,
+        DataType.deleted_at.is_(None),
     )
     assert str(executed_stmt) == str(expected_stmt)
 

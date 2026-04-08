@@ -50,6 +50,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://aide:aide@db-test:5432/aide_test
     volumes:
       - ./backend:/app/backend
+      - ./tests:/app/tests
     depends_on:
       - db-test
 

@@ -28,7 +28,11 @@ class _MockRepository:
 
 class _MockUnitOfWork:
     def __init__(self) -> None:
-        self.session = MagicMock()
+        self.session = AsyncMock()
+        # _pre_delete calls session.execute() which must return a result with scalar_one()
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = 0
+        self.session.execute.return_value = mock_result
 
     async def __aenter__(self) -> "_MockUnitOfWork":
         return self

@@ -42,6 +42,8 @@ DATASET_SCHEMA_ALREADY_EXISTS = "DATASET_SCHEMA_ALREADY_EXISTS"
 FIELD_BINDING_NOT_FOUND = "FIELD_BINDING_NOT_FOUND"
 FIELD_BINDING_FIELD_ID_ALREADY_EXISTS = "FIELD_BINDING_FIELD_ID_ALREADY_EXISTS"
 FIELD_BINDING_POSITION_ALREADY_EXISTS = "FIELD_BINDING_POSITION_ALREADY_EXISTS"
+ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
+HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 
 ErrorInfo = Tuple[int, str]
 
@@ -165,6 +167,14 @@ ERROR_MAP = {
     FIELD_BINDING_POSITION_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A binding for this position already exists in the given dataset schema.",
+    ),
+    ENTITY_NOT_DELETED: (
+        status.HTTP_400_BAD_REQUEST,
+        "The entity is not deleted and cannot be restored.",
+    ),
+    HAS_DEPENDENT_ENTITIES: (
+        status.HTTP_409_CONFLICT,
+        "Cannot delete: the entity has dependent records. Remove them first.",
     ),
 }
 

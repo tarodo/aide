@@ -3,6 +3,8 @@ from fastapi import APIRouter
 from backend.api.v1.utils.crud_router import create_crud_router
 from backend.core.errors import (
     CREDENTIAL_REF_NOT_FOUND,
+    ENTITY_NOT_DELETED,
+    HAS_DEPENDENT_ENTITIES,
     SYSTEM_ALREADY_EXISTS,
     SYSTEM_FLAVOR_NOT_FOUND,
     SYSTEM_NOT_FOUND,
@@ -34,7 +36,9 @@ crud_router = create_crud_router(
         CREDENTIAL_REF_NOT_FOUND,
     ],
     get_one_error_codes=[SYSTEM_NOT_FOUND],
-    delete_error_codes=[SYSTEM_NOT_FOUND],
+    delete_error_codes=[SYSTEM_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
+    supports_restore=True,
+    restore_error_codes=[SYSTEM_NOT_FOUND, ENTITY_NOT_DELETED],
 )
 
 router.include_router(crud_router)

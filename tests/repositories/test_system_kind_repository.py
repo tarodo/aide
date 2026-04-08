@@ -48,7 +48,10 @@ async def test_get_by_code(
     assert result == test_system_kind
     call_args = mock_session.execute.call_args[0]
     executed_stmt = call_args[0]
-    expected_stmt = select(SystemKind).where(SystemKind.code == test_system_kind.code)
+    expected_stmt = select(SystemKind).where(
+        SystemKind.code == test_system_kind.code,
+        SystemKind.deleted_at.is_(None),
+    )
     assert str(executed_stmt) == str(expected_stmt)
 
 

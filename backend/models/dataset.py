@@ -5,19 +5,20 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
-from backend.models.mixins import MetaDataMixin
+from backend.models.mixins import SoftDeleteMetaDataMixin
 
 
-class Dataset(Base, MetaDataMixin):
+class Dataset(Base, SoftDeleteMetaDataMixin):
     __tablename__ = "datasets"
 
     system_id: Mapped[uuid.UUID] = mapped_column(
@@ -32,8 +33,12 @@ class Dataset(Base, MetaDataMixin):
     system = relationship("System")
 
     __table_args__ = (
-        UniqueConstraint(
-            "system_id", "object_name", name="idx_dataset_system_id_object_name"
+        Index(
+            "uq_datasets_system_id_object_name_active",
+            "system_id",
+            "object_name",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
         ),
     )
 

@@ -63,10 +63,14 @@ class CastRule(Base, MetaDataMixin):
     __tablename__ = "cast_rules"
 
     source_data_type_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("data_types.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("data_types.id", ondelete="CASCADE"),
+        nullable=False,
     )
     target_data_type_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("data_types.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("data_types.id", ondelete="CASCADE"),
+        nullable=False,
     )
     param_mapping: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     safety: Mapped[CastSafety] = mapped_column(CastSafetyType(), nullable=False)

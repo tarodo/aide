@@ -47,7 +47,26 @@ class NoteMixin:
     note: Mapped[str] = mapped_column(Text, nullable=True)
 
 
+class SoftDeleteMixin:
+    """Mixin for soft-delete support."""
+
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, default=None, index=True
+    )
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, default=None
+    )
+
+
 class MetaDataMixin(UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin):
     """Mixin for metadata fields."""
+
+    pass
+
+
+class SoftDeleteMetaDataMixin(
+    UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin, SoftDeleteMixin
+):
+    """MetaData mixin with soft-delete support for core entities."""
 
     pass

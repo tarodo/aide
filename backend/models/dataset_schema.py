@@ -13,7 +13,9 @@ class DatasetSchema(Base, MetaDataMixin):
     __tablename__ = "dataset_schemas"
 
     dataset_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("datasets.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("datasets.id", ondelete="CASCADE"),
+        nullable=False,
     )
     version_num: Mapped[int] = mapped_column(Integer, nullable=False)
     schema: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

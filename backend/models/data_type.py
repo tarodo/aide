@@ -1,15 +1,15 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
-from backend.models.mixins import MetaDataMixin
+from backend.models.mixins import SoftDeleteMetaDataMixin
 
 
-class DataType(Base, MetaDataMixin):
+class DataType(Base, SoftDeleteMetaDataMixin):
     __tablename__ = "data_types"
 
     system_flavor_id: Mapped[uuid.UUID] = mapped_column(
@@ -22,8 +22,12 @@ class DataType(Base, MetaDataMixin):
     system_flavor = relationship("SystemFlavor", back_populates="data_types")
 
     __table_args__ = (
-        UniqueConstraint(
-            "system_flavor_id", "code", name="idx_data_type_system_flavor_id_code"
+        Index(
+            "uq_data_types_sfid_code_active",
+            "system_flavor_id",
+            "code",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
         ),
     )
 

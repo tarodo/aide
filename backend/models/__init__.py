@@ -12,7 +12,12 @@ from .dataset import (
 from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
 from .field_binding import FieldBinding as FieldBinding
-from .mixins import TimestampMixin, UserTrackingMixin
+from .mixins import (
+    SoftDeleteMetaDataMixin,
+    SoftDeleteMixin,
+    TimestampMixin,
+    UserTrackingMixin,
+)
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
 from .system import System as System
@@ -22,6 +27,8 @@ __all__ = [
     "User",
     "TimestampMixin",
     "UserTrackingMixin",
+    "SoftDeleteMixin",
+    "SoftDeleteMetaDataMixin",
     "SystemKind",
     "SystemFlavor",
     "DataType",
