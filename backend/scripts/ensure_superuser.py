@@ -6,6 +6,10 @@ from backend.services.user import UserService
 
 
 async def _ensure():
+    if not settings.FIRST_SUPERUSER_EMAIL or not settings.FIRST_SUPERUSER_PASSWORD:
+        print("Skip superuser bootstrap: FIRST_SUPERUSER_EMAIL/PASSWORD are not set.")
+        return
+
     service = UserService()
     uow = UnitOfWork()
     user = await service.ensure_initial_superuser(

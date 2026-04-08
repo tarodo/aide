@@ -43,7 +43,10 @@ class Settings(BaseSettings):
     def is_dev(self) -> bool:
         return self.ENV.lower() == "dev"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Keep raw env strings (e.g. CORS_ORIGINS=*) and parse them in validators.
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", enable_decoding=False
+    )
 
 
 settings = Settings()
