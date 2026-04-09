@@ -66,9 +66,7 @@ class TypeInstanceService(
             if not await uow.data_types.get(update_data["data_type_id"]):
                 raise AppException(errors.DATA_TYPE_NOT_FOUND)
 
-    async def get_tree(
-        self, uow: UnitOfWork, root_id: uuid.UUID
-    ) -> TypeInstanceTree:
+    async def get_tree(self, uow: UnitOfWork, root_id: uuid.UUID) -> TypeInstanceTree:
         async with uow:
             repo = cast(TypeInstanceRepository, uow.type_instances)
             db_obj = await repo.get_tree(root_id)

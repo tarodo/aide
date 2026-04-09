@@ -28,7 +28,9 @@ class TypeInstance(Base, MetaDataMixin):
     slot: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     data_type = relationship("DataType")
-    parent = relationship("TypeInstance", remote_side="TypeInstance.id", back_populates="children")
+    parent = relationship(
+        "TypeInstance", remote_side="TypeInstance.id", back_populates="children"
+    )
     children = relationship(
         "TypeInstance",
         back_populates="parent",

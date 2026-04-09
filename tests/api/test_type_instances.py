@@ -48,26 +48,28 @@ async def test_data_types(transactional_session: AsyncSession) -> dict:
     varchar_type = DataType(
         system_flavor=flavor, code="VARCHAR", params_schema={"length": "integer"}
     )
-    array_type = DataType(
-        system_flavor=flavor, code="ARRAY", params_schema={}
-    )
-    struct_type = DataType(
-        system_flavor=flavor, code="STRUCT", params_schema={}
-    )
-    string_type = DataType(
-        system_flavor=flavor, code="STRING", params_schema={}
-    )
-    int_type = DataType(
-        system_flavor=flavor, code="INT", params_schema={}
-    )
-    map_type = DataType(
-        system_flavor=flavor, code="MAP", params_schema={}
-    )
+    array_type = DataType(system_flavor=flavor, code="ARRAY", params_schema={})
+    struct_type = DataType(system_flavor=flavor, code="STRUCT", params_schema={})
+    string_type = DataType(system_flavor=flavor, code="STRING", params_schema={})
+    int_type = DataType(system_flavor=flavor, code="INT", params_schema={})
+    map_type = DataType(system_flavor=flavor, code="MAP", params_schema={})
     decimal_type = DataType(
-        system_flavor=flavor, code="DECIMAL", params_schema={"p": "integer", "s": "integer"}
+        system_flavor=flavor,
+        code="DECIMAL",
+        params_schema={"p": "integer", "s": "integer"},
     )
     transactional_session.add_all(
-        [kind, flavor, varchar_type, array_type, struct_type, string_type, int_type, map_type, decimal_type]
+        [
+            kind,
+            flavor,
+            varchar_type,
+            array_type,
+            struct_type,
+            string_type,
+            int_type,
+            map_type,
+            decimal_type,
+        ]
     )
     await transactional_session.commit()
     return {

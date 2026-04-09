@@ -53,6 +53,7 @@ async def test_get_by_dataset_and_name(
     expected_stmt = select(Field).where(
         Field.dataset_id == test_field.dataset_id,
         Field.name == test_field.name,
+        Field.parent_id.is_(None),
     )
     assert str(executed_stmt) == str(expected_stmt)
 

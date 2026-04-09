@@ -1403,6 +1403,15 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_fld_parent_id",
+          "name": "parent_id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_fld_name",
           "name": "name",
           "type": { "id": "text", "name": "text" },
@@ -1486,10 +1495,24 @@
       ],
       "indexes": [
         {
-          "id": "ix_fld_dataset_name",
-          "name": "idx_field_dataset_id_name",
+          "id": "ix_fld_root_name",
+          "name": "idx_field_root_name",
           "unique": true,
           "fieldIds": ["f_fld_dataset_id", "f_fld_name"],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fld_nested_name",
+          "name": "idx_field_nested_name",
+          "unique": true,
+          "fieldIds": ["f_fld_dataset_id", "f_fld_parent_id", "f_fld_name"],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fld_parent_id",
+          "name": "ix_fields_parent_id",
+          "unique": false,
+          "fieldIds": ["f_fld_parent_id"],
           "createdAt": 1712534400000
         }
       ],
@@ -2054,6 +2077,20 @@
       "targetTableId": "t_fields",
       "sourceFieldId": "f_ds_id",
       "targetFieldId": "f_fld_dataset_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_fld_fld",
+      "name": "field_to_children",
+      "sourceSchema": "public",
+      "sourceTableId": "t_fields",
+      "targetSchema": "public",
+      "targetTableId": "t_fields",
+      "sourceFieldId": "f_fld_id",
+      "targetFieldId": "f_fld_parent_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

@@ -127,7 +127,9 @@ class TestFieldBindingAPI:
         assert response.status_code == 201
         res_json = response.json()
         assert res_json["position"] == 10
-        assert res_json["type_instance_id"] == str(test_dependencies["type_instance"].id)
+        assert res_json["type_instance_id"] == str(
+            test_dependencies["type_instance"].id
+        )
 
     async def test_create_field_binding_duplicate_field(
         self,
