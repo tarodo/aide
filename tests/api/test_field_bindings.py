@@ -17,6 +17,7 @@ from backend.models import (
     System,
     SystemFlavor,
     SystemKind,
+    TypeInstance,
     User,
 )
 
@@ -63,11 +64,22 @@ async def test_dependencies(transactional_session: AsyncSession) -> dict:
     transactional_session.add_all(
         [kind, flavor, system, dataset, schema, field, data_type]
     )
+    await transactional_session.flush()
+
+    type_instance = TypeInstance(
+        data_type_id=data_type.id,
+        type_params={"precision": 10},
+        parent_id=None,
+        slot=None,
+    )
+    transactional_session.add(type_instance)
     await transactional_session.commit()
+
     return {
         "field": field,
         "dataset_schema": schema,
         "data_type": data_type,
+        "type_instance": type_instance,
     }
 
 
@@ -80,8 +92,7 @@ async def test_field_binding(
         dataset_schema=test_dependencies["dataset_schema"],
         position=1,
         is_nullable=False,
-        data_type=test_dependencies["data_type"],
-        type_params={"precision": 10},
+        type_instance=test_dependencies["type_instance"],
     )
     transactional_session.add(binding)
     await transactional_session.commit()
@@ -108,8 +119,7 @@ class TestFieldBindingAPI:
             "dataset_schema_id": str(test_dependencies["dataset_schema"].id),
             "position": 10,
             "is_nullable": True,
-            "data_type_id": str(test_dependencies["data_type"].id),
-            "type_params": {"scale": 2},
+            "type_instance_id": str(test_dependencies["type_instance"].id),
         }
         response = await async_client.post(
             "/api/v1/field-bindings/", json=data, headers=superuser_token_headers
@@ -117,7 +127,7 @@ class TestFieldBindingAPI:
         assert response.status_code == 201
         res_json = response.json()
         assert res_json["position"] == 10
-        assert res_json["type_params"] == {"scale": 2}
+        assert res_json["type_instance_id"] == str(test_dependencies["type_instance"].id)
 
     async def test_create_field_binding_duplicate_field(
         self,
@@ -129,7 +139,7 @@ class TestFieldBindingAPI:
             "field_id": str(test_field_binding.field_id),
             "dataset_schema_id": str(test_field_binding.dataset_schema_id),
             "position": 99,
-            "data_type_id": str(test_field_binding.data_type_id),
+            "type_instance_id": str(test_field_binding.type_instance_id),
         }
         response = await async_client.post(
             "/api/v1/field-bindings/", json=data, headers=superuser_token_headers
@@ -159,7 +169,7 @@ class TestFieldBindingAPI:
             "field_id": str(new_field.id),
             "dataset_schema_id": str(test_field_binding.dataset_schema_id),
             "position": test_field_binding.position,
-            "data_type_id": str(test_field_binding.data_type_id),
+            "type_instance_id": str(test_field_binding.type_instance_id),
         }
         response = await async_client.post(
             "/api/v1/field-bindings/", json=data, headers=superuser_token_headers
@@ -169,6 +179,24 @@ class TestFieldBindingAPI:
             response.json()["error_code"]
             == errors.FIELD_BINDING_POSITION_ALREADY_EXISTS
         )
+
+    async def test_create_field_binding_type_instance_not_found(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_dependencies: dict,
+    ):
+        data = {
+            "field_id": str(test_dependencies["field"].id),
+            "dataset_schema_id": str(test_dependencies["dataset_schema"].id),
+            "position": 1,
+            "type_instance_id": "00000000-0000-0000-0000-000000000000",
+        }
+        response = await async_client.post(
+            "/api/v1/field-bindings/", json=data, headers=superuser_token_headers
+        )
+        assert response.status_code == 404
+        assert response.json()["error_code"] == errors.TYPE_INSTANCE_NOT_FOUND
 
     async def test_get_field_binding_by_id(
         self,

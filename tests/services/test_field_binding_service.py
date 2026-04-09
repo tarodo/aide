@@ -6,7 +6,7 @@ import pytest
 
 from backend.core import errors
 from backend.core.exceptions import AppException
-from backend.models import DatasetSchema, DataType, Field, FieldBinding
+from backend.models import DatasetSchema, Field, FieldBinding, TypeInstance
 from backend.schemas.field_binding import (
     FieldBindingCreate,
     FieldBindingUpdate,
@@ -33,7 +33,7 @@ class _MockDatasetSchemas:
         self.get: AsyncMock = AsyncMock()
 
 
-class _MockDataTypes:
+class _MockTypeInstances:
     def __init__(self) -> None:
         self.get: AsyncMock = AsyncMock()
 
@@ -43,7 +43,7 @@ class _MockUnitOfWork:
         self.session = MagicMock()
         self.fields = _MockFields()
         self.dataset_schemas = _MockDatasetSchemas()
-        self.data_types = _MockDataTypes()
+        self.type_instances = _MockTypeInstances()
 
     async def __aenter__(self) -> "_MockUnitOfWork":
         return self
@@ -73,20 +73,20 @@ def db_dataset_schema() -> DatasetSchema:
 
 
 @pytest.fixture
-def db_data_type() -> DataType:
-    return DataType(id=uuid.uuid4(), code="INT")
+def db_type_instance() -> TypeInstance:
+    return TypeInstance(id=uuid.uuid4(), data_type_id=uuid.uuid4())
 
 
 @pytest.fixture
 def field_binding_create_schema(
-    db_field: Field, db_dataset_schema: DatasetSchema, db_data_type: DataType
+    db_field: Field, db_dataset_schema: DatasetSchema, db_type_instance: TypeInstance
 ) -> FieldBindingCreate:
     return FieldBindingCreate(
         field_id=db_field.id,
         dataset_schema_id=db_dataset_schema.id,
         position=1,
         is_nullable=False,
-        data_type_id=db_data_type.id,
+        type_instance_id=db_type_instance.id,
     )
 
 
@@ -101,7 +101,7 @@ def db_field_binding(
         dataset_schema_id=field_binding_create_schema.dataset_schema_id,
         position=field_binding_create_schema.position,
         is_nullable=field_binding_create_schema.is_nullable,
-        data_type_id=field_binding_create_schema.data_type_id,
+        type_instance_id=field_binding_create_schema.type_instance_id,
         created_at=now,
         updated_at=now,
     )
@@ -153,7 +153,7 @@ class TestFieldBindingService:
         [
             ("field", errors.FIELD_NOT_FOUND),
             ("dataset_schema", errors.DATASET_SCHEMA_NOT_FOUND),
-            ("data_type", errors.DATA_TYPE_NOT_FOUND),
+            ("type_instance", errors.TYPE_INSTANCE_NOT_FOUND),
         ],
     )
     async def test_create_dependency_not_found(
@@ -163,7 +163,7 @@ class TestFieldBindingService:
         field_binding_create_schema: FieldBindingCreate,
         db_field: Field,
         db_dataset_schema: DatasetSchema,
-        db_data_type: DataType,
+        db_type_instance: TypeInstance,
         missing_entity: str,
         error_code: str,
     ):
@@ -177,8 +177,8 @@ class TestFieldBindingService:
         mock_uow.dataset_schemas.get.return_value = (
             None if missing_entity == "dataset_schema" else db_dataset_schema
         )
-        mock_uow.data_types.get.return_value = (
-            None if missing_entity == "data_type" else db_data_type
+        mock_uow.type_instances.get.return_value = (
+            None if missing_entity == "type_instance" else db_type_instance
         )
 
         with patch.object(
@@ -241,7 +241,7 @@ class TestFieldBindingService:
         mock_uow: _MockUnitOfWork,
         db_field_binding: FieldBinding,
     ):
-        update_schema = FieldBindingUpdate(data_type_id=uuid.uuid4())
+        update_schema = FieldBindingUpdate(type_instance_id=uuid.uuid4())
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_field_binding
         mock_repo.get_by_dataset_schema_and_field_id.return_value = None
@@ -250,7 +250,7 @@ class TestFieldBindingService:
         mock_uow.dataset_schemas.get.return_value = DatasetSchema(
             id=db_field_binding.dataset_schema_id
         )
-        mock_uow.data_types.get.return_value = None
+        mock_uow.type_instances.get.return_value = None
 
         with patch.object(
             field_binding_service, "_get_repository", return_value=mock_repo
@@ -259,4 +259,4 @@ class TestFieldBindingService:
                 await field_binding_service.update(
                     uow=mock_uow, obj_id=db_field_binding.id, obj_in=update_schema
                 )
-        assert exc_info.value.error_code == errors.DATA_TYPE_NOT_FOUND
+        assert exc_info.value.error_code == errors.TYPE_INSTANCE_NOT_FOUND

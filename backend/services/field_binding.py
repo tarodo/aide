@@ -36,14 +36,14 @@ class FieldBindingService(
         uow: UnitOfWork,
         field_id: uuid.UUID,
         dataset_schema_id: uuid.UUID,
-        data_type_id: uuid.UUID,
+        type_instance_id: uuid.UUID,
     ) -> None:
         if not await uow.fields.get(field_id):
             raise AppException(errors.FIELD_NOT_FOUND)
         if not await uow.dataset_schemas.get(dataset_schema_id):
             raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
-        if not await uow.data_types.get(data_type_id):
-            raise AppException(errors.DATA_TYPE_NOT_FOUND)
+        if not await uow.type_instances.get(type_instance_id):
+            raise AppException(errors.TYPE_INSTANCE_NOT_FOUND)
 
     async def _pre_create(
         self,
@@ -62,7 +62,7 @@ class FieldBindingService(
             raise AppException(errors.FIELD_BINDING_POSITION_ALREADY_EXISTS)
 
         await self._validate_dependencies(
-            uow, obj_in.field_id, obj_in.dataset_schema_id, obj_in.data_type_id
+            uow, obj_in.field_id, obj_in.dataset_schema_id, obj_in.type_instance_id
         )
 
     async def _pre_update(
@@ -99,5 +99,5 @@ class FieldBindingService(
             uow,
             new_field_id,
             new_schema_id,
-            update_data.get("data_type_id", db_obj.data_type_id),
+            update_data.get("type_instance_id", db_obj.type_instance_id),
         )

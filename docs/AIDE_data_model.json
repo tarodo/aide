@@ -2,7 +2,7 @@
   "id": "0",
   "name": "AIDE V3",
   "createdAt": "2025-11-14T17:14:17.452Z",
-  "updatedAt": "2026-04-08T12:00:00.000Z",
+  "updatedAt": "2026-04-09T12:00:00.000Z",
   "databaseType": "postgresql",
   "tables": [
     {
@@ -1665,21 +1665,12 @@
           "createdAt": 1712534400000
         },
         {
-          "id": "f_fb_data_type_id",
-          "name": "data_type_id",
+          "id": "f_fb_type_instance_id",
+          "name": "type_instance_id",
           "type": { "id": "uuid", "name": "uuid" },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
-          "createdAt": 1712534400000
-        },
-        {
-          "id": "f_fb_type_params",
-          "name": "type_params",
-          "type": { "id": "jsonb", "name": "jsonb" },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
           "createdAt": 1712534400000
         },
         {
@@ -1744,10 +1735,10 @@
           "createdAt": 1712534400000
         },
         {
-          "id": "ix_fb_data_type",
-          "name": "ix_field_bindings_data_type_id",
+          "id": "ix_fb_type_instance",
+          "name": "ix_field_bindings_type_instance_id",
           "unique": false,
-          "fieldIds": ["f_fb_data_type_id"],
+          "fieldIds": ["f_fb_type_instance_id"],
           "createdAt": 1712534400000
         }
       ],
@@ -1755,6 +1746,133 @@
       "isView": false,
       "createdAt": 1712534400000,
       "order": 15,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_type_instances",
+      "name": "type_instances",
+      "schema": "public",
+      "x": 3354,
+      "y": -2300,
+      "fields": [
+        {
+          "id": "f_ti_id",
+          "name": "id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_data_type_id",
+          "name": "data_type_id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_type_params",
+          "name": "type_params",
+          "type": { "id": "jsonb", "name": "jsonb" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_parent_id",
+          "name": "parent_id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_slot",
+          "name": "slot",
+          "type": { "id": "varchar", "name": "varchar(255)" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_created_at",
+          "name": "created_at",
+          "type": { "id": "timestamp", "name": "timestamp" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_updated_at",
+          "name": "updated_at",
+          "type": { "id": "timestamp", "name": "timestamp" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_created_by",
+          "name": "created_by",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_updated_by",
+          "name": "updated_by",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_note",
+          "name": "note",
+          "type": { "id": "text", "name": "text" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_ti_data_type",
+          "name": "ix_type_instances_data_type_id",
+          "unique": false,
+          "fieldIds": ["f_ti_data_type_id"],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_ti_parent",
+          "name": "ix_type_instances_parent_id",
+          "unique": false,
+          "fieldIds": ["f_ti_parent_id"],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "uq_ti_parent_slot",
+          "name": "uq_type_instance_parent_slot",
+          "unique": true,
+          "fieldIds": ["f_ti_parent_id", "f_ti_slot"],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#c4a8ff",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 16,
       "diagramId": "w0gac180t7j1"
     }
   ],
@@ -1984,14 +2102,42 @@
       "diagramId": "w0gac180t7j1"
     },
     {
-      "id": "rel_dt_fb",
-      "name": "data_type_to_field_binding",
+      "id": "rel_dt_ti",
+      "name": "data_type_to_type_instance",
       "sourceSchema": "public",
       "sourceTableId": "t_data_types",
       "targetSchema": "public",
-      "targetTableId": "t_field_bindings",
+      "targetTableId": "t_type_instances",
       "sourceFieldId": "f_dt_id",
-      "targetFieldId": "f_fb_data_type_id",
+      "targetFieldId": "f_ti_data_type_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_ti_ti",
+      "name": "type_instance_to_children",
+      "sourceSchema": "public",
+      "sourceTableId": "t_type_instances",
+      "targetSchema": "public",
+      "targetTableId": "t_type_instances",
+      "sourceFieldId": "f_ti_id",
+      "targetFieldId": "f_ti_parent_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_ti_fb",
+      "name": "type_instance_to_field_binding",
+      "sourceSchema": "public",
+      "sourceTableId": "t_type_instances",
+      "targetSchema": "public",
+      "targetTableId": "t_field_bindings",
+      "sourceFieldId": "f_ti_id",
+      "targetFieldId": "f_fb_type_instance_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

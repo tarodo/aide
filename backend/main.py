@@ -15,6 +15,7 @@ from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import datasets as v1_datasets
 from backend.api.v1 import dataset_schemas as v1_dataset_schemas
 from backend.api.v1 import field_bindings as v1_field_bindings
+from backend.api.v1 import type_instances as v1_type_instances
 from backend.api.v1 import fields as v1_fields
 from backend.api.v1 import login as v1_login
 from backend.api.v1 import system_flavors as v1_system_flavors
@@ -218,6 +219,12 @@ app.include_router(
     v1_field_bindings.router,
     prefix=f"{api_v1_prefix}/field-bindings",
     tags=["Field Bindings"],
+)
+
+app.include_router(
+    v1_type_instances.router,
+    prefix=f"{api_v1_prefix}/type-instances",
+    tags=["Type Instances"],
 )
 
 

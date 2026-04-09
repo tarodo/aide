@@ -1,8 +1,7 @@
 import uuid
-from typing import Any
 
 from sqlalchemy import Boolean, ForeignKey, Integer, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -22,17 +21,16 @@ class FieldBinding(Base, MetaDataMixin):
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     is_nullable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    data_type_id: Mapped[uuid.UUID] = mapped_column(
+    type_instance_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("data_types.id", ondelete="CASCADE"),
+        ForeignKey("type_instances.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    type_params: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     field = relationship("Field")
     dataset_schema = relationship("DatasetSchema")
-    data_type = relationship("DataType")
+    type_instance = relationship("TypeInstance")
 
     __table_args__ = (
         UniqueConstraint(

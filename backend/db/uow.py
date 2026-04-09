@@ -13,6 +13,7 @@ from backend.repositories.field_binding import FieldBindingRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
 from backend.repositories.system_kind import SystemKindRepository
+from backend.repositories.type_instance import TypeInstanceRepository
 from backend.repositories.user import UserRepository
 
 
@@ -33,6 +34,7 @@ class UnitOfWork:
         self.fields = FieldRepository(self.session)
         self.dataset_schemas = DatasetSchemaRepository(self.session)
         self.field_bindings = FieldBindingRepository(self.session)
+        self.type_instances = TypeInstanceRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

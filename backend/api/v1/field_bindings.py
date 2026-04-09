@@ -3,11 +3,11 @@ from fastapi import APIRouter
 from backend.api.v1.utils.crud_router import create_crud_router
 from backend.core.errors import (
     DATASET_SCHEMA_NOT_FOUND,
-    DATA_TYPE_NOT_FOUND,
     FIELD_BINDING_FIELD_ID_ALREADY_EXISTS,
     FIELD_BINDING_NOT_FOUND,
     FIELD_BINDING_POSITION_ALREADY_EXISTS,
     FIELD_NOT_FOUND,
+    TYPE_INSTANCE_NOT_FOUND,
 )
 from backend.schemas.field_binding import (
     FieldBindingCreate,
@@ -29,7 +29,7 @@ crud_router = create_crud_router(
         FIELD_BINDING_POSITION_ALREADY_EXISTS,
         FIELD_NOT_FOUND,
         DATASET_SCHEMA_NOT_FOUND,
-        DATA_TYPE_NOT_FOUND,
+        TYPE_INSTANCE_NOT_FOUND,
     ],
     update_error_codes=[
         FIELD_BINDING_NOT_FOUND,
@@ -37,7 +37,7 @@ crud_router = create_crud_router(
         FIELD_BINDING_POSITION_ALREADY_EXISTS,
         FIELD_NOT_FOUND,
         DATASET_SCHEMA_NOT_FOUND,
-        DATA_TYPE_NOT_FOUND,
+        TYPE_INSTANCE_NOT_FOUND,
     ],
     get_one_error_codes=[FIELD_BINDING_NOT_FOUND],
     delete_error_codes=[FIELD_BINDING_NOT_FOUND],

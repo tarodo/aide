@@ -42,6 +42,11 @@ DATASET_SCHEMA_ALREADY_EXISTS = "DATASET_SCHEMA_ALREADY_EXISTS"
 FIELD_BINDING_NOT_FOUND = "FIELD_BINDING_NOT_FOUND"
 FIELD_BINDING_FIELD_ID_ALREADY_EXISTS = "FIELD_BINDING_FIELD_ID_ALREADY_EXISTS"
 FIELD_BINDING_POSITION_ALREADY_EXISTS = "FIELD_BINDING_POSITION_ALREADY_EXISTS"
+TYPE_INSTANCE_NOT_FOUND = "TYPE_INSTANCE_NOT_FOUND"
+TYPE_INSTANCE_SLOT_ALREADY_EXISTS = "TYPE_INSTANCE_SLOT_ALREADY_EXISTS"
+TYPE_INSTANCE_SLOT_REQUIRED = "TYPE_INSTANCE_SLOT_REQUIRED"
+TYPE_INSTANCE_SLOT_FORBIDDEN = "TYPE_INSTANCE_SLOT_FORBIDDEN"
+TYPE_INSTANCE_PARENT_NOT_FOUND = "TYPE_INSTANCE_PARENT_NOT_FOUND"
 ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
 HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 
@@ -167,6 +172,26 @@ ERROR_MAP = {
     FIELD_BINDING_POSITION_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A binding for this position already exists in the given dataset schema.",
+    ),
+    TYPE_INSTANCE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested type instance was not found.",
+    ),
+    TYPE_INSTANCE_SLOT_ALREADY_EXISTS: (
+        status.HTTP_400_BAD_REQUEST,
+        "A type instance with this slot already exists under the given parent.",
+    ),
+    TYPE_INSTANCE_SLOT_REQUIRED: (
+        status.HTTP_400_BAD_REQUEST,
+        "Slot is required when parent_id is set.",
+    ),
+    TYPE_INSTANCE_SLOT_FORBIDDEN: (
+        status.HTTP_400_BAD_REQUEST,
+        "Slot must be null for root type instances (parent_id is null).",
+    ),
+    TYPE_INSTANCE_PARENT_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The specified parent type instance was not found.",
     ),
     ENTITY_NOT_DELETED: (
         status.HTTP_400_BAD_REQUEST,

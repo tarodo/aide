@@ -1,5 +1,4 @@
 import uuid
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,8 +12,7 @@ class FieldBindingBase(BaseModel):
     dataset_schema_id: uuid.UUID
     position: int
     is_nullable: bool = True
-    data_type_id: uuid.UUID
-    type_params: dict[str, Any] | None = None
+    type_instance_id: uuid.UUID
 
 
 class FieldBindingCreate(FieldBindingBase, NoteMixin):
@@ -30,8 +28,7 @@ class FieldBindingUpdate(NoteMixin):
     dataset_schema_id: uuid.UUID | None = None
     position: int | None = None
     is_nullable: bool | None = None
-    data_type_id: uuid.UUID | None = None
-    type_params: dict[str, Any] | None = None
+    type_instance_id: uuid.UUID | None = None
 
 
 class FieldBindingRead(FieldBindingBase, MetaDataMixin):
