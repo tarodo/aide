@@ -24,15 +24,18 @@ def test_root(client: TestClient):
 def test_app_exception_handler(client: TestClient):
     response = client.get("/__test_app_exception")
     status_code, detail = errors.ERROR_MAP[errors.USER_NOT_FOUND]
+    body = response.json()
     assert response.status_code == status_code
-    assert response.json() == {"error_code": errors.USER_NOT_FOUND, "detail": detail}
+    assert body["error_code"] == errors.USER_NOT_FOUND
+    assert body["detail"] == detail
+    assert isinstance(body["request_id"], str)
 
 
 def test_unhandled_exception_handler(client: TestClient):
     with TestClient(app, raise_server_exceptions=False) as raw_client:
         response = raw_client.get("/__test_unhandled_exception")
+    body = response.json()
     assert response.status_code == 500
-    assert response.json() == {
-        "error_code": "INTERNAL_SERVER_ERROR",
-        "detail": "An unexpected internal error occurred.",
-    }
+    assert body["error_code"] == "INTERNAL_SERVER_ERROR"
+    assert body["detail"] == "An unexpected internal error occurred."
+    assert isinstance(body["request_id"], str)

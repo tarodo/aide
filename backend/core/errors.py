@@ -271,7 +271,11 @@ def build_error_responses(
         examples = {
             code: {
                 "summary": code,
-                "value": {"error_code": code, "detail": detail},
+                "value": {
+                    "error_code": code,
+                    "detail": detail,
+                    "request_id": "b5d6f2a0-1234-4abc-9def-0123456789ab",
+                },
             }
             for code, (_, detail) in items
         }

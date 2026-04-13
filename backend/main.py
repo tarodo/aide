@@ -82,9 +82,14 @@ async def app_exception_handler(request: Request, exc: AppException):
         error_code,
         (status.HTTP_500_INTERNAL_SERVER_ERROR, "An internal error occurred"),
     )
+    ctx = structlog.contextvars.get_contextvars()
     return JSONResponse(
         status_code=status_code,
-        content=ErrorResponse(error_code=error_code, detail=detail).model_dump(),
+        content=ErrorResponse(
+            error_code=error_code,
+            detail=detail,
+            request_id=ctx.get("request_id"),
+        ).model_dump(),
     )
 
 
@@ -92,11 +97,13 @@ async def app_exception_handler(request: Request, exc: AppException):
 async def unhandled_exception_handler(request: Request, exc: Exception):
     """Handles any unhandled exceptions as a fallback."""
     logger.exception("Unhandled exception occurred", exc_info=exc)
+    ctx = structlog.contextvars.get_contextvars()
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=ErrorResponse(
             error_code="INTERNAL_SERVER_ERROR",
             detail="An unexpected internal error occurred.",
+            request_id=ctx.get("request_id"),
         ).model_dump(),
     )
 

@@ -12,3 +12,4 @@ class ErrorResponse(BaseModel):
 
     error_code: str
     detail: str
+    request_id: str | None = None
