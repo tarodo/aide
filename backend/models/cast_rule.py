@@ -2,7 +2,7 @@ import enum
 import uuid
 from typing import Any
 
-from sqlalchemy import Enum, ForeignKey, TypeDecorator, UniqueConstraint
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,53 +10,10 @@ from backend.db.base import Base
 from backend.models.mixins import MetaDataMixin
 
 
-class CastSafety(enum.Enum):
+class CastSafety(str, enum.Enum):
     IMPLICIT = "implicit"
     SAFE = "safe"
     UNSAFE = "unsafe"
-
-
-class CastSafetyType(TypeDecorator):
-    """Type decorator to convert between enum values (API) and enum names (DB)."""
-
-    impl = Enum(
-        "IMPLICIT",
-        "SAFE",
-        "UNSAFE",
-        name="castsafety",
-        native_enum=True,
-        create_type=False,
-    )
-    cache_ok = True
-
-    def process_bind_param(self, value, dialect):
-        """Convert enum value to enum name for database storage."""
-        if value is None:
-            return None
-        if isinstance(value, CastSafety):
-            return value.name  # Use enum name (IMPLICIT, SAFE, UNSAFE) for DB
-        if isinstance(value, str):
-            # If it's a string from API (lowercase), convert to enum then to name
-            try:
-                return CastSafety(value).name
-            except ValueError:
-                # If not found by value, assume it's already a name (uppercase)
-                return value.upper()
-        return value
-
-    def process_result_value(self, value, dialect):
-        """Convert enum name from database to enum value."""
-        if value is None:
-            return None
-        if isinstance(value, str):
-            # Convert DB enum name (uppercase) to Python enum
-            try:
-                return CastSafety[value]
-            except KeyError:
-                # If not found by name, try by value (lowercase)
-                return CastSafety(value)
-        # If it's already a CastSafety enum, return as-is
-        return value
 
 
 class CastRule(Base, MetaDataMixin):
@@ -73,7 +30,7 @@ class CastRule(Base, MetaDataMixin):
         nullable=False,
     )
     param_mapping: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    safety: Mapped[CastSafety] = mapped_column(CastSafetyType(), nullable=False)
+    safety: Mapped[str] = mapped_column(String(20), nullable=False)
 
     source_data_type = relationship("DataType", foreign_keys=[source_data_type_id])
     target_data_type = relationship("DataType", foreign_keys=[target_data_type_id])

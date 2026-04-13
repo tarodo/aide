@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from backend.models.refresh_token import RefreshToken
 
 from backend.db.base import Base
 from backend.models.mixins import MetaDataMixin

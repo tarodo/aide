@@ -862,7 +862,7 @@
         {
           "id": "f_cr2_safety",
           "name": "safety",
-          "type": { "id": "castsafety", "name": "castsafety" },
+          "type": { "id": "varchar", "name": "varchar(20)" },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -2308,13 +2308,5 @@
   ],
   "dependencies": [],
   "areas": [],
-  "customTypes": [
-    {
-      "id": "ct_castsafety",
-      "name": "castsafety",
-      "kind": "enum",
-      "values": ["IMPLICIT", "SAFE", "UNSAFE"],
-      "createdAt": 1712534400000
-    }
-  ]
+  "customTypes": []
 }

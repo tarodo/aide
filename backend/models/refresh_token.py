@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
+
+if TYPE_CHECKING:
+    from backend.models.user import User
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
