@@ -97,13 +97,18 @@ class DatasetService(
         size: int,
         filters: dict[str, Any] | None = None,
         sort: list[tuple[str, bool]] | None = None,
+        include_deleted: bool = False,
     ) -> Page[AnyDatasetRead]:
         """Get a paginated list of datasets."""
         skip = (page - 1) * size
         async with uow:
             repo = cast(DatasetRepository, self._get_repository(uow.session))
             items, total = await repo.get_multi_paginated(
-                skip=skip, limit=size, filters=filters, sort=sort
+                skip=skip,
+                limit=size,
+                filters=filters,
+                sort=sort,
+                include_deleted=include_deleted,
             )
             pages = math.ceil(total / size) if size > 0 else 0
 

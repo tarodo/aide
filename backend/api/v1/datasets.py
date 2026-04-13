@@ -1,11 +1,12 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.api.dependencies import (
     get_current_superuser,
     get_current_user,
+    get_current_user_optional,
 )
 from backend.api.filter_sort import FilterSortParams, get_filter_sort_dependency
 from backend.core.errors import (
@@ -40,16 +41,27 @@ _filter_sort = get_filter_sort_dependency(
     summary="Get all datasets (paginated)",
 )
 async def get_all(
+    include_deleted: bool = Query(
+        False, description="Include soft-deleted records (superuser only)"
+    ),
     service: DatasetService = Depends(DatasetService),
     uow: UnitOfWork = Depends(UnitOfWork),
     params: FilterSortParams = Depends(_filter_sort),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> Any:
+    if include_deleted:
+        if not current_user or not current_user.is_superuser:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Superuser privileges required for include_deleted",
+            )
     return await service.get_paginated(
         uow=uow,
         page=params.page,
         size=params.size,
         filters=params.filters,
         sort=params.sort,
+        include_deleted=include_deleted,
     )
 
 

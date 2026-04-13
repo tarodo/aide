@@ -12,6 +12,9 @@ from backend.models import User
 from backend.schemas.token import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/login", auto_error=False
+)
 
 
 @dataclass(frozen=True)
@@ -76,3 +79,30 @@ async def get_current_superuser(
             detail="The user doesn't have enough privileges",
         )
     return current_user
+
+
+async def get_current_user_optional(
+    token: Annotated[str | None, Depends(oauth2_scheme_optional)],
+    uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
+) -> User | None:
+    """Return the current user if a valid token is present, else None."""
+    if token is None:
+        return None
+    try:
+        payload = decode_access_token(token)
+        token_data = TokenData(user_id=payload.get("user_id"))
+    except (JWTError, ValueError):
+        return None
+
+    if token_data.user_id is None:
+        return None
+
+    async with uow:
+        user = await uow.users.get(uuid.UUID(token_data.user_id))
+        if user is None or not user.is_active:
+            return None
+        _ = user.is_superuser
+        session = getattr(uow, "session", None)
+        if session is not None:
+            session.expunge(user)
+        return user

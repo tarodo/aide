@@ -100,6 +100,7 @@ class BaseRepository(Generic[ModelType]):
         limit: int = 100,
         filters: dict[str, Any] | None = None,
         sort: list[tuple[str, bool]] | None = None,
+        include_deleted: bool = False,
     ) -> tuple[Sequence[ModelType], int]:
         total_query = select(func.count()).select_from(self.model)
         if filters:
@@ -177,12 +178,13 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
         limit: int = 100,
         filters: dict[str, Any] | None = None,
         sort: list[tuple[str, bool]] | None = None,
+        include_deleted: bool = False,
     ) -> tuple[Sequence[SoftDeleteModelType], int]:
-        total_query = (
-            select(func.count())
-            .select_from(self.model)
-            .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
-        )
+        total_query = select(func.count()).select_from(self.model)
+        if not include_deleted:
+            total_query = total_query.where(
+                self.model.deleted_at.is_(None)  # type: ignore[attr-defined]
+            )
         if filters:
             total_query = self._apply_filters(total_query, filters)
         total_result = await self._execute(
@@ -190,9 +192,11 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
         )
         total = total_result.scalar_one()
 
-        items_query = select(self.model).where(
-            self.model.deleted_at.is_(None)  # type: ignore[attr-defined]
-        )
+        items_query = select(self.model)
+        if not include_deleted:
+            items_query = items_query.where(
+                self.model.deleted_at.is_(None)  # type: ignore[attr-defined]
+            )
         if filters:
             items_query = self._apply_filters(items_query, filters)
         if sort:

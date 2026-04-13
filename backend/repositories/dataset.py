@@ -35,19 +35,22 @@ class DatasetRepository(SoftDeleteRepository[Dataset]):
         limit: int = 100,
         filters: dict[str, Any] | None = None,
         sort: list[tuple[str, bool]] | None = None,
+        include_deleted: bool = False,
     ) -> tuple[list[Dataset], int]:
-        """Get multiple non-deleted datasets with pagination and polymorphic loading."""
+        """Get multiple datasets with pagination and polymorphic loading."""
         poly = with_polymorphic(Dataset, "*")
 
-        total_query = (
-            select(func.count()).select_from(poly).where(poly.deleted_at.is_(None))
-        )
+        total_query = select(func.count()).select_from(poly)
+        if not include_deleted:
+            total_query = total_query.where(poly.deleted_at.is_(None))
         if filters:
             total_query = self._apply_filters(total_query, filters, entity=poly)
         total_result = await self.session.execute(total_query)
         total = total_result.scalar_one()
 
-        items_query = select(poly).where(poly.deleted_at.is_(None))
+        items_query = select(poly)
+        if not include_deleted:
+            items_query = items_query.where(poly.deleted_at.is_(None))
         if filters:
             items_query = self._apply_filters(items_query, filters, entity=poly)
         if sort:

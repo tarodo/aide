@@ -1,13 +1,14 @@
 import uuid
 from typing import Any, List, Sequence, Type, TypeVar
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
 from backend.api.dependencies import (
     PaginationParams,
     get_current_superuser,
     get_current_user,
+    get_current_user_optional,
     get_pagination_params,
 )
 from backend.api.filter_sort import (
@@ -65,7 +66,43 @@ def create_crud_router(
     if restore_dependencies is None:
         restore_dependencies = [Depends(get_current_superuser)]
 
-    if filter_model is not None:
+    if filter_model is not None and supports_restore:
+        _filter_sort_dep = get_filter_sort_dependency(
+            filter_model, sortable_fields or set(), default_sort
+        )
+
+        @router.get(
+            "/",
+            response_model=Page[read_schema],  # type: ignore[valid-type]
+            summary=f"Get all {entity_name}s (paginated)",
+            dependencies=get_all_dependencies,
+        )
+        async def get_all_filtered_soft(
+            include_deleted: bool = Query(
+                False,
+                description="Include soft-deleted records (superuser only)",
+            ),
+            service: ServiceType = Depends(service_dependency),
+            uow: UnitOfWork = Depends(UnitOfWork),
+            params: FilterSortParams = Depends(_filter_sort_dep),
+            current_user: User | None = Depends(get_current_user_optional),
+        ) -> Any:
+            if include_deleted:
+                if not current_user or not current_user.is_superuser:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Superuser privileges required for include_deleted",
+                    )
+            return await service.get_paginated(
+                uow=uow,
+                page=params.page,
+                size=params.size,
+                filters=params.filters,
+                sort=params.sort,
+                include_deleted=include_deleted,
+            )
+
+    elif filter_model is not None:
         _filter_sort_dep = get_filter_sort_dependency(
             filter_model, sortable_fields or set(), default_sort
         )

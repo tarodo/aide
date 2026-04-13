@@ -89,6 +89,22 @@ async def test_system(
     return s
 
 
+@pytest_asyncio.fixture
+async def regular_user(transactional_session: AsyncSession) -> User:
+    """Fixture for a non-superuser persisted in the database."""
+    user = User(
+        email="sys_regular.user@example.com",
+        hashed_password=get_password_hash("password123"),
+        full_name="Regular User",
+        is_active=True,
+        is_superuser=False,
+    )
+    transactional_session.add(user)
+    await transactional_session.commit()
+    await transactional_session.refresh(user)
+    return user
+
+
 @pytest.mark.asyncio
 class TestSystemAPI:
     @pytest.fixture
@@ -346,3 +362,68 @@ class TestSystemAPI:
         assert all(item["is_active"] is True for item in data["items"])
         codes = [item["code"] for item in data["items"]]
         assert codes == sorted(codes, reverse=True)
+
+    async def test_include_deleted_default_hides_deleted(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        # Delete the system
+        await async_client.delete(
+            f"/api/v1/systems/{test_system.id}",
+            headers=superuser_token_headers,
+        )
+        # Default list should not include it
+        response = await async_client.get(
+            "/api/v1/systems/", headers=superuser_token_headers
+        )
+        assert response.status_code == 200
+        ids = [item["id"] for item in response.json()["items"]]
+        assert str(test_system.id) not in ids
+
+    async def test_include_deleted_true_shows_deleted(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        # Delete the system
+        await async_client.delete(
+            f"/api/v1/systems/{test_system.id}",
+            headers=superuser_token_headers,
+        )
+        # include_deleted=true should show it
+        response = await async_client.get(
+            "/api/v1/systems/?include_deleted=true",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        ids = [item["id"] for item in response.json()["items"]]
+        assert str(test_system.id) in ids
+
+    async def test_include_deleted_non_superuser_forbidden(
+        self,
+        async_client: AsyncClient,
+        regular_user: User,
+    ):
+        # Get regular user token
+        login_data = {
+            "username": regular_user.email,
+            "password": "password123",
+        }
+        r = await async_client.post("/api/v1/login/", data=login_data)
+        token = r.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = await async_client.get(
+            "/api/v1/systems/?include_deleted=true", headers=headers
+        )
+        assert response.status_code == 403
+
+    async def test_include_deleted_unauthenticated_forbidden(
+        self,
+        async_client: AsyncClient,
+    ):
+        response = await async_client.get("/api/v1/systems/?include_deleted=true")
+        assert response.status_code == 403
