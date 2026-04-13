@@ -1,4 +1,5 @@
 from .credential_ref import CredentialRef as CredentialRef
+from .refresh_token import RefreshToken as RefreshToken
 from .cast_rule import CastRule, CastSafety
 from .data_type import DataType as DataType
 from .dataset import (
@@ -22,10 +23,12 @@ from .mixins import (
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
 from .system import System as System
-from .user import User as User
+from .user import User as User, UserType as UserType
 
 __all__ = [
     "User",
+    "UserType",
+    "RefreshToken",
     "TimestampMixin",
     "UserTrackingMixin",
     "SoftDeleteMixin",

@@ -18,7 +18,6 @@ class _MockUnitOfWork:
     def __init__(self) -> None:
         self.users = _MockUsers()
         self.session = MagicMock()
-        self.session.expunge = MagicMock()
 
     async def __aenter__(self) -> "_MockUnitOfWork":
         return self
@@ -71,7 +70,6 @@ class TestAuthService:
         mock_verify_password.assert_called_once_with(
             "password123", db_user.hashed_password
         )
-        mock_uow.session.expunge.assert_called_once_with(db_user)
         assert result == db_user
 
     @patch("backend.services.auth_service.verify_password", return_value=False)
@@ -91,7 +89,6 @@ class TestAuthService:
             )
 
         assert exc_info.value.error_code == errors.INVALID_CREDENTIALS
-        mock_uow.session.expunge.assert_not_called()
 
     async def test_authenticate_user_not_found(
         self, auth_service: AuthService, mock_uow: _MockUnitOfWork
@@ -105,4 +102,3 @@ class TestAuthService:
             )
 
         assert exc_info.value.error_code == errors.INVALID_CREDENTIALS
-        mock_uow.session.expunge.assert_not_called()

@@ -2,7 +2,7 @@
   "id": "0",
   "name": "AIDE V3",
   "createdAt": "2025-11-14T17:14:17.452Z",
-  "updatedAt": "2026-04-09T12:00:00.000Z",
+  "updatedAt": "2026-04-13T12:00:00.000Z",
   "databaseType": "postgresql",
   "tables": [
     {
@@ -67,6 +67,16 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_users_user_type",
+          "name": "user_type",
+          "type": { "id": "varchar", "name": "varchar(20)" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "regular",
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_users_created_at",
           "name": "created_at",
           "type": { "id": "timestamp", "name": "timestamp" },
@@ -119,12 +129,112 @@
           "unique": true,
           "fieldIds": ["f_users_email"],
           "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_users_user_type",
+          "name": "ix_users_user_type",
+          "unique": false,
+          "fieldIds": ["f_users_user_type"],
+          "createdAt": 1712534400000
         }
       ],
       "color": "#b39ddb",
       "isView": false,
       "createdAt": 1712534400000,
       "order": 0,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_refresh_tokens",
+      "name": "refresh_tokens",
+      "schema": "public",
+      "x": 800,
+      "y": -2600,
+      "fields": [
+        {
+          "id": "f_rt_id",
+          "name": "id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_token_hash",
+          "name": "token_hash",
+          "type": { "id": "varchar", "name": "varchar(64)" },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_user_id",
+          "name": "user_id",
+          "type": { "id": "uuid", "name": "uuid" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_expires_at",
+          "name": "expires_at",
+          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_revoked_at",
+          "name": "revoked_at",
+          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_created_at",
+          "name": "created_at",
+          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_rt_client_info",
+          "name": "client_info",
+          "type": { "id": "varchar", "name": "varchar(255)" },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_rt_token_hash",
+          "name": "ix_refresh_tokens_token_hash",
+          "unique": true,
+          "fieldIds": ["f_rt_token_hash"],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_rt_user_id",
+          "name": "ix_refresh_tokens_user_id",
+          "unique": false,
+          "fieldIds": ["f_rt_user_id"],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#ef9a9a",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 1,
       "diagramId": "w0gac180t7j1"
     },
     {
@@ -2175,6 +2285,21 @@
       "targetTableId": "t_field_bindings",
       "sourceFieldId": "f_ti_id",
       "targetFieldId": "f_fb_type_instance_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    }
+    ,
+    {
+      "id": "rel_user_rt",
+      "name": "user_to_refresh_tokens",
+      "sourceSchema": "public",
+      "sourceTableId": "t_users",
+      "targetSchema": "public",
+      "targetTableId": "t_refresh_tokens",
+      "sourceFieldId": "f_users_id",
+      "targetFieldId": "f_rt_user_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

@@ -7,6 +7,7 @@ import pytest
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.models import User
+from backend.models.user import UserType
 from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
@@ -64,6 +65,7 @@ def db_user() -> User:
         hashed_password="hashed_password_string",
         is_active=True,
         is_superuser=False,
+        user_type=UserType.REGULAR.value,
         created_by=user_id,
         updated_by=user_id,
         created_at=now,
@@ -83,6 +85,7 @@ def db_superuser() -> User:
         hashed_password="hashed_password_string",
         is_active=True,
         is_superuser=True,
+        user_type=UserType.REGULAR.value,
         created_by=user_id,
         updated_by=user_id,
         created_at=now,

@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -48,3 +50,18 @@ def decode_access_token(token: str) -> dict:
         algorithms=[settings.JWT_ALGORITHM],
     )
     return payload
+
+
+def generate_refresh_token() -> tuple[str, str]:
+    """Generate a cryptographically secure refresh token.
+
+    Returns (raw_token, token_hash). Only the hash is stored in DB.
+    """
+    raw_token = secrets.token_urlsafe(48)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    return raw_token, token_hash
+
+
+def hash_refresh_token(raw_token: str) -> str:
+    """Hash a raw refresh token for DB lookup."""
+    return hashlib.sha256(raw_token.encode()).hexdigest()
