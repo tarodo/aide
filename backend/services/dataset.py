@@ -142,11 +142,17 @@ class DatasetService(
     ) -> AnyDatasetRead:
         """Update an existing dataset."""
         update_data = obj_in.model_dump(exclude_unset=True)
+        client_row_version = update_data.pop("row_version", None)
+
         async with uow:
             repo = cast(DatasetRepository, self._get_repository(uow.session))
             db_obj = await repo.get(obj_id)
             if not db_obj:
                 raise AppException(self.not_found_error_code)
+
+            if client_row_version is not None and hasattr(db_obj, "row_version"):
+                if db_obj.row_version != client_row_version:
+                    raise AppException(errors.VERSION_CONFLICT)
 
             if obj_in.kind != db_obj.kind:
                 raise AppException(errors.DATASET_KIND_MISMATCH)
@@ -156,6 +162,9 @@ class DatasetService(
             update_data.pop("kind", None)
             for field, value in update_data.items():
                 setattr(db_obj, field, value)
+
+            if hasattr(db_obj, "row_version"):
+                db_obj.row_version += 1
 
             if updater_id and hasattr(db_obj, "updated_by"):
                 setattr(db_obj, "updated_by", updater_id)

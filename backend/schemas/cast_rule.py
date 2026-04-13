@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class CastSafety(str, enum.Enum):
@@ -28,7 +28,7 @@ class CastRuleCreate(CastRuleBase, NoteMixin):
     pass
 
 
-class CastRuleUpdate(NoteMixin):
+class CastRuleUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for cast rule update."""
 
     source_data_type_id: uuid.UUID | None = None

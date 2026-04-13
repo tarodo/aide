@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class TypeInstanceCreate(NoteMixin):
@@ -17,7 +17,7 @@ class TypeInstanceCreate(NoteMixin):
     slot: str | None = None
 
 
-class TypeInstanceUpdate(NoteMixin):
+class TypeInstanceUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for type instance update (parent_id and slot are immutable)."""
 
     data_type_id: uuid.UUID | None = None

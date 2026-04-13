@@ -6,6 +6,7 @@ from backend.core.errors import (
     DATA_TYPE_NOT_FOUND,
     ENTITY_NOT_DELETED,
     SYSTEM_FLAVOR_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.data_type import (
     DataTypeCreate,
@@ -28,6 +29,7 @@ crud_router = create_crud_router(
         DATA_TYPE_NOT_FOUND,
         DATA_TYPE_ALREADY_EXISTS,
         SYSTEM_FLAVOR_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[DATA_TYPE_NOT_FOUND],
     delete_error_codes=[DATA_TYPE_NOT_FOUND],

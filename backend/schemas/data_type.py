@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class DataTypeBase(BaseModel):
@@ -21,7 +21,7 @@ class DataTypeCreate(DataTypeBase, NoteMixin):
     pass
 
 
-class DataTypeUpdate(NoteMixin):
+class DataTypeUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for data type update."""
 
     system_flavor_id: uuid.UUID | None = None

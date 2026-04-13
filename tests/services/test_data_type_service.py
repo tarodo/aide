@@ -62,7 +62,11 @@ def data_type_service() -> DataTypeService:
 def db_system_flavor() -> SystemFlavor:
     """Fixture for a database SystemFlavor model object."""
     return SystemFlavor(
-        id=uuid.uuid4(), code="POSTGRESQL", name="PostgreSQL", kind_id=uuid.uuid4()
+        id=uuid.uuid4(),
+        code="POSTGRESQL",
+        name="PostgreSQL",
+        kind_id=uuid.uuid4(),
+        row_version=1,
     )
 
 
@@ -92,6 +96,7 @@ def db_data_type(db_system_flavor: SystemFlavor) -> DataType:
         updated_by=user_id,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -217,7 +222,7 @@ class TestDataTypeService:
         mock_uow: _MockUnitOfWork,
         db_data_type: DataType,
     ):
-        update_schema = DataTypeUpdate(code="TEXT")
+        update_schema = DataTypeUpdate(code="TEXT", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_data_type
         mock_repo.get_by_system_flavor_and_code.return_value = None

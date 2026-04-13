@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Text, func
+from sqlalchemy import DateTime, Integer, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -58,14 +58,29 @@ class SoftDeleteMixin:
     )
 
 
-class MetaDataMixin(UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin):
+class VersionMixin:
+    """Mixin for optimistic locking version field."""
+
+    row_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
+
+
+class MetaDataMixin(
+    UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin, VersionMixin
+):
     """Mixin for metadata fields."""
 
     pass
 
 
 class SoftDeleteMetaDataMixin(
-    UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin, SoftDeleteMixin
+    UUIDMixin,
+    TimestampMixin,
+    UserTrackingMixin,
+    NoteMixin,
+    SoftDeleteMixin,
+    VersionMixin,
 ):
     """MetaData mixin with soft-delete support for core entities."""
 

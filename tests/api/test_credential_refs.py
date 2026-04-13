@@ -122,7 +122,7 @@ class TestCredentialRefAPI:
         superuser_token_headers: dict,
         test_credential_ref: CredentialRef,
     ):
-        update_data = {"version": 2}
+        update_data = {"version": 2, "row_version": 1}
         response = await async_client.put(
             f"/api/v1/credential-refs/{test_credential_ref.id}",
             json=update_data,

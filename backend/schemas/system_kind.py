@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class SystemKindBase(BaseModel):
@@ -16,7 +16,7 @@ class SystemKindCreate(SystemKindBase, NoteMixin):
     pass
 
 
-class SystemKindUpdate(NoteMixin):
+class SystemKindUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for system kind update."""
 
     code: str | None = None

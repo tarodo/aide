@@ -65,7 +65,9 @@ def system_flavor_service() -> SystemFlavorService:
 @pytest.fixture
 def db_system_kind() -> SystemKind:
     """Fixture for a database SystemKind model object."""
-    return SystemKind(id=uuid.uuid4(), code="RDBMS", name="Relational Database")
+    return SystemKind(
+        id=uuid.uuid4(), code="RDBMS", name="Relational Database", row_version=1
+    )
 
 
 @pytest.fixture
@@ -96,6 +98,7 @@ def db_system_flavor(db_system_kind: SystemKind) -> SystemFlavor:
         updated_by=user_id,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -234,7 +237,7 @@ class TestSystemFlavorService:
         mock_uow: _MockUnitOfWork,
         db_system_flavor: SystemFlavor,
     ):
-        update_schema = SystemFlavorUpdate(name="New Name")
+        update_schema = SystemFlavorUpdate(name="New Name", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_system_flavor
         mock_repo.update.return_value = db_system_flavor

@@ -491,7 +491,7 @@ class TestTypeInstanceAPI:
         superuser_token_headers: dict,
         flat_type_instance: TypeInstance,
     ):
-        update_data = {"type_params": {"length": 100}}
+        update_data = {"type_params": {"length": 100}, "row_version": 1}
         response = await async_client.put(
             f"/api/v1/type-instances/{flat_type_instance.id}",
             json=update_data,

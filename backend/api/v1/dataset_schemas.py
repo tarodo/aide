@@ -5,6 +5,7 @@ from backend.core.errors import (
     DATASET_NOT_FOUND,
     DATASET_SCHEMA_ALREADY_EXISTS,
     DATASET_SCHEMA_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.dataset_schema import (
     DatasetSchemaCreate,
@@ -27,6 +28,7 @@ crud_router = create_crud_router(
         DATASET_SCHEMA_NOT_FOUND,
         DATASET_SCHEMA_ALREADY_EXISTS,
         DATASET_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[DATASET_SCHEMA_NOT_FOUND],
     delete_error_codes=[DATASET_SCHEMA_NOT_FOUND],

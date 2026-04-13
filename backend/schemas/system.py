@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class SystemBase(BaseModel):
@@ -24,7 +24,7 @@ class SystemCreate(SystemBase, NoteMixin):
     pass
 
 
-class SystemUpdate(NoteMixin):
+class SystemUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for system update."""
 
     code: str | None = None

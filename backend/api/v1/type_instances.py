@@ -12,6 +12,7 @@ from backend.core.errors import (
     TYPE_INSTANCE_SLOT_REQUIRED,
     UNAUTHORIZED,
     FORBIDDEN,
+    VERSION_CONFLICT,
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
@@ -42,6 +43,7 @@ crud_router = create_crud_router(
     update_error_codes=[
         TYPE_INSTANCE_NOT_FOUND,
         DATA_TYPE_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[TYPE_INSTANCE_NOT_FOUND],
     delete_error_codes=[TYPE_INSTANCE_NOT_FOUND],

@@ -5,6 +5,7 @@ from backend.core.errors import (
     CAST_RULE_ALREADY_EXISTS,
     CAST_RULE_NOT_FOUND,
     DATA_TYPE_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.cast_rule import (
     CastRuleCreate,
@@ -27,6 +28,7 @@ crud_router = create_crud_router(
         CAST_RULE_NOT_FOUND,
         CAST_RULE_ALREADY_EXISTS,
         DATA_TYPE_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[CAST_RULE_NOT_FOUND],
     delete_error_codes=[CAST_RULE_NOT_FOUND],

@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class FieldBindingBase(BaseModel):
@@ -21,7 +21,7 @@ class FieldBindingCreate(FieldBindingBase, NoteMixin):
     pass
 
 
-class FieldBindingUpdate(NoteMixin):
+class FieldBindingUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for field binding update."""
 
     field_id: uuid.UUID | None = None

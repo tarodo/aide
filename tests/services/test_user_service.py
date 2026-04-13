@@ -70,6 +70,7 @@ def db_user() -> User:
         updated_by=user_id,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -90,6 +91,7 @@ def db_superuser() -> User:
         updated_by=user_id,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 

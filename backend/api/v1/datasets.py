@@ -17,6 +17,7 @@ from backend.core.errors import (
     INVALID_DATASET_KIND,
     SYSTEM_NOT_FOUND,
     UNAUTHORIZED,
+    VERSION_CONFLICT,
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
@@ -104,6 +105,7 @@ async def get_one(
             DATASET_NOT_FOUND,
             DATASET_ALREADY_EXISTS,
             DATASET_KIND_MISMATCH,
+            VERSION_CONFLICT,
             UNAUTHORIZED,
             FORBIDDEN,
         ),

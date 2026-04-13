@@ -46,6 +46,7 @@ def db_user() -> User:
         email="test@example.com",
         hashed_password="hashed_password_string",
         is_active=True,
+        row_version=1,
     )
 
 

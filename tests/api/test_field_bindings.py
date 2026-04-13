@@ -233,7 +233,7 @@ class TestFieldBindingAPI:
         superuser_token_headers: dict,
         test_field_binding: FieldBinding,
     ):
-        update_data = {"is_nullable": True, "position": 2}
+        update_data = {"is_nullable": True, "position": 2, "row_version": 1}
         response = await async_client.put(
             f"/api/v1/field-bindings/{test_field_binding.id}",
             json=update_data,

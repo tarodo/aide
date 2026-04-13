@@ -59,7 +59,7 @@ def dataset_service() -> DatasetService:
 
 @pytest.fixture
 def db_system() -> System:
-    return System(id=uuid.uuid4(), code="SYS1", name="System 1")
+    return System(id=uuid.uuid4(), code="SYS1", name="System 1", row_version=1)
 
 
 @pytest.fixture
@@ -100,6 +100,7 @@ def db_dataset_rdbms(rdbms_create_schema: DatasetRdbmsCreate) -> DatasetRdbms:
         created_at=now,
         updated_at=now,
         is_active=True,
+        row_version=1,
     )
 
 
@@ -149,6 +150,7 @@ class TestDatasetService:
             created_at=now,
             updated_at=now,
             is_active=True,
+            row_version=1,
         )
         mock_repo.create.return_value = db_dataset_kafka
         mock_uow.systems.get.return_value = db_system
@@ -240,7 +242,7 @@ class TestDatasetService:
     async def test_update_not_found(
         self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
     ):
-        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="DWH")
+        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="DWH", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = None
         with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
@@ -256,7 +258,9 @@ class TestDatasetService:
         mock_uow: _MockUnitOfWork,
         db_dataset_rdbms: DatasetRdbms,
     ):
-        update_schema = DatasetKafkaUpdate(kind="kafka", topic="some_topic")
+        update_schema = DatasetKafkaUpdate(
+            kind="kafka", topic="some_topic", row_version=1
+        )
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_dataset_rdbms
 
@@ -276,9 +280,13 @@ class TestDatasetService:
         mock_uow: _MockUnitOfWork,
         db_dataset_rdbms: DatasetRdbms,
     ):
-        update_schema = DatasetRdbmsUpdate(kind="rdbms", object_name="new_name")
+        update_schema = DatasetRdbmsUpdate(
+            kind="rdbms", object_name="new_name", row_version=1
+        )
         mock_repo = _MockRepository()
-        mock_repo.get_by_system_and_object_name.return_value = Dataset(id=uuid.uuid4())
+        mock_repo.get_by_system_and_object_name.return_value = Dataset(
+            id=uuid.uuid4(), row_version=1
+        )
 
         with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
             with pytest.raises(AppException) as exc_info:

@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class SystemFlavorBase(BaseModel):
@@ -21,7 +21,7 @@ class SystemFlavorCreate(SystemFlavorBase, NoteMixin):
     pass
 
 
-class SystemFlavorUpdate(NoteMixin):
+class SystemFlavorUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for system flavor update."""
 
     code: str | None = None

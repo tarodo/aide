@@ -6,6 +6,7 @@ from backend.core.errors import (
     CREDENTIAL_REF_NOT_FOUND,
     ENTITY_NOT_DELETED,
     HAS_DEPENDENT_ENTITIES,
+    VERSION_CONFLICT,
 )
 from backend.schemas.credential_ref import (
     CredentialRefCreate,
@@ -24,7 +25,11 @@ crud_router = create_crud_router(
     read_schema=CredentialRefRead,
     entity_name="credential ref",
     create_error_codes=[CREDENTIAL_REF_ALREADY_EXISTS],
-    update_error_codes=[CREDENTIAL_REF_NOT_FOUND, CREDENTIAL_REF_ALREADY_EXISTS],
+    update_error_codes=[
+        CREDENTIAL_REF_NOT_FOUND,
+        CREDENTIAL_REF_ALREADY_EXISTS,
+        VERSION_CONFLICT,
+    ],
     get_one_error_codes=[CREDENTIAL_REF_NOT_FOUND],
     delete_error_codes=[CREDENTIAL_REF_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
     supports_restore=True,

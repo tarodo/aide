@@ -229,7 +229,7 @@ class TestFieldAPI:
         superuser_token_headers: dict,
         test_field: Field,
     ):
-        update_data = {"path": "customer.id"}
+        update_data = {"path": "customer.id", "row_version": 1}
         response = await async_client.put(
             f"/api/v1/fields/{test_field.id}",
             json=update_data,
@@ -401,7 +401,7 @@ class TestFieldAPI:
         # Try to set parent's parent_id to its own child
         response = await async_client.put(
             f"/api/v1/fields/{parent.id}",
-            json={"parent_id": str(child.id)},
+            json={"parent_id": str(child.id), "row_version": 1},
             headers=superuser_token_headers,
         )
         assert response.status_code == 400

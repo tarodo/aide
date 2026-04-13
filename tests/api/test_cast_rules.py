@@ -196,7 +196,7 @@ class TestCastRuleAPI:
         superuser_token_headers: dict,
         test_cast_rule: CastRule,
     ):
-        update_data = {"safety": "unsafe"}
+        update_data = {"safety": "unsafe", "row_version": 1}
         response = await async_client.put(
             f"/api/v1/cast-rules/{test_cast_rule.id}",
             json=update_data,

@@ -135,7 +135,7 @@ class TestSystemFlavorAPI:
         superuser_token_headers: dict,
         test_system_flavor: SystemFlavor,
     ):
-        update_data = {"name": "Updated PostgreSQL Name"}
+        update_data = {"name": "Updated PostgreSQL Name", "row_version": 1}
         response = await async_client.put(
             f"/api/v1/system-flavors/{test_system_flavor.id}",
             json=update_data,

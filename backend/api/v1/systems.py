@@ -8,6 +8,7 @@ from backend.core.errors import (
     SYSTEM_ALREADY_EXISTS,
     SYSTEM_FLAVOR_NOT_FOUND,
     SYSTEM_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.filters import SYSTEM_SORTABLE, SystemFilter
 from backend.schemas.system import (
@@ -35,6 +36,7 @@ crud_router = create_crud_router(
         SYSTEM_ALREADY_EXISTS,
         SYSTEM_FLAVOR_NOT_FOUND,
         CREDENTIAL_REF_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[SYSTEM_NOT_FOUND],
     delete_error_codes=[SYSTEM_NOT_FOUND, HAS_DEPENDENT_ENTITIES],

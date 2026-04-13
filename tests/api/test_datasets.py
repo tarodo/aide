@@ -174,7 +174,12 @@ class TestDatasetAPI:
         dataset_id = create_response.json()["id"]
 
         # Update it
-        update_data = {"kind": "rdbms", "layer": "DWH", "table_name": "dim_stock"}
+        update_data = {
+            "kind": "rdbms",
+            "layer": "DWH",
+            "table_name": "dim_stock",
+            "row_version": 1,
+        }
         update_response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
             json=update_data,
@@ -207,7 +212,7 @@ class TestDatasetAPI:
         dataset_id = create_response.json()["id"]
 
         # Try to update it with a 'kafka' kind
-        update_data = {"kind": "kafka", "topic": "new_topic"}
+        update_data = {"kind": "kafka", "topic": "new_topic", "row_version": 1}
         update_response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
             json=update_data,
@@ -215,6 +220,44 @@ class TestDatasetAPI:
         )
         assert update_response.status_code == 400
         assert update_response.json()["error_code"] == errors.DATASET_KIND_MISMATCH
+
+    async def test_update_dataset_version_conflict(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        # Create a dataset
+        create_data = {
+            "kind": "rdbms",
+            "system_id": str(test_system.id),
+            "object_name": "conflict_test_table",
+            "layer": "ODS",
+            "schema_name": "test",
+            "table_name": "conflict",
+        }
+        create_response = await async_client.post(
+            "/api/v1/datasets/", json=create_data, headers=superuser_token_headers
+        )
+        dataset_id = create_response.json()["id"]
+
+        # First update succeeds
+        response = await async_client.patch(
+            f"/api/v1/datasets/{dataset_id}",
+            json={"kind": "rdbms", "layer": "DWH", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["row_version"] == 2
+
+        # Second update with stale row_version
+        response = await async_client.patch(
+            f"/api/v1/datasets/{dataset_id}",
+            json={"kind": "rdbms", "layer": "CDM", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 409
+        assert response.json()["error_code"] == "VERSION_CONFLICT"
 
     async def test_delete_dataset(
         self,

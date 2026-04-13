@@ -184,7 +184,7 @@ class TestDatasetSchemaAPI:
         superuser_token_headers: dict,
         test_dataset_schema: DatasetSchema,
     ):
-        update_data = {"extra": {"comment": "first version"}}
+        update_data = {"extra": {"comment": "first version"}, "row_version": 1}
         response = await async_client.put(
             f"/api/v1/dataset-schemas/{test_dataset_schema.id}",
             json=update_data,

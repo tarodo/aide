@@ -55,6 +55,7 @@ REFRESH_TOKEN_EXPIRED = "REFRESH_TOKEN_EXPIRED"
 REFRESH_TOKEN_REVOKED = "REFRESH_TOKEN_REVOKED"
 ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
 HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
+VERSION_CONFLICT = "VERSION_CONFLICT"
 
 ErrorInfo = Tuple[int, str]
 
@@ -224,6 +225,10 @@ ERROR_MAP = {
     HAS_DEPENDENT_ENTITIES: (
         status.HTTP_409_CONFLICT,
         "Cannot delete: the entity has dependent records. Remove them first.",
+    ),
+    VERSION_CONFLICT: (
+        status.HTTP_409_CONFLICT,
+        "The entity has been modified by another user. Please reload and try again.",
     ),
 }
 

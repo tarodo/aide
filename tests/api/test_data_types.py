@@ -152,7 +152,7 @@ class TestDataTypeAPI:
         superuser_token_headers: dict,
         test_data_type: DataType,
     ):
-        update_data = {"code": "TEXT"}
+        update_data = {"code": "TEXT", "row_version": 1}
         response = await async_client.put(
             f"/api/v1/data-types/{test_data_type.id}",
             json=update_data,

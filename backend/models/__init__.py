@@ -19,6 +19,7 @@ from .mixins import (
     SoftDeleteMixin,
     TimestampMixin,
     UserTrackingMixin,
+    VersionMixin,
 )
 from .system_flavor import SystemFlavor as SystemFlavor
 from .system_kind import SystemKind as SystemKind
@@ -33,6 +34,7 @@ __all__ = [
     "UserTrackingMixin",
     "SoftDeleteMixin",
     "SoftDeleteMetaDataMixin",
+    "VersionMixin",
     "SystemKind",
     "SystemFlavor",
     "DataType",

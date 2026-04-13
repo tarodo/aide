@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from backend.models.user import UserType
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class UserBase(BaseModel):
@@ -18,7 +18,7 @@ class UserCreate(UserBase, NoteMixin):
     user_type: UserType = UserType.REGULAR
 
 
-class UserUpdate(NoteMixin):
+class UserUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for user update."""
 
     email: EmailStr | None = None

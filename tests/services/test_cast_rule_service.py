@@ -48,12 +48,12 @@ def cast_rule_service() -> CastRuleService:
 
 @pytest.fixture
 def db_data_type1() -> DataType:
-    return DataType(id=uuid.uuid4(), code="INT")
+    return DataType(id=uuid.uuid4(), code="INT", row_version=1)
 
 
 @pytest.fixture
 def db_data_type2() -> DataType:
-    return DataType(id=uuid.uuid4(), code="BIGINT")
+    return DataType(id=uuid.uuid4(), code="BIGINT", row_version=1)
 
 
 @pytest.fixture
@@ -79,6 +79,7 @@ def db_cast_rule(cast_rule_create_schema: CastRuleCreate) -> CastRule:
         safety=cast_rule_create_schema.safety,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -147,12 +148,12 @@ class TestCastRuleService:
     ):
         # Use a different source data type to actually change it
         new_source_id = uuid.uuid4()
-        new_source_data_type = DataType(id=new_source_id, code="TEXT")
-        update_schema = CastRuleUpdate(source_data_type_id=new_source_id)
+        new_source_data_type = DataType(id=new_source_id, code="TEXT", row_version=1)
+        update_schema = CastRuleUpdate(source_data_type_id=new_source_id, row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_cast_rule
         # Return a different CastRule to simulate duplicate
-        duplicate_rule = CastRule(id=uuid.uuid4())
+        duplicate_rule = CastRule(id=uuid.uuid4(), row_version=1)
         mock_repo.get_by_source_and_target_data_type_ids.return_value = duplicate_rule
         # Need to set up data_types.get for validation that happens after duplicate check
         mock_uow.data_types.get.side_effect = [new_source_data_type, db_data_type2]
@@ -171,12 +172,12 @@ class TestCastRuleService:
         db_cast_rule: CastRule,
     ):
         new_target_id = uuid.uuid4()
-        update_schema = CastRuleUpdate(target_data_type_id=new_target_id)
+        update_schema = CastRuleUpdate(target_data_type_id=new_target_id, row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_cast_rule
         mock_repo.get_by_source_and_target_data_type_ids.return_value = None
         mock_uow.data_types.get.side_effect = [
-            DataType(id=db_cast_rule.source_data_type_id),
+            DataType(id=db_cast_rule.source_data_type_id, row_version=1),
             None,
         ]
 

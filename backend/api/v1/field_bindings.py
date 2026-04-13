@@ -8,6 +8,7 @@ from backend.core.errors import (
     FIELD_BINDING_POSITION_ALREADY_EXISTS,
     FIELD_NOT_FOUND,
     TYPE_INSTANCE_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.field_binding import (
     FieldBindingCreate,
@@ -39,6 +40,7 @@ crud_router = create_crud_router(
         FIELD_NOT_FOUND,
         DATASET_SCHEMA_NOT_FOUND,
         TYPE_INSTANCE_NOT_FOUND,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[FIELD_BINDING_NOT_FOUND],
     delete_error_codes=[FIELD_BINDING_NOT_FOUND],

@@ -6,6 +6,7 @@ from backend.core.errors import (
     HAS_DEPENDENT_ENTITIES,
     SYSTEM_KIND_ALREADY_EXISTS,
     SYSTEM_KIND_NOT_FOUND,
+    VERSION_CONFLICT,
 )
 from backend.schemas.filters import SYSTEM_KIND_SORTABLE, SystemKindFilter
 from backend.schemas.system_kind import (
@@ -24,7 +25,11 @@ crud_router = create_crud_router(
     read_schema=SystemKindRead,
     entity_name="system kind",
     create_error_codes=[SYSTEM_KIND_ALREADY_EXISTS],
-    update_error_codes=[SYSTEM_KIND_NOT_FOUND, SYSTEM_KIND_ALREADY_EXISTS],
+    update_error_codes=[
+        SYSTEM_KIND_NOT_FOUND,
+        SYSTEM_KIND_ALREADY_EXISTS,
+        VERSION_CONFLICT,
+    ],
     get_one_error_codes=[SYSTEM_KIND_NOT_FOUND],
     delete_error_codes=[SYSTEM_KIND_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
     supports_restore=True,

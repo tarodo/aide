@@ -13,6 +13,7 @@ from backend.core.errors import (
     FIELD_PARENT_NOT_FOUND,
     FORBIDDEN,
     UNAUTHORIZED,
+    VERSION_CONFLICT,
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
@@ -46,6 +47,7 @@ crud_router = create_crud_router(
         FIELD_PARENT_NOT_FOUND,
         FIELD_PARENT_DATASET_MISMATCH,
         FIELD_CIRCULAR_REFERENCE,
+        VERSION_CONFLICT,
     ],
     get_one_error_codes=[FIELD_NOT_FOUND],
     delete_error_codes=[FIELD_NOT_FOUND],

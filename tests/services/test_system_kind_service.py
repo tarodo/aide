@@ -74,6 +74,7 @@ def db_system_kind() -> SystemKind:
         updated_by=user_id,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -183,7 +184,7 @@ class TestSystemKindService:
         mock_uow: _MockUnitOfWork,
         db_system_kind: SystemKind,
     ):
-        update_schema = SystemKindUpdate(name="New Name")
+        update_schema = SystemKindUpdate(name="New Name", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_system_kind
         mock_repo.update.return_value = db_system_kind

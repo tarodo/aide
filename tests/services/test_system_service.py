@@ -60,12 +60,14 @@ def system_service() -> SystemService:
 
 @pytest.fixture
 def db_system_flavor() -> SystemFlavor:
-    return SystemFlavor(id=uuid.uuid4(), code="FLAVOR", name="Flavor")
+    return SystemFlavor(id=uuid.uuid4(), code="FLAVOR", name="Flavor", row_version=1)
 
 
 @pytest.fixture
 def db_credential_ref() -> CredentialRef:
-    return CredentialRef(id=uuid.uuid4(), provider="vault", path="/secret")
+    return CredentialRef(
+        id=uuid.uuid4(), provider="vault", path="/secret", row_version=1
+    )
 
 
 @pytest.fixture
@@ -92,6 +94,7 @@ def db_system(system_create_schema: SystemCreate) -> System:
         is_active=True,
         created_at=now,
         updated_at=now,
+        row_version=1,
     )
 
 
@@ -159,9 +162,11 @@ class TestSystemServicePreUpdate:
         mock_uow: _MockUnitOfWork,
         db_system: System,
     ):
-        update_schema = SystemUpdate(code="NEW_CODE")
+        update_schema = SystemUpdate(code="NEW_CODE", row_version=1)
         mock_repo = _MockRepository()
-        mock_repo.get_by_code.return_value = System(id=uuid.uuid4(), code="NEW_CODE")
+        mock_repo.get_by_code.return_value = System(
+            id=uuid.uuid4(), code="NEW_CODE", row_version=1
+        )
 
         with patch.object(system_service, "_get_repository", return_value=mock_repo):
             with pytest.raises(AppException) as exc_info:
@@ -179,7 +184,7 @@ class TestSystemServicePreUpdate:
         mock_uow: _MockUnitOfWork,
         db_system: System,
     ):
-        update_schema = SystemUpdate(flavor_id=uuid.uuid4())
+        update_schema = SystemUpdate(flavor_id=uuid.uuid4(), row_version=1)
         mock_repo = _MockRepository()
         mock_uow.system_flavors.get.return_value = None
 
@@ -199,7 +204,7 @@ class TestSystemServicePreUpdate:
         mock_uow: _MockUnitOfWork,
         db_system: System,
     ):
-        update_schema = SystemUpdate(credential_ref_id=uuid.uuid4())
+        update_schema = SystemUpdate(credential_ref_id=uuid.uuid4(), row_version=1)
         mock_repo = _MockRepository()
         mock_uow.credential_refs.get.return_value = None
 

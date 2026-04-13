@@ -3,7 +3,7 @@ from typing import Any, Annotated, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 # --- Base Schemas ---
@@ -164,7 +164,7 @@ def validate_dataset_read(obj: Any) -> AnyDatasetRead:
 # --- Update Schemas ---
 
 
-class DatasetUpdateBase(NoteMixin):
+class DatasetUpdateBase(VersionedUpdateMixin, NoteMixin):
     """Base schema for dataset updates, containing common optional fields."""
 
     object_name: str | None = None

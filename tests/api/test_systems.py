@@ -172,7 +172,11 @@ class TestSystemAPI:
         superuser_token_headers: dict,
         test_system: System,
     ):
-        update_data = {"name": "Updated Production DB", "is_active": False}
+        update_data = {
+            "name": "Updated Production DB",
+            "is_active": False,
+            "row_version": 1,
+        }
         response = await async_client.put(
             f"/api/v1/systems/{test_system.id}",
             json=update_data,
@@ -182,6 +186,44 @@ class TestSystemAPI:
         res_json = response.json()
         assert res_json["name"] == "Updated Production DB"
         assert res_json["is_active"] is False
+
+    async def test_update_system_increments_row_version(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.put(
+            f"/api/v1/systems/{test_system.id}",
+            json={"name": "V1 Update", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["row_version"] == 2
+
+    async def test_update_system_version_conflict(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        # First update succeeds
+        response = await async_client.put(
+            f"/api/v1/systems/{test_system.id}",
+            json={"name": "First Update", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["row_version"] == 2
+
+        # Second update with stale row_version (1, but DB is now 2)
+        response = await async_client.put(
+            f"/api/v1/systems/{test_system.id}",
+            json={"name": "Stale Update", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 409
+        assert response.json()["error_code"] == "VERSION_CONFLICT"
 
     async def test_delete_system(
         self,

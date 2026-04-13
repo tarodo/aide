@@ -22,5 +22,15 @@ class NoteMixin(BaseModel):
     note: str | None = None
 
 
-class MetaDataMixin(UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin):
+class VersionMixin(BaseModel):
+    row_version: int
+
+
+class VersionedUpdateMixin(BaseModel):
+    row_version: int
+
+
+class MetaDataMixin(
+    UUIDMixin, TimestampMixin, UserTrackingMixin, NoteMixin, VersionMixin
+):
     pass

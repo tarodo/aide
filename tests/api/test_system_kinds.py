@@ -113,7 +113,7 @@ class TestSystemKindAPI:
         superuser_token_headers: dict,
         test_system_kind: SystemKind,
     ):
-        update_data = {"name": "Updated RDBMS Name"}
+        update_data = {"name": "Updated RDBMS Name", "row_version": 1}
         response = await async_client.put(
             f"/api/v1/system-kinds/{test_system_kind.id}",
             json=update_data,

@@ -6,6 +6,7 @@ import structlog
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.errors import VERSION_CONFLICT
 from backend.core.exceptions import AppException
 from backend.db.base import Base
 from backend.db.uow import UnitOfWork
@@ -144,16 +145,25 @@ class GenericService(
     ) -> ReadSchemaType:
         """Update an existing object."""
         update_data = obj_in.model_dump(exclude_unset=True)
+        client_row_version = update_data.pop("row_version", None)
+
         async with uow:
             repo: BaseRepository[ModelType] = self._get_repository(uow.session)
             db_obj = await repo.get(obj_id)
             if not db_obj:
                 raise AppException(self.not_found_error_code)
 
+            if client_row_version is not None and hasattr(db_obj, "row_version"):
+                if db_obj.row_version != client_row_version:  # type: ignore[attr-defined]
+                    raise AppException(VERSION_CONFLICT)
+
             await self._pre_update(uow, db_obj, obj_in, updater_id)
 
             for field, value in update_data.items():
                 setattr(db_obj, field, value)
+
+            if hasattr(db_obj, "row_version"):
+                db_obj.row_version += 1  # type: ignore[attr-defined]
 
             if updater_id and hasattr(db_obj, "updated_by"):
                 setattr(db_obj, "updated_by", updater_id)

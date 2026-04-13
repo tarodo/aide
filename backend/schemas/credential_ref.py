@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class CredentialRefBase(BaseModel):
@@ -17,7 +17,7 @@ class CredentialRefCreate(CredentialRefBase, NoteMixin):
     pass
 
 
-class CredentialRefUpdate(NoteMixin):
+class CredentialRefUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for credential ref update."""
 
     provider: str | None = None

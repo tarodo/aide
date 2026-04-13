@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class FieldBase(BaseModel):
@@ -25,7 +25,7 @@ class FieldCreate(FieldBase, NoteMixin):
     pass
 
 
-class FieldUpdate(NoteMixin):
+class FieldUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for field update."""
 
     dataset_id: uuid.UUID | None = None

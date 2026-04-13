@@ -15,7 +15,10 @@
         {
           "id": "f_users_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -24,7 +27,10 @@
         {
           "id": "f_users_email",
           "name": "email",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": true,
           "nullable": false,
@@ -33,7 +39,10 @@
         {
           "id": "f_users_hashed_password",
           "name": "hashed_password",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -42,7 +51,10 @@
         {
           "id": "f_users_full_name",
           "name": "full_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -51,7 +63,10 @@
         {
           "id": "f_users_is_active",
           "name": "is_active",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -60,7 +75,10 @@
         {
           "id": "f_users_is_superuser",
           "name": "is_superuser",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -69,7 +87,10 @@
         {
           "id": "f_users_user_type",
           "name": "user_type",
-          "type": { "id": "varchar", "name": "varchar(20)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(20)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -79,7 +100,10 @@
         {
           "id": "f_users_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -88,7 +112,10 @@
         {
           "id": "f_users_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -97,7 +124,10 @@
         {
           "id": "f_users_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -106,7 +136,10 @@
         {
           "id": "f_users_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -115,10 +148,25 @@
         {
           "id": "f_users_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_users_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -127,14 +175,18 @@
           "id": "ix_users_email",
           "name": "ix_users_email",
           "unique": true,
-          "fieldIds": ["f_users_email"],
+          "fieldIds": [
+            "f_users_email"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_users_user_type",
           "name": "ix_users_user_type",
           "unique": false,
-          "fieldIds": ["f_users_user_type"],
+          "fieldIds": [
+            "f_users_user_type"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -154,7 +206,10 @@
         {
           "id": "f_rt_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -163,7 +218,10 @@
         {
           "id": "f_rt_token_hash",
           "name": "token_hash",
-          "type": { "id": "varchar", "name": "varchar(64)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(64)"
+          },
           "primaryKey": false,
           "unique": true,
           "nullable": false,
@@ -172,7 +230,10 @@
         {
           "id": "f_rt_user_id",
           "name": "user_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -181,7 +242,10 @@
         {
           "id": "f_rt_expires_at",
           "name": "expires_at",
-          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "type": {
+            "id": "timestamptz",
+            "name": "timestamptz"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -190,7 +254,10 @@
         {
           "id": "f_rt_revoked_at",
           "name": "revoked_at",
-          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "type": {
+            "id": "timestamptz",
+            "name": "timestamptz"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -199,7 +266,10 @@
         {
           "id": "f_rt_created_at",
           "name": "created_at",
-          "type": { "id": "timestamptz", "name": "timestamptz" },
+          "type": {
+            "id": "timestamptz",
+            "name": "timestamptz"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -208,7 +278,10 @@
         {
           "id": "f_rt_client_info",
           "name": "client_info",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -220,14 +293,18 @@
           "id": "ix_rt_token_hash",
           "name": "ix_refresh_tokens_token_hash",
           "unique": true,
-          "fieldIds": ["f_rt_token_hash"],
+          "fieldIds": [
+            "f_rt_token_hash"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_rt_user_id",
           "name": "ix_refresh_tokens_user_id",
           "unique": false,
-          "fieldIds": ["f_rt_user_id"],
+          "fieldIds": [
+            "f_rt_user_id"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -247,7 +324,10 @@
         {
           "id": "f_sk_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -256,7 +336,10 @@
         {
           "id": "f_sk_code",
           "name": "code",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": true,
           "nullable": false,
@@ -266,7 +349,10 @@
         {
           "id": "f_sk_name",
           "name": "name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -275,7 +361,10 @@
         {
           "id": "f_sk_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -284,7 +373,10 @@
         {
           "id": "f_sk_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -293,7 +385,10 @@
         {
           "id": "f_sk_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -302,7 +397,10 @@
         {
           "id": "f_sk_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -311,10 +409,25 @@
         {
           "id": "f_sk_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sk_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -323,7 +436,9 @@
           "id": "ix_sk_code",
           "name": "ix_system_kinds_code",
           "unique": true,
-          "fieldIds": ["f_sk_code"],
+          "fieldIds": [
+            "f_sk_code"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -343,7 +458,10 @@
         {
           "id": "f_sf_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -352,7 +470,10 @@
         {
           "id": "f_sf_kind_id",
           "name": "kind_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -361,7 +482,10 @@
         {
           "id": "f_sf_code",
           "name": "code",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": true,
           "nullable": false,
@@ -371,7 +495,10 @@
         {
           "id": "f_sf_name",
           "name": "name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -380,7 +507,10 @@
         {
           "id": "f_sf_vendor",
           "name": "vendor",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -389,7 +519,10 @@
         {
           "id": "f_sf_versions",
           "name": "versions",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -398,7 +531,10 @@
         {
           "id": "f_sf_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -407,7 +543,10 @@
         {
           "id": "f_sf_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -416,7 +555,10 @@
         {
           "id": "f_sf_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -425,7 +567,10 @@
         {
           "id": "f_sf_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -434,10 +579,25 @@
         {
           "id": "f_sf_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sf_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -446,7 +606,9 @@
           "id": "ix_sf_code",
           "name": "ix_system_flavors_code",
           "unique": true,
-          "fieldIds": ["f_sf_code"],
+          "fieldIds": [
+            "f_sf_code"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -466,7 +628,10 @@
         {
           "id": "f_cr_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -475,7 +640,10 @@
         {
           "id": "f_cr_provider",
           "name": "provider",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -484,7 +652,10 @@
         {
           "id": "f_cr_path",
           "name": "path",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -493,7 +664,10 @@
         {
           "id": "f_cr_version",
           "name": "version",
-          "type": { "id": "integer", "name": "integer" },
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -502,7 +676,10 @@
         {
           "id": "f_cr_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -511,7 +688,10 @@
         {
           "id": "f_cr_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -520,7 +700,10 @@
         {
           "id": "f_cr_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -529,7 +712,10 @@
         {
           "id": "f_cr_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -538,10 +724,25 @@
         {
           "id": "f_cr_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -550,7 +751,10 @@
           "id": "ix_cr_provider_path",
           "name": "idx_credential_ref_provider_path",
           "unique": true,
-          "fieldIds": ["f_cr_provider", "f_cr_path"],
+          "fieldIds": [
+            "f_cr_provider",
+            "f_cr_path"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -570,7 +774,10 @@
         {
           "id": "f_sys_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -579,7 +786,10 @@
         {
           "id": "f_sys_code",
           "name": "code",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": true,
           "nullable": false,
@@ -588,7 +798,10 @@
         {
           "id": "f_sys_name",
           "name": "name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -597,7 +810,10 @@
         {
           "id": "f_sys_is_active",
           "name": "is_active",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -606,7 +822,10 @@
         {
           "id": "f_sys_tags",
           "name": "tags",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -615,7 +834,10 @@
         {
           "id": "f_sys_extra",
           "name": "extra",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -624,7 +846,10 @@
         {
           "id": "f_sys_flavor_id",
           "name": "flavor_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -633,7 +858,10 @@
         {
           "id": "f_sys_credential_ref_id",
           "name": "credential_ref_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -642,7 +870,10 @@
         {
           "id": "f_sys_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -651,7 +882,10 @@
         {
           "id": "f_sys_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -660,7 +894,10 @@
         {
           "id": "f_sys_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -669,7 +906,10 @@
         {
           "id": "f_sys_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -678,10 +918,25 @@
         {
           "id": "f_sys_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sys_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -690,7 +945,9 @@
           "id": "ix_sys_code",
           "name": "ix_systems_code",
           "unique": true,
-          "fieldIds": ["f_sys_code"],
+          "fieldIds": [
+            "f_sys_code"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -710,7 +967,10 @@
         {
           "id": "f_dt_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -719,7 +979,10 @@
         {
           "id": "f_dt_system_flavor_id",
           "name": "system_flavor_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -728,7 +991,10 @@
         {
           "id": "f_dt_code",
           "name": "code",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -737,7 +1003,10 @@
         {
           "id": "f_dt_params_schema",
           "name": "params_schema",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -747,7 +1016,10 @@
         {
           "id": "f_dt_render_template",
           "name": "render_template",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -757,7 +1029,10 @@
         {
           "id": "f_dt_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -766,7 +1041,10 @@
         {
           "id": "f_dt_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -775,7 +1053,10 @@
         {
           "id": "f_dt_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -784,7 +1065,10 @@
         {
           "id": "f_dt_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -793,10 +1077,25 @@
         {
           "id": "f_dt_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dt_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -805,7 +1104,10 @@
           "id": "ix_dt_flavor_code",
           "name": "idx_data_type_system_flavor_id_code",
           "unique": true,
-          "fieldIds": ["f_dt_system_flavor_id", "f_dt_code"],
+          "fieldIds": [
+            "f_dt_system_flavor_id",
+            "f_dt_code"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -825,7 +1127,10 @@
         {
           "id": "f_cr2_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -834,7 +1139,10 @@
         {
           "id": "f_cr2_source_data_type_id",
           "name": "source_data_type_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -843,7 +1151,10 @@
         {
           "id": "f_cr2_target_data_type_id",
           "name": "target_data_type_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -852,7 +1163,10 @@
         {
           "id": "f_cr2_param_mapping",
           "name": "param_mapping",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -862,7 +1176,10 @@
         {
           "id": "f_cr2_safety",
           "name": "safety",
-          "type": { "id": "varchar", "name": "varchar(20)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(20)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -872,7 +1189,10 @@
         {
           "id": "f_cr2_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -881,7 +1201,10 @@
         {
           "id": "f_cr2_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -890,7 +1213,10 @@
         {
           "id": "f_cr2_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -899,7 +1225,10 @@
         {
           "id": "f_cr2_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -908,10 +1237,25 @@
         {
           "id": "f_cr2_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr2_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -920,7 +1264,10 @@
           "id": "ix_cr2_source_target",
           "name": "idx_cast_rule_source_target_data_type_id",
           "unique": true,
-          "fieldIds": ["f_cr2_source_data_type_id", "f_cr2_target_data_type_id"],
+          "fieldIds": [
+            "f_cr2_source_data_type_id",
+            "f_cr2_target_data_type_id"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -940,7 +1287,10 @@
         {
           "id": "f_ds_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -949,7 +1299,10 @@
         {
           "id": "f_ds_system_id",
           "name": "system_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -958,7 +1311,10 @@
         {
           "id": "f_ds_object_name",
           "name": "object_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -967,7 +1323,10 @@
         {
           "id": "f_ds_layer",
           "name": "layer",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -977,7 +1336,10 @@
         {
           "id": "f_ds_is_active",
           "name": "is_active",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -986,7 +1348,10 @@
         {
           "id": "f_ds_extra",
           "name": "extra",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -995,7 +1360,10 @@
         {
           "id": "f_ds_kind",
           "name": "kind",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1005,7 +1373,10 @@
         {
           "id": "f_ds_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1014,7 +1385,10 @@
         {
           "id": "f_ds_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1023,7 +1397,10 @@
         {
           "id": "f_ds_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1032,7 +1409,10 @@
         {
           "id": "f_ds_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1041,10 +1421,25 @@
         {
           "id": "f_ds_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ds_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -1053,28 +1448,37 @@
           "id": "ix_ds_system_object",
           "name": "idx_dataset_system_id_object_name",
           "unique": true,
-          "fieldIds": ["f_ds_system_id", "f_ds_object_name"],
+          "fieldIds": [
+            "f_ds_system_id",
+            "f_ds_object_name"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_ds_system_id",
           "name": "ix_datasets_system_id",
           "unique": false,
-          "fieldIds": ["f_ds_system_id"],
+          "fieldIds": [
+            "f_ds_system_id"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_ds_layer",
           "name": "ix_datasets_layer",
           "unique": false,
-          "fieldIds": ["f_ds_layer"],
+          "fieldIds": [
+            "f_ds_layer"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_ds_kind",
           "name": "ix_datasets_kind",
           "unique": false,
-          "fieldIds": ["f_ds_kind"],
+          "fieldIds": [
+            "f_ds_kind"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -1094,7 +1498,10 @@
         {
           "id": "f_dr_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": false,
           "nullable": false,
@@ -1104,7 +1511,10 @@
         {
           "id": "f_dr_catalog_name",
           "name": "catalog_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1113,7 +1523,10 @@
         {
           "id": "f_dr_schema_name",
           "name": "schema_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1122,7 +1535,10 @@
         {
           "id": "f_dr_table_name",
           "name": "table_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1131,7 +1547,10 @@
         {
           "id": "f_dr_is_view",
           "name": "is_view",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1140,7 +1559,10 @@
         {
           "id": "f_dr_distribution",
           "name": "distribution",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1149,7 +1571,10 @@
         {
           "id": "f_dr_pk_columns",
           "name": "pk_columns",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1158,7 +1583,10 @@
         {
           "id": "f_dr_uq_constraints",
           "name": "uq_constraints",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1183,7 +1611,10 @@
         {
           "id": "f_dk_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": false,
           "nullable": false,
@@ -1193,7 +1624,10 @@
         {
           "id": "f_dk_topic",
           "name": "topic",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1202,7 +1636,10 @@
         {
           "id": "f_dk_format",
           "name": "format",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1212,7 +1649,10 @@
         {
           "id": "f_dk_partitions",
           "name": "partitions",
-          "type": { "id": "integer", "name": "integer" },
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1221,7 +1661,10 @@
         {
           "id": "f_dk_retention_ms",
           "name": "retention_ms",
-          "type": { "id": "bigint", "name": "bigint" },
+          "type": {
+            "id": "bigint",
+            "name": "bigint"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1230,7 +1673,10 @@
         {
           "id": "f_dk_key_columns",
           "name": "key_columns",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1254,7 +1700,10 @@
         {
           "id": "f_dsto_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": false,
           "nullable": false,
@@ -1264,7 +1713,10 @@
         {
           "id": "f_dsto_path",
           "name": "path",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1273,7 +1725,10 @@
         {
           "id": "f_dsto_file_format",
           "name": "file_format",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1283,7 +1738,10 @@
         {
           "id": "f_dsto_compression",
           "name": "compression",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1293,7 +1751,10 @@
         {
           "id": "f_dsto_partition_by",
           "name": "partition_by",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1317,7 +1778,10 @@
         {
           "id": "f_dsf_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": false,
           "nullable": false,
@@ -1327,7 +1791,10 @@
         {
           "id": "f_dsf_path",
           "name": "path",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1336,7 +1803,10 @@
         {
           "id": "f_dsf_file_format",
           "name": "file_format",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1346,7 +1816,10 @@
         {
           "id": "f_dsf_compression",
           "name": "compression",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1356,7 +1829,10 @@
         {
           "id": "f_dsf_archive",
           "name": "archive",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1381,7 +1857,10 @@
         {
           "id": "f_dh_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": false,
           "nullable": false,
@@ -1391,7 +1870,10 @@
         {
           "id": "f_dh_catalog_uri",
           "name": "catalog_uri",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1400,7 +1882,10 @@
         {
           "id": "f_dh_db_name",
           "name": "db_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1409,7 +1894,10 @@
         {
           "id": "f_dh_table_name",
           "name": "table_name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1418,7 +1906,10 @@
         {
           "id": "f_dh_is_external",
           "name": "is_external",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1427,7 +1918,10 @@
         {
           "id": "f_dh_file_format",
           "name": "file_format",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1436,7 +1930,10 @@
         {
           "id": "f_dh_location",
           "name": "location",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1445,7 +1942,10 @@
         {
           "id": "f_dh_partition_cols",
           "name": "partition_cols",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1454,7 +1954,10 @@
         {
           "id": "f_dh_serde",
           "name": "serde",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1463,7 +1966,10 @@
         {
           "id": "f_dh_tblproperties",
           "name": "tblproperties",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1472,7 +1978,10 @@
         {
           "id": "f_dh_bkey_columns",
           "name": "bkey_columns",
-          "type": { "id": "array", "name": "varchar(255)[]" },
+          "type": {
+            "id": "array",
+            "name": "varchar(255)[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1497,7 +2006,10 @@
         {
           "id": "f_fld_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -1506,7 +2018,10 @@
         {
           "id": "f_fld_dataset_id",
           "name": "dataset_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1515,7 +2030,10 @@
         {
           "id": "f_fld_parent_id",
           "name": "parent_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1524,7 +2042,10 @@
         {
           "id": "f_fld_name",
           "name": "name",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1533,7 +2054,10 @@
         {
           "id": "f_fld_path",
           "name": "path",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1542,7 +2066,10 @@
         {
           "id": "f_fld_pii_tags",
           "name": "pii_tags",
-          "type": { "id": "array", "name": "text[]" },
+          "type": {
+            "id": "array",
+            "name": "text[]"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1551,7 +2078,10 @@
         {
           "id": "f_fld_extra",
           "name": "extra",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1560,7 +2090,10 @@
         {
           "id": "f_fld_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1569,7 +2102,10 @@
         {
           "id": "f_fld_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1578,7 +2114,10 @@
         {
           "id": "f_fld_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1587,7 +2126,10 @@
         {
           "id": "f_fld_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1596,10 +2138,25 @@
         {
           "id": "f_fld_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fld_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -1608,21 +2165,30 @@
           "id": "ix_fld_root_name",
           "name": "idx_field_root_name",
           "unique": true,
-          "fieldIds": ["f_fld_dataset_id", "f_fld_name"],
+          "fieldIds": [
+            "f_fld_dataset_id",
+            "f_fld_name"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_fld_nested_name",
           "name": "idx_field_nested_name",
           "unique": true,
-          "fieldIds": ["f_fld_dataset_id", "f_fld_parent_id", "f_fld_name"],
+          "fieldIds": [
+            "f_fld_dataset_id",
+            "f_fld_parent_id",
+            "f_fld_name"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_fld_parent_id",
           "name": "ix_fields_parent_id",
           "unique": false,
-          "fieldIds": ["f_fld_parent_id"],
+          "fieldIds": [
+            "f_fld_parent_id"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -1642,7 +2208,10 @@
         {
           "id": "f_dsc_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -1651,7 +2220,10 @@
         {
           "id": "f_dsc_dataset_id",
           "name": "dataset_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1660,7 +2232,10 @@
         {
           "id": "f_dsc_version_num",
           "name": "version_num",
-          "type": { "id": "integer", "name": "integer" },
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1669,7 +2244,10 @@
         {
           "id": "f_dsc_schema",
           "name": "schema",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1678,7 +2256,10 @@
         {
           "id": "f_dsc_extra",
           "name": "extra",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1687,7 +2268,10 @@
         {
           "id": "f_dsc_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1696,7 +2280,10 @@
         {
           "id": "f_dsc_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1705,7 +2292,10 @@
         {
           "id": "f_dsc_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1714,7 +2304,10 @@
         {
           "id": "f_dsc_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1723,10 +2316,25 @@
         {
           "id": "f_dsc_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dsc_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -1735,7 +2343,10 @@
           "id": "ix_dsc_dataset_version",
           "name": "idx_dataset_schema_dataset_id_version_num",
           "unique": true,
-          "fieldIds": ["f_dsc_dataset_id", "f_dsc_version_num"],
+          "fieldIds": [
+            "f_dsc_dataset_id",
+            "f_dsc_version_num"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -1755,7 +2366,10 @@
         {
           "id": "f_fb_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -1764,7 +2378,10 @@
         {
           "id": "f_fb_field_id",
           "name": "field_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1773,7 +2390,10 @@
         {
           "id": "f_fb_dataset_schema_id",
           "name": "dataset_schema_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1782,7 +2402,10 @@
         {
           "id": "f_fb_position",
           "name": "position",
-          "type": { "id": "integer", "name": "integer" },
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1791,7 +2414,10 @@
         {
           "id": "f_fb_is_nullable",
           "name": "is_nullable",
-          "type": { "id": "boolean", "name": "boolean" },
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1800,7 +2426,10 @@
         {
           "id": "f_fb_type_instance_id",
           "name": "type_instance_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1809,7 +2438,10 @@
         {
           "id": "f_fb_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1818,7 +2450,10 @@
         {
           "id": "f_fb_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1827,7 +2462,10 @@
         {
           "id": "f_fb_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1836,7 +2474,10 @@
         {
           "id": "f_fb_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1845,10 +2486,25 @@
         {
           "id": "f_fb_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fb_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -1857,21 +2513,29 @@
           "id": "ix_fb_schema_field",
           "name": "idx_field_binding_dataset_schema_id_field_id",
           "unique": true,
-          "fieldIds": ["f_fb_dataset_schema_id", "f_fb_field_id"],
+          "fieldIds": [
+            "f_fb_dataset_schema_id",
+            "f_fb_field_id"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_fb_schema_position",
           "name": "idx_field_binding_dataset_schema_id_position",
           "unique": true,
-          "fieldIds": ["f_fb_dataset_schema_id", "f_fb_position"],
+          "fieldIds": [
+            "f_fb_dataset_schema_id",
+            "f_fb_position"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_fb_type_instance",
           "name": "ix_field_bindings_type_instance_id",
           "unique": false,
-          "fieldIds": ["f_fb_type_instance_id"],
+          "fieldIds": [
+            "f_fb_type_instance_id"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -1891,7 +2555,10 @@
         {
           "id": "f_ti_id",
           "name": "id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": true,
           "unique": true,
           "nullable": false,
@@ -1900,7 +2567,10 @@
         {
           "id": "f_ti_data_type_id",
           "name": "data_type_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1909,7 +2579,10 @@
         {
           "id": "f_ti_type_params",
           "name": "type_params",
-          "type": { "id": "jsonb", "name": "jsonb" },
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1918,7 +2591,10 @@
         {
           "id": "f_ti_parent_id",
           "name": "parent_id",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1927,7 +2603,10 @@
         {
           "id": "f_ti_slot",
           "name": "slot",
-          "type": { "id": "varchar", "name": "varchar(255)" },
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1936,7 +2615,10 @@
         {
           "id": "f_ti_created_at",
           "name": "created_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1945,7 +2627,10 @@
         {
           "id": "f_ti_updated_at",
           "name": "updated_at",
-          "type": { "id": "timestamp", "name": "timestamp" },
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
@@ -1954,7 +2639,10 @@
         {
           "id": "f_ti_created_by",
           "name": "created_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1963,7 +2651,10 @@
         {
           "id": "f_ti_updated_by",
           "name": "updated_by",
-          "type": { "id": "uuid", "name": "uuid" },
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
@@ -1972,10 +2663,25 @@
         {
           "id": "f_ti_note",
           "name": "note",
-          "type": { "id": "text", "name": "text" },
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
           "primaryKey": false,
           "unique": false,
           "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ti_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1712534400000
         }
       ],
@@ -1984,21 +2690,28 @@
           "id": "ix_ti_data_type",
           "name": "ix_type_instances_data_type_id",
           "unique": false,
-          "fieldIds": ["f_ti_data_type_id"],
+          "fieldIds": [
+            "f_ti_data_type_id"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "ix_ti_parent",
           "name": "ix_type_instances_parent_id",
           "unique": false,
-          "fieldIds": ["f_ti_parent_id"],
+          "fieldIds": [
+            "f_ti_parent_id"
+          ],
           "createdAt": 1712534400000
         },
         {
           "id": "uq_ti_parent_slot",
           "name": "uq_type_instance_parent_slot",
           "unique": true,
-          "fieldIds": ["f_ti_parent_id", "f_ti_slot"],
+          "fieldIds": [
+            "f_ti_parent_id",
+            "f_ti_slot"
+          ],
           "createdAt": 1712534400000
         }
       ],
@@ -2289,8 +3002,7 @@
       "targetCardinality": "many",
       "createdAt": 1712534400000,
       "diagramId": "w0gac180t7j1"
-    }
-    ,
+    },
     {
       "id": "rel_user_rt",
       "name": "user_to_refresh_tokens",

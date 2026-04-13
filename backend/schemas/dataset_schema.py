@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.schemas.mixins import MetaDataMixin, NoteMixin
+from backend.schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
 class DatasetSchemaBase(BaseModel):
@@ -23,7 +23,7 @@ class DatasetSchemaCreate(DatasetSchemaBase, NoteMixin):
     pass
 
 
-class DatasetSchemaUpdate(NoteMixin):
+class DatasetSchemaUpdate(VersionedUpdateMixin, NoteMixin):
     """Schema for dataset schema update."""
 
     dataset_id: uuid.UUID | None = None
