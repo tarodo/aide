@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from backend.api.filter_sort import BaseFilter
 
@@ -10,9 +11,13 @@ from backend.api.filter_sort import BaseFilter
 # ── System ───────────────────────────────────────────────────────────────
 class SystemFilter(BaseFilter):
     code: str | None = None
+    code__like: str | None = None
     name: str | None = None
+    name__like: str | None = None
     is_active: bool | None = None
     flavor_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 SYSTEM_SORTABLE = {"code", "name", "is_active", "created_at", "updated_at"}
@@ -21,7 +26,9 @@ SYSTEM_SORTABLE = {"code", "name", "is_active", "created_at", "updated_at"}
 # ── SystemKind ───────────────────────────────────────────────────────────
 class SystemKindFilter(BaseFilter):
     code: str | None = None
+    code__like: str | None = None
     name: str | None = None
+    name__like: str | None = None
 
 
 SYSTEM_KIND_SORTABLE = {"code", "name", "created_at", "updated_at"}
@@ -30,9 +37,12 @@ SYSTEM_KIND_SORTABLE = {"code", "name", "created_at", "updated_at"}
 # ── SystemFlavor ─────────────────────────────────────────────────────────
 class SystemFlavorFilter(BaseFilter):
     code: str | None = None
+    code__like: str | None = None
     name: str | None = None
+    name__like: str | None = None
     kind_id: uuid.UUID | None = None
     vendor: str | None = None
+    vendor__like: str | None = None
 
 
 SYSTEM_FLAVOR_SORTABLE = {"code", "name", "vendor", "created_at", "updated_at"}
@@ -42,8 +52,12 @@ SYSTEM_FLAVOR_SORTABLE = {"code", "name", "vendor", "created_at", "updated_at"}
 class DatasetFilter(BaseFilter):
     system_id: uuid.UUID | None = None
     layer: str | None = None
+    layer__in: str | None = None
     kind: str | None = None
+    kind__in: str | None = None
     is_active: bool | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 DATASET_SORTABLE = {
@@ -61,6 +75,7 @@ class FieldFilter(BaseFilter):
     dataset_id: uuid.UUID | None = None
     parent_id: uuid.UUID | None = None
     name: str | None = None
+    name__like: str | None = None
 
 
 FIELD_SORTABLE = {"name", "created_at", "updated_at"}
@@ -69,6 +84,7 @@ FIELD_SORTABLE = {"name", "created_at", "updated_at"}
 # ── DataType ─────────────────────────────────────────────────────────────
 class DataTypeFilter(BaseFilter):
     code: str | None = None
+    code__like: str | None = None
     system_flavor_id: uuid.UUID | None = None
 
 
@@ -80,6 +96,7 @@ class CastRuleFilter(BaseFilter):
     source_data_type_id: uuid.UUID | None = None
     target_data_type_id: uuid.UUID | None = None
     safety: str | None = None
+    safety__in: str | None = None
 
 
 CAST_RULE_SORTABLE = {"safety", "created_at", "updated_at"}
@@ -88,6 +105,8 @@ CAST_RULE_SORTABLE = {"safety", "created_at", "updated_at"}
 # ── CredentialRef ────────────────────────────────────────────────────────
 class CredentialRefFilter(BaseFilter):
     provider: str | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 CREDENTIAL_REF_SORTABLE = {"provider", "created_at", "updated_at"}
@@ -96,6 +115,8 @@ CREDENTIAL_REF_SORTABLE = {"provider", "created_at", "updated_at"}
 # ── DatasetSchema ────────────────────────────────────────────────────────
 class DatasetSchemaFilter(BaseFilter):
     dataset_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 DATASET_SCHEMA_SORTABLE = {"version_num", "created_at", "updated_at"}
@@ -106,6 +127,8 @@ class FieldBindingFilter(BaseFilter):
     field_id: uuid.UUID | None = None
     dataset_schema_id: uuid.UUID | None = None
     type_instance_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 FIELD_BINDING_SORTABLE = {"position", "created_at", "updated_at"}
@@ -116,6 +139,8 @@ class TypeInstanceFilter(BaseFilter):
     data_type_id: uuid.UUID | None = None
     parent_id: uuid.UUID | None = None
     slot: str | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 TYPE_INSTANCE_SORTABLE = {"slot", "created_at", "updated_at"}
@@ -124,9 +149,13 @@ TYPE_INSTANCE_SORTABLE = {"slot", "created_at", "updated_at"}
 # ── User ─────────────────────────────────────────────────────────────────
 class UserFilter(BaseFilter):
     email: str | None = None
+    email__like: str | None = None
     is_active: bool | None = None
     is_superuser: bool | None = None
     user_type: str | None = None
+    user_type__in: str | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
 
 
 USER_SORTABLE = {

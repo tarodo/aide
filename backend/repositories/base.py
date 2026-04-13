@@ -5,6 +5,7 @@ import structlog
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.filter_sort import FilterOp, FilterSpec
 from backend.core.settings import settings
 from backend.db.base import Base
 
@@ -40,11 +41,35 @@ class BaseRepository(Generic[ModelType]):
         self, query: Select, filters: dict[str, Any], *, entity: Any = None
     ) -> Select:
         target = entity or self.model
-        for field_name, value in filters.items():
-            column = getattr(target, field_name, None)
-            if column is None:
-                raise ValueError(f"Model has no column '{field_name}'")
-            query = query.where(column == value)
+        for key, value in filters.items():
+            if isinstance(value, FilterSpec):
+                column = getattr(target, value.field, None)
+                if column is None:
+                    raise ValueError(f"Model has no column '{value.field}'")
+                if value.op == FilterOp.EQ:
+                    query = query.where(column == value.value)
+                elif value.op == FilterOp.GT:
+                    query = query.where(column > value.value)
+                elif value.op == FilterOp.GTE:
+                    query = query.where(column >= value.value)
+                elif value.op == FilterOp.LT:
+                    query = query.where(column < value.value)
+                elif value.op == FilterOp.LTE:
+                    query = query.where(column <= value.value)
+                elif value.op == FilterOp.IN:
+                    query = query.where(column.in_(value.value))
+                elif value.op == FilterOp.LIKE:
+                    escaped = (
+                        value.value.replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_")
+                    )
+                    query = query.where(column.ilike(f"%{escaped}%", escape="\\"))
+            else:
+                column = getattr(target, key, None)
+                if column is None:
+                    raise ValueError(f"Model has no column '{key}'")
+                query = query.where(column == value)
         return query
 
     def _apply_sort(
