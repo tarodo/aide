@@ -2,6 +2,7 @@ import math
 import uuid
 from typing import Any, Generic, Type, TypeVar, cast
 
+import structlog
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +11,8 @@ from backend.db.base import Base
 from backend.db.uow import UnitOfWork
 from backend.repositories.base import BaseRepository, SoftDeleteRepository
 from backend.schemas.pagination import Page
+
+logger = structlog.get_logger(__name__)
 
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -37,6 +40,10 @@ class GenericService(
         self.read_schema = read_schema
         self.not_found_error_code = not_found_error_code
 
+    @property
+    def _entity_name(self) -> str:
+        return self.model.__tablename__
+
     def _get_repository(self, session: AsyncSession) -> BaseRepository[ModelType]:
         return cast(BaseRepository[ModelType], self.repository(session))
 
@@ -47,6 +54,11 @@ class GenericService(
             db_obj = await repo.get(obj_id)
             if not db_obj:
                 raise AppException(self.not_found_error_code)
+            logger.debug(
+                "entity.retrieved",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+            )
             return self.read_schema.model_validate(db_obj)
 
     async def get_paginated(
@@ -66,6 +78,13 @@ class GenericService(
                 skip=skip, limit=size, filters=filters, sort=sort
             )
             pages = math.ceil(total / size) if size > 0 else 0
+            logger.debug(
+                "entity.listed",
+                entity=self._entity_name,
+                page=page,
+                size=size,
+                total=total,
+            )
 
             return Page[ReadSchemaType](
                 items=[self.read_schema.model_validate(item) for item in items],
@@ -98,6 +117,12 @@ class GenericService(
                 setattr(db_obj, "updated_by", creator_id)
 
             created_obj = await repo.create(obj_in=db_obj)
+            logger.info(
+                "entity.created",
+                entity=self._entity_name,
+                entity_id=str(created_obj.id),  # type: ignore[attr-defined]
+                user_id=str(creator_id) if creator_id else None,
+            )
             return self.read_schema.model_validate(created_obj)
 
     async def _pre_update(
@@ -134,6 +159,12 @@ class GenericService(
                 setattr(db_obj, "updated_by", updater_id)
 
             updated_obj = await repo.update(db_obj=db_obj)
+            logger.info(
+                "entity.updated",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(updater_id) if updater_id else None,
+            )
             return self.read_schema.model_validate(updated_obj)
 
     async def delete(
@@ -150,6 +181,12 @@ class GenericService(
                 raise AppException(self.not_found_error_code)
 
             deleted_obj = await repo.delete(db_obj=db_obj)
+            logger.info(
+                "entity.deleted",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(deleter_id) if deleter_id else None,
+            )
             return self.read_schema.model_validate(deleted_obj)
 
 
@@ -184,6 +221,12 @@ class SoftDeleteService(
                 setattr(db_obj, "deleted_by", deleter_id)
 
             deleted_obj = await repo.delete(db_obj=db_obj)
+            logger.info(
+                "entity.soft_deleted",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(deleter_id) if deleter_id else None,
+            )
             return self.read_schema.model_validate(deleted_obj)
 
     async def restore(
@@ -207,4 +250,10 @@ class SoftDeleteService(
                 setattr(db_obj, "updated_by", restorer_id)
 
             restored_obj = await repo.restore(db_obj=db_obj)
+            logger.info(
+                "entity.restored",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(restorer_id) if restorer_id else None,
+            )
             return self.read_schema.model_validate(restored_obj)

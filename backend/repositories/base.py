@@ -1,9 +1,14 @@
+import time
 from typing import Any, Generic, Sequence, Type, TypeVar
 
+import structlog
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.settings import settings
 from backend.db.base import Base
+
+logger = structlog.get_logger(__name__)
 
 ModelType = TypeVar("ModelType", bound=Base)
 
@@ -17,6 +22,19 @@ class BaseRepository(Generic[ModelType]):
 
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def _execute(self, stmt: Any, *, method: str = "unknown") -> Any:
+        start = time.perf_counter()
+        result = await self.session.execute(stmt)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        if elapsed_ms >= settings.SLOW_QUERY_THRESHOLD_MS:
+            logger.warning(
+                "Slow query detected",
+                duration_ms=round(elapsed_ms, 2),
+                table=self.model.__tablename__,
+                method=method,
+            )
+        return result
 
     def _apply_filters(
         self, query: Select, filters: dict[str, Any], *, entity: Any = None
@@ -47,7 +65,7 @@ class BaseRepository(Generic[ModelType]):
         self, *, skip: int = 0, limit: int = 100
     ) -> Sequence[ModelType]:
         query = select(self.model).offset(skip).limit(limit)
-        result = await self.session.execute(query)
+        result = await self._execute(query, method="get_multi")
         return result.scalars().all()
 
     async def get_multi_paginated(
@@ -61,7 +79,9 @@ class BaseRepository(Generic[ModelType]):
         total_query = select(func.count()).select_from(self.model)
         if filters:
             total_query = self._apply_filters(total_query, filters)
-        total_result = await self.session.execute(total_query)
+        total_result = await self._execute(
+            total_query, method="get_multi_paginated.count"
+        )
         total = total_result.scalar_one()
 
         items_query = select(self.model)
@@ -73,7 +93,7 @@ class BaseRepository(Generic[ModelType]):
             items_query = items_query.order_by(self.model.id)  # type: ignore[attr-defined]
         items_query = items_query.offset(skip).limit(limit)
 
-        items_result = await self.session.execute(items_query)
+        items_result = await self._execute(items_query, method="get_multi_paginated")
         items = items_result.scalars().all()
 
         return items, total
@@ -107,7 +127,7 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
             self.model.id == obj_id,  # type: ignore[attr-defined]
             self.model.deleted_at.is_(None),  # type: ignore[attr-defined]
         )
-        result = await self.session.execute(query)
+        result = await self._execute(query, method="get")
         return result.scalars().first()
 
     async def get_including_deleted(self, obj_id: Any) -> SoftDeleteModelType | None:
@@ -122,7 +142,7 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.session.execute(query)
+        result = await self._execute(query, method="get_multi")
         return result.scalars().all()
 
     async def get_multi_paginated(
@@ -140,7 +160,9 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
         )
         if filters:
             total_query = self._apply_filters(total_query, filters)
-        total_result = await self.session.execute(total_query)
+        total_result = await self._execute(
+            total_query, method="get_multi_paginated.count"
+        )
         total = total_result.scalar_one()
 
         items_query = select(self.model).where(
@@ -154,7 +176,7 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
             items_query = items_query.order_by(self.model.id)  # type: ignore[attr-defined]
         items_query = items_query.offset(skip).limit(limit)
 
-        items_result = await self.session.execute(items_query)
+        items_result = await self._execute(items_query, method="get_multi_paginated")
         items = items_result.scalars().all()
         return items, total
 
