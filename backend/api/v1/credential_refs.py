@@ -12,6 +12,7 @@ from backend.schemas.credential_ref import (
     CredentialRefRead,
     CredentialRefUpdate,
 )
+from backend.schemas.filters import CREDENTIAL_REF_SORTABLE, CredentialRefFilter
 from backend.services.credential_ref import CredentialRefService
 
 router = APIRouter()
@@ -28,6 +29,8 @@ crud_router = create_crud_router(
     delete_error_codes=[CREDENTIAL_REF_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
     supports_restore=True,
     restore_error_codes=[CREDENTIAL_REF_NOT_FOUND, ENTITY_NOT_DELETED],
+    filter_model=CredentialRefFilter,
+    sortable_fields=CREDENTIAL_REF_SORTABLE,
 )
 
 router.include_router(crud_router)

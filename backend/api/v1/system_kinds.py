@@ -7,6 +7,7 @@ from backend.core.errors import (
     SYSTEM_KIND_ALREADY_EXISTS,
     SYSTEM_KIND_NOT_FOUND,
 )
+from backend.schemas.filters import SYSTEM_KIND_SORTABLE, SystemKindFilter
 from backend.schemas.system_kind import (
     SystemKindCreate,
     SystemKindRead,
@@ -28,6 +29,9 @@ crud_router = create_crud_router(
     delete_error_codes=[SYSTEM_KIND_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
     supports_restore=True,
     restore_error_codes=[SYSTEM_KIND_NOT_FOUND, ENTITY_NOT_DELETED],
+    filter_model=SystemKindFilter,
+    sortable_fields=SYSTEM_KIND_SORTABLE,
+    default_sort="code",
 )
 
 router.include_router(crud_router)

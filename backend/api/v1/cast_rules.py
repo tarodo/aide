@@ -11,6 +11,7 @@ from backend.schemas.cast_rule import (
     CastRuleRead,
     CastRuleUpdate,
 )
+from backend.schemas.filters import CAST_RULE_SORTABLE, CastRuleFilter
 from backend.services.cast_rule import CastRuleService
 
 router = APIRouter()
@@ -29,6 +30,8 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[CAST_RULE_NOT_FOUND],
     delete_error_codes=[CAST_RULE_NOT_FOUND],
+    filter_model=CastRuleFilter,
+    sortable_fields=CAST_RULE_SORTABLE,
 )
 
 router.include_router(crud_router)

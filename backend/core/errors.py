@@ -8,7 +8,7 @@ user-facing detail message.
 """
 
 from collections import defaultdict
-from typing import Any, Dict, Iterable, Protocol, Tuple, Type, cast
+from typing import Any, Dict, Tuple, Type
 
 from fastapi import status
 from pydantic import BaseModel
@@ -57,12 +57,6 @@ ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
 HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 
 ErrorInfo = Tuple[int, str]
-
-
-class ResponsesMapping(Protocol):
-    def keys(self) -> Iterable[int | str]: ...
-
-    def __getitem__(self, __key: int | str) -> Dict[str, Any]: ...
 
 
 # Mapping of error codes to (HTTP Status Code, Detail Message)
@@ -237,7 +231,7 @@ ERROR_MAP = {
 def build_error_responses(
     *error_codes: str,
     error_schema: Type[BaseModel] | None = None,
-) -> ResponsesMapping:
+) -> Dict[int | str, Dict[str, Any]]:
     """
     Turn a list of registered error codes into a FastAPI `responses` mapping.
 
@@ -267,7 +261,7 @@ def build_error_responses(
             )
         grouped[ERROR_MAP[code][0]].append((code, ERROR_MAP[code]))
 
-    responses: Dict[int, Dict[str, Any]] = {}
+    responses: Dict[int | str, Dict[str, Any]] = {}
     for status_code, items in grouped.items():
         description = (
             items[0][1][1]
@@ -291,4 +285,4 @@ def build_error_responses(
             },
         }
 
-    return cast(ResponsesMapping, responses)
+    return responses

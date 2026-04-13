@@ -6,13 +6,12 @@ from fastapi import APIRouter, Depends, status
 from backend.api.dependencies import (
     get_current_superuser,
     get_current_user,
-    get_pagination_params,
-    PaginationParams,
 )
+from backend.api.filter_sort import FilterSortParams, get_filter_sort_dependency
 from backend.core.errors import (
     DATASET_ALREADY_EXISTS,
-    DATASET_NOT_FOUND,
     DATASET_KIND_MISMATCH,
+    DATASET_NOT_FOUND,
     ENTITY_NOT_DELETED,
     FORBIDDEN,
     INVALID_DATASET_KIND,
@@ -23,10 +22,15 @@ from backend.core.errors import (
 from backend.db.uow import UnitOfWork
 from backend.models import User
 from backend.schemas.dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
+from backend.schemas.filters import DATASET_SORTABLE, DatasetFilter
 from backend.schemas.pagination import Page
 from backend.services.dataset import DatasetService
 
 router = APIRouter()
+
+_filter_sort = get_filter_sort_dependency(
+    DatasetFilter, DATASET_SORTABLE, "object_name"
+)
 
 
 @router.get(
@@ -37,10 +41,14 @@ router = APIRouter()
 async def get_all(
     service: DatasetService = Depends(DatasetService),
     uow: UnitOfWork = Depends(UnitOfWork),
-    pagination: PaginationParams = Depends(get_pagination_params),
+    params: FilterSortParams = Depends(_filter_sort),
 ) -> Any:
     return await service.get_paginated(
-        uow=uow, page=pagination.page, size=pagination.size
+        uow=uow,
+        page=params.page,
+        size=params.size,
+        filters=params.filters,
+        sort=params.sort,
     )
 
 

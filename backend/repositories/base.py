@@ -1,6 +1,6 @@
 from typing import Any, Generic, Sequence, Type, TypeVar
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.base import Base
@@ -18,47 +18,61 @@ class BaseRepository(Generic[ModelType]):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, obj_id: Any) -> ModelType | None:
-        """
-        Get an object by its ID.
+    def _apply_filters(
+        self, query: Select, filters: dict[str, Any], *, entity: Any = None
+    ) -> Select:
+        target = entity or self.model
+        for field_name, value in filters.items():
+            column = getattr(target, field_name, None)
+            if column is None:
+                raise ValueError(f"Model has no column '{field_name}'")
+            query = query.where(column == value)
+        return query
 
-        :param obj_id: Object ID
-        :return: The object or None if not found
-        """
+    def _apply_sort(
+        self, query: Select, sort: list[tuple[str, bool]], *, entity: Any = None
+    ) -> Select:
+        target = entity or self.model
+        for field_name, desc in sort:
+            column = getattr(target, field_name, None)
+            if column is None:
+                raise ValueError(f"Model has no column '{field_name}'")
+            query = query.order_by(column.desc() if desc else column.asc())
+        return query
+
+    async def get(self, obj_id: Any) -> ModelType | None:
         return await self.session.get(self.model, obj_id)
 
     async def get_multi(
         self, *, skip: int = 0, limit: int = 100
     ) -> Sequence[ModelType]:
-        """
-        Get multiple objects with pagination.
-
-        :param skip: Number of objects to skip
-        :param limit: Maximum number of objects to return
-        :return: List of objects
-        """
         query = select(self.model).offset(skip).limit(limit)
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_multi_paginated(
-        self, *, skip: int = 0, limit: int = 100
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        filters: dict[str, Any] | None = None,
+        sort: list[tuple[str, bool]] | None = None,
     ) -> tuple[Sequence[ModelType], int]:
-        """
-        Get multiple objects with pagination and total count.
-
-        :param skip: Number of objects to skip
-        :param limit: Maximum number of objects to return
-        :return: A tuple containing the list of objects and the total count
-        """
         total_query = select(func.count()).select_from(self.model)
+        if filters:
+            total_query = self._apply_filters(total_query, filters)
         total_result = await self.session.execute(total_query)
         total = total_result.scalar_one()
 
-        # Assuming the model has an 'id' attribute for ordering.
-        items_query = (
-            select(self.model).order_by(self.model.id).offset(skip).limit(limit)  # type: ignore[attr-defined]
-        )
+        items_query = select(self.model)
+        if filters:
+            items_query = self._apply_filters(items_query, filters)
+        if sort:
+            items_query = self._apply_sort(items_query, sort)
+        else:
+            items_query = items_query.order_by(self.model.id)  # type: ignore[attr-defined]
+        items_query = items_query.offset(skip).limit(limit)
+
         items_result = await self.session.execute(items_query)
         items = items_result.scalars().all()
 
@@ -112,23 +126,34 @@ class SoftDeleteRepository(BaseRepository[SoftDeleteModelType]):
         return result.scalars().all()
 
     async def get_multi_paginated(
-        self, *, skip: int = 0, limit: int = 100
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        filters: dict[str, Any] | None = None,
+        sort: list[tuple[str, bool]] | None = None,
     ) -> tuple[Sequence[SoftDeleteModelType], int]:
         total_query = (
             select(func.count())
             .select_from(self.model)
             .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
         )
+        if filters:
+            total_query = self._apply_filters(total_query, filters)
         total_result = await self.session.execute(total_query)
         total = total_result.scalar_one()
 
-        items_query = (
-            select(self.model)
-            .where(self.model.deleted_at.is_(None))  # type: ignore[attr-defined]
-            .order_by(self.model.id)  # type: ignore[attr-defined]
-            .offset(skip)
-            .limit(limit)
+        items_query = select(self.model).where(
+            self.model.deleted_at.is_(None)  # type: ignore[attr-defined]
         )
+        if filters:
+            items_query = self._apply_filters(items_query, filters)
+        if sort:
+            items_query = self._apply_sort(items_query, sort)
+        else:
+            items_query = items_query.order_by(self.model.id)  # type: ignore[attr-defined]
+        items_query = items_query.offset(skip).limit(limit)
+
         items_result = await self.session.execute(items_query)
         items = items_result.scalars().all()
         return items, total

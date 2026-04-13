@@ -12,6 +12,7 @@ from backend.schemas.data_type import (
     DataTypeRead,
     DataTypeUpdate,
 )
+from backend.schemas.filters import DATA_TYPE_SORTABLE, DataTypeFilter
 from backend.services.data_type import DataTypeService
 
 router = APIRouter()
@@ -32,6 +33,9 @@ crud_router = create_crud_router(
     delete_error_codes=[DATA_TYPE_NOT_FOUND],
     supports_restore=True,
     restore_error_codes=[DATA_TYPE_NOT_FOUND, ENTITY_NOT_DELETED],
+    filter_model=DataTypeFilter,
+    sortable_fields=DATA_TYPE_SORTABLE,
+    default_sort="code",
 )
 
 router.include_router(crud_router)

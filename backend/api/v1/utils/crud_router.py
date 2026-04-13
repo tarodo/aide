@@ -10,6 +10,11 @@ from backend.api.dependencies import (
     get_current_user,
     get_pagination_params,
 )
+from backend.api.filter_sort import (
+    BaseFilter,
+    FilterSortParams,
+    get_filter_sort_dependency,
+)
 from backend.core.errors import FORBIDDEN, UNAUTHORIZED, build_error_responses
 from backend.db.uow import UnitOfWork
 from backend.models import User
@@ -41,6 +46,9 @@ def create_crud_router(
     supports_restore: bool = False,
     restore_dependencies: Sequence[Any] | None = None,
     restore_error_codes: List[str] | None = None,
+    filter_model: Type[BaseFilter] | None = None,
+    sortable_fields: set[str] | None = None,
+    default_sort: str = "id",
 ) -> APIRouter:
     router = APIRouter()
 
@@ -57,20 +65,46 @@ def create_crud_router(
     if restore_dependencies is None:
         restore_dependencies = [Depends(get_current_superuser)]
 
-    @router.get(
-        "/",
-        response_model=Page[read_schema],  # type: ignore[valid-type]
-        summary=f"Get all {entity_name}s (paginated)",
-        dependencies=get_all_dependencies,
-    )
-    async def get_all(
-        service: ServiceType = Depends(service_dependency),
-        uow: UnitOfWork = Depends(UnitOfWork),
-        pagination: PaginationParams = Depends(get_pagination_params),
-    ) -> Any:
-        return await service.get_paginated(
-            uow=uow, page=pagination.page, size=pagination.size
+    if filter_model is not None:
+        _filter_sort_dep = get_filter_sort_dependency(
+            filter_model, sortable_fields or set(), default_sort
         )
+
+        @router.get(
+            "/",
+            response_model=Page[read_schema],  # type: ignore[valid-type]
+            summary=f"Get all {entity_name}s (paginated)",
+            dependencies=get_all_dependencies,
+        )
+        async def get_all_filtered(
+            service: ServiceType = Depends(service_dependency),
+            uow: UnitOfWork = Depends(UnitOfWork),
+            params: FilterSortParams = Depends(_filter_sort_dep),
+        ) -> Any:
+            return await service.get_paginated(
+                uow=uow,
+                page=params.page,
+                size=params.size,
+                filters=params.filters,
+                sort=params.sort,
+            )
+
+    else:
+
+        @router.get(
+            "/",
+            response_model=Page[read_schema],  # type: ignore[valid-type]
+            summary=f"Get all {entity_name}s (paginated)",
+            dependencies=get_all_dependencies,
+        )
+        async def get_all(
+            service: ServiceType = Depends(service_dependency),
+            uow: UnitOfWork = Depends(UnitOfWork),
+            pagination: PaginationParams = Depends(get_pagination_params),
+        ) -> Any:
+            return await service.get_paginated(
+                uow=uow, page=pagination.page, size=pagination.size
+            )
 
     @router.post(
         "/",

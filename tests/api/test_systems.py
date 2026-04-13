@@ -202,3 +202,105 @@ class TestSystemAPI:
             headers=superuser_token_headers,
         )
         assert response.status_code == 404
+
+    async def test_filter_by_is_active(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?is_active=true",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(item["is_active"] is True for item in data["items"])
+
+    async def test_filter_by_code(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            f"/api/v1/systems/?code={test_system.code}",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["code"] == test_system.code
+
+    async def test_filter_no_results(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?code=NONEXISTENT",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 0
+        assert data["items"] == []
+
+    async def test_sort_by_code_asc(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?sort=code",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        codes = [item["code"] for item in data["items"]]
+        assert codes == sorted(codes)
+
+    async def test_sort_by_code_desc(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?sort=-code",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        codes = [item["code"] for item in data["items"]]
+        assert codes == sorted(codes, reverse=True)
+
+    async def test_sort_invalid_field_returns_422(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?sort=hacked_field",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 422
+
+    async def test_filter_and_sort_combined(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        response = await async_client.get(
+            "/api/v1/systems/?is_active=true&sort=-code",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(item["is_active"] is True for item in data["items"])
+        codes = [item["code"] for item in data["items"]]
+        assert codes == sorted(codes, reverse=True)

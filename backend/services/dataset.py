@@ -1,6 +1,6 @@
 import math
 import uuid
-from typing import cast
+from typing import Any, cast
 
 from backend.core import errors
 from backend.core.exceptions import AppException
@@ -90,13 +90,21 @@ class DatasetService(
             return validate_dataset_read(db_obj)
 
     async def get_paginated(
-        self, uow: UnitOfWork, *, page: int, size: int
+        self,
+        uow: UnitOfWork,
+        *,
+        page: int,
+        size: int,
+        filters: dict[str, Any] | None = None,
+        sort: list[tuple[str, bool]] | None = None,
     ) -> Page[AnyDatasetRead]:
         """Get a paginated list of datasets."""
         skip = (page - 1) * size
         async with uow:
             repo = cast(DatasetRepository, self._get_repository(uow.session))
-            items, total = await repo.get_multi_paginated(skip=skip, limit=size)
+            items, total = await repo.get_multi_paginated(
+                skip=skip, limit=size, filters=filters, sort=sort
+            )
             pages = math.ceil(total / size) if size > 0 else 0
 
             return Page[AnyDatasetRead](

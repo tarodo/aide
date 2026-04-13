@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import with_polymorphic
@@ -28,26 +29,33 @@ class DatasetRepository(SoftDeleteRepository[Dataset]):
         return result.scalars().first()
 
     async def get_multi_paginated(
-        self, *, skip: int = 0, limit: int = 100
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        filters: dict[str, Any] | None = None,
+        sort: list[tuple[str, bool]] | None = None,
     ) -> tuple[list[Dataset], int]:
         """Get multiple non-deleted datasets with pagination and polymorphic loading."""
-        polymorphic_query = with_polymorphic(Dataset, "*")
+        poly = with_polymorphic(Dataset, "*")
 
         total_query = (
-            select(func.count())
-            .select_from(polymorphic_query)
-            .where(polymorphic_query.deleted_at.is_(None))
+            select(func.count()).select_from(poly).where(poly.deleted_at.is_(None))
         )
+        if filters:
+            total_query = self._apply_filters(total_query, filters, entity=poly)
         total_result = await self.session.execute(total_query)
         total = total_result.scalar_one()
 
-        items_query = (
-            select(polymorphic_query)
-            .where(polymorphic_query.deleted_at.is_(None))
-            .order_by(polymorphic_query.id)
-            .offset(skip)
-            .limit(limit)
-        )
+        items_query = select(poly).where(poly.deleted_at.is_(None))
+        if filters:
+            items_query = self._apply_filters(items_query, filters, entity=poly)
+        if sort:
+            items_query = self._apply_sort(items_query, sort, entity=poly)
+        else:
+            items_query = items_query.order_by(poly.id)
+        items_query = items_query.offset(skip).limit(limit)
+
         items_result = await self.session.execute(items_query)
         items = list(items_result.scalars().all())
 

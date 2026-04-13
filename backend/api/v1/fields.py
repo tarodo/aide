@@ -22,6 +22,7 @@ from backend.schemas.field import (
     FieldTree,
     FieldUpdate,
 )
+from backend.schemas.filters import FIELD_SORTABLE, FieldFilter
 from backend.services.field import FieldService
 
 router = APIRouter()
@@ -48,6 +49,9 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[FIELD_NOT_FOUND],
     delete_error_codes=[FIELD_NOT_FOUND],
+    filter_model=FieldFilter,
+    sortable_fields=FIELD_SORTABLE,
+    default_sort="name",
 )
 
 router.include_router(crud_router)

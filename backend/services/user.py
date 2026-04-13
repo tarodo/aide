@@ -1,5 +1,6 @@
 import math
 import uuid
+from typing import Any
 
 from backend.core import errors
 from backend.core.exceptions import AppException
@@ -49,14 +50,20 @@ class UserService:
             return UserRead.model_validate(db_user)
 
     async def get_users_paginated(
-        self, uow: UnitOfWork, *, page: int, size: int
+        self,
+        uow: UnitOfWork,
+        *,
+        page: int,
+        size: int,
+        filters: dict[str, Any] | None = None,
+        sort: list[tuple[str, bool]] | None = None,
     ) -> Page[UserRead]:
-        """
-        Get a paginated list of users.
-        """
+        """Get a paginated list of users."""
         skip = (page - 1) * size
         async with uow:
-            items, total = await uow.users.get_multi_paginated(skip=skip, limit=size)
+            items, total = await uow.users.get_multi_paginated(
+                skip=skip, limit=size, filters=filters, sort=sort
+            )
             pages = math.ceil(total / size) if size > 0 else 0
 
             return Page[UserRead](

@@ -11,6 +11,7 @@ from backend.schemas.dataset_schema import (
     DatasetSchemaRead,
     DatasetSchemaUpdate,
 )
+from backend.schemas.filters import DATASET_SCHEMA_SORTABLE, DatasetSchemaFilter
 from backend.services.dataset_schema import DatasetSchemaService
 
 router = APIRouter()
@@ -29,6 +30,8 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[DATASET_SCHEMA_NOT_FOUND],
     delete_error_codes=[DATASET_SCHEMA_NOT_FOUND],
+    filter_model=DatasetSchemaFilter,
+    sortable_fields=DATASET_SCHEMA_SORTABLE,
 )
 
 router.include_router(crud_router)

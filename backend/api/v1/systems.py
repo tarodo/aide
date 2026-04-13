@@ -9,6 +9,7 @@ from backend.core.errors import (
     SYSTEM_FLAVOR_NOT_FOUND,
     SYSTEM_NOT_FOUND,
 )
+from backend.schemas.filters import SYSTEM_SORTABLE, SystemFilter
 from backend.schemas.system import (
     SystemCreate,
     SystemRead,
@@ -39,6 +40,9 @@ crud_router = create_crud_router(
     delete_error_codes=[SYSTEM_NOT_FOUND, HAS_DEPENDENT_ENTITIES],
     supports_restore=True,
     restore_error_codes=[SYSTEM_NOT_FOUND, ENTITY_NOT_DELETED],
+    filter_model=SystemFilter,
+    sortable_fields=SYSTEM_SORTABLE,
+    default_sort="code",
 )
 
 router.include_router(crud_router)

@@ -14,6 +14,7 @@ from backend.schemas.field_binding import (
     FieldBindingRead,
     FieldBindingUpdate,
 )
+from backend.schemas.filters import FIELD_BINDING_SORTABLE, FieldBindingFilter
 from backend.services.field_binding import FieldBindingService
 
 router = APIRouter()
@@ -41,6 +42,8 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[FIELD_BINDING_NOT_FOUND],
     delete_error_codes=[FIELD_BINDING_NOT_FOUND],
+    filter_model=FieldBindingFilter,
+    sortable_fields=FIELD_BINDING_SORTABLE,
 )
 
 router.include_router(crud_router)

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import CursorResult, delete, select, update
 from sqlalchemy.sql import func
 
 from backend.models.refresh_token import RefreshToken
@@ -27,11 +27,11 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
             )
             .values(revoked_at=func.now())
         )
-        result = await self.session.execute(stmt)
+        result: CursorResult = await self.session.execute(stmt)  # type: ignore[assignment]
         return result.rowcount
 
     async def delete_expired(self, before: datetime) -> int:
         """Hard-delete tokens that expired before the given timestamp."""
         stmt = delete(self.model).where(self.model.expires_at < before)
-        result = await self.session.execute(stmt)
+        result: CursorResult = await self.session.execute(stmt)  # type: ignore[assignment]
         return result.rowcount

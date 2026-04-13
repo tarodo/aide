@@ -186,7 +186,9 @@ async def test_get_users_paginated(
     result = await user_service.get_users_paginated(uow=mock_uow, page=page, size=size)
 
     # Assert
-    mock_uow.users.get_multi_paginated.assert_awaited_once_with(skip=0, limit=size)
+    mock_uow.users.get_multi_paginated.assert_awaited_once_with(
+        skip=0, limit=size, filters=None, sort=None
+    )
     assert isinstance(result, Page)
     assert result.total == 1
     assert result.page == page

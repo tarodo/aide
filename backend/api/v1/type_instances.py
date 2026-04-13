@@ -15,6 +15,7 @@ from backend.core.errors import (
     build_error_responses,
 )
 from backend.db.uow import UnitOfWork
+from backend.schemas.filters import TYPE_INSTANCE_SORTABLE, TypeInstanceFilter
 from backend.schemas.type_instance import (
     TypeInstanceCreate,
     TypeInstanceRead,
@@ -44,6 +45,8 @@ crud_router = create_crud_router(
     ],
     get_one_error_codes=[TYPE_INSTANCE_NOT_FOUND],
     delete_error_codes=[TYPE_INSTANCE_NOT_FOUND],
+    filter_model=TypeInstanceFilter,
+    sortable_fields=TYPE_INSTANCE_SORTABLE,
 )
 
 router.include_router(crud_router)

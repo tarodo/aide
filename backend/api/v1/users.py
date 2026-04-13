@@ -3,11 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, status
 
 from backend.api.dependencies import (
-    PaginationParams,
-    get_current_user,
     get_current_superuser,
-    get_pagination_params,
+    get_current_user,
 )
+from backend.api.filter_sort import FilterSortParams, get_filter_sort_dependency
 from backend.core.errors import (
     FORBIDDEN,
     UNAUTHORIZED,
@@ -17,11 +16,14 @@ from backend.core.errors import (
 )
 from backend.db.uow import UnitOfWork
 from backend.models import User
+from backend.schemas.filters import USER_SORTABLE, UserFilter
 from backend.schemas.pagination import Page
 from backend.schemas.user import UserCreate, UserRead
 from backend.services.user import UserService
 
 router = APIRouter()
+
+_filter_sort = get_filter_sort_dependency(UserFilter, USER_SORTABLE, "email")
 
 
 @router.get(
@@ -36,13 +38,14 @@ router = APIRouter()
 async def get_all_users(
     uow: UnitOfWork = Depends(UnitOfWork),
     user_service: UserService = Depends(UserService),
-    pagination: PaginationParams = Depends(get_pagination_params),
+    params: FilterSortParams = Depends(_filter_sort),
 ) -> Page[UserRead]:
-    """
-    Get a paginated list of all users. Requires superuser privileges.
-    """
     return await user_service.get_users_paginated(
-        uow=uow, page=pagination.page, size=pagination.size
+        uow=uow,
+        page=params.page,
+        size=params.size,
+        filters=params.filters,
+        sort=params.sort,
     )
 
 
