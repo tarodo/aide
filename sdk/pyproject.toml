@@ -8,5 +8,14 @@ dependencies = [
     "aide-schemas",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
 [tool.uv.sources]
 aide-schemas = { path = "../schemas", editable = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
