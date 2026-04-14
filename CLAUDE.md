@@ -12,6 +12,7 @@
 | `make test-docker` | Run tests in Docker (pytest + coverage) |
 | `make alembic-gen` | Auto-generate migration from model changes |
 | `make alembic-head` | Apply migrations to head |
+| `uv run python -m backend.scripts.seed_data_types --file backend/scripts/data/postgres14.yaml` | Seed PG14 data types |
 
 Package manager: `uv`. Python ≥ 3.13.
 
@@ -98,3 +99,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["package_name"]
 ```
+
+### Data type seeding
+
+Data types are pre-loaded per flavor from YAML files in `backend/scripts/data/`. Flavor `code` = min supported version; `versions` lists all compatible versions. Re-run `seed_data_types.py` after editing a YAML — it is idempotent. Removing a type from YAML does NOT delete the row (protects existing `TypeInstance` FKs); prune manually if required.
