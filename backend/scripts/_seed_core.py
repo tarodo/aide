@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -9,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.models.system_flavor import SystemFlavor
 from backend.models.system_kind import SystemKind
 
 
@@ -102,6 +104,51 @@ async def upsert_system_kind(
 
     if existing.name != spec.name:
         existing.name = spec.name
+        await session.flush()
+        return existing, "updated"
+
+    return existing, "unchanged"
+
+
+async def upsert_system_flavor(
+    session: AsyncSession, spec: SeedFlavor, kind_id: uuid.UUID
+) -> tuple[SystemFlavor, UpsertStatus]:
+    stmt = select(SystemFlavor).where(SystemFlavor.code == spec.code)
+    existing = (await session.execute(stmt)).scalars().first()
+
+    if existing is None:
+        obj = SystemFlavor(
+            code=spec.code,
+            name=spec.name,
+            vendor=spec.vendor,
+            versions=list(spec.versions),
+            kind_id=kind_id,
+        )
+        session.add(obj)
+        await session.flush()
+        return obj, "inserted"
+
+    fields_changed = (
+        existing.name != spec.name
+        or existing.vendor != spec.vendor
+        or list(existing.versions or []) != list(spec.versions)
+        or existing.kind_id != kind_id
+    )
+
+    if existing.deleted_at is not None:
+        existing.deleted_at = None
+        existing.name = spec.name
+        existing.vendor = spec.vendor
+        existing.versions = list(spec.versions)
+        existing.kind_id = kind_id
+        await session.flush()
+        return existing, "restored"
+
+    if fields_changed:
+        existing.name = spec.name
+        existing.vendor = spec.vendor
+        existing.versions = list(spec.versions)
+        existing.kind_id = kind_id
         await session.flush()
         return existing, "updated"
 

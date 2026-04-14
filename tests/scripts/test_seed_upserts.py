@@ -2,7 +2,12 @@ import pytest
 from sqlalchemy import select
 
 from backend.models.system_kind import SystemKind
-from backend.scripts._seed_core import SeedKind, upsert_system_kind
+from backend.scripts._seed_core import (
+    SeedFlavor,
+    SeedKind,
+    upsert_system_flavor,
+    upsert_system_kind,
+)
 
 
 @pytest.mark.asyncio
@@ -52,3 +57,50 @@ async def test_upsert_kind_restores_soft_deleted(transactional_session):
         select(SystemKind).where(SystemKind.code == "rdbms")
     )
     assert len(check.scalars().all()) == 1
+
+
+@pytest.mark.asyncio
+async def test_upsert_flavor_inserts_with_kind_fk(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    spec = SeedFlavor(
+        code="postgres14",
+        name="PostgreSQL",
+        vendor="PGDG",
+        versions=["14", "15"],
+    )
+    obj, status = await upsert_system_flavor(transactional_session, spec, kind.id)
+    assert status == "inserted"
+    assert obj.kind_id == kind.id
+    assert obj.versions == ["14", "15"]
+
+
+@pytest.mark.asyncio
+async def test_upsert_flavor_updates_when_versions_change(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    await upsert_system_flavor(
+        transactional_session,
+        SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"]),
+        kind.id,
+    )
+    obj, status = await upsert_system_flavor(
+        transactional_session,
+        SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14", "15"]),
+        kind.id,
+    )
+    assert status == "updated"
+    assert obj.versions == ["14", "15"]
+
+
+@pytest.mark.asyncio
+async def test_upsert_flavor_noop_when_unchanged(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    spec = SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"])
+    await upsert_system_flavor(transactional_session, spec, kind.id)
+    _, status = await upsert_system_flavor(transactional_session, spec, kind.id)
+    assert status == "unchanged"
