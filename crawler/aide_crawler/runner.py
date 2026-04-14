@@ -12,19 +12,8 @@ from aide_crawler.applier import apply_new_datasets
 from aide_crawler.differ import classify_and_diff
 from aide_crawler.inspector import run_inspection
 from aide_crawler.normalizer import normalize
+from aide_crawler.reporter import format_report
 from aide_crawler.type_cache import TypeCache
-
-
-def format_report(*args, **kwargs):  # type: ignore[misc]
-    """Thin shim — real implementation lives in reporter.py (Task 11).
-
-    Imported lazily to avoid a broken top-level import while reporter.py
-    is being rewritten.  Once Task 11 lands this shim can be replaced by
-    a direct ``from aide_crawler.reporter import format_report``.
-    """
-    from aide_crawler.reporter import format_report as _real  # noqa: PLC0415
-
-    return _real(*args, **kwargs)
 
 
 async def run_crawl(
