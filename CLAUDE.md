@@ -17,7 +17,13 @@ Package manager: `uv`. Python ≥ 3.13.
 
 ## Architecture
 
-Layered async FastAPI app:
+Monorepo with 4 packages wired via `[tool.uv.sources]` in root pyproject.toml:
+- `backend/` — FastAPI metastore (depends on aide-schemas)
+- `schemas/` — shared Pydantic DTOs (`aide-schemas`, zero backend deps)
+- `sdk/` — async REST client (`aide-sdk`, depends on aide-schemas)
+- `crawler/` — RDBMS metadata crawler CLI (`aide-crawler`, depends on aide-sdk)
+
+Layered async FastAPI app in `backend/`:
 
 ```
 backend/
@@ -25,7 +31,7 @@ backend/
 ├── services/        # Business logic (GenericService base)
 ├── repositories/    # DB access (BaseRepository generic CRUD)
 ├── models/          # SQLAlchemy 2.0 async ORM
-├── schemas/         # Pydantic DTOs (Create/Read/Update)
+├── schemas/         # Re-exports from aide-schemas (backward compat)
 ├── core/            # Config, auth, errors
 ├── db/              # Session, UoW pattern
 └── alembic/         # Migrations
@@ -33,7 +39,7 @@ backend/
 
 Request flow: Router → Service → UoW → Repository → Model.
 
-New entities follow this pattern: add model, repository, service, schemas, router, then wire in `main.py`.
+New entities follow this pattern: add model, repository, service, schemas (in `schemas/aide_schemas/` + re-export in `backend/schemas/`), router, then wire in `main.py`.
 
 ## Environment
 
@@ -71,3 +77,24 @@ Run `make format` after code changes. This runs `black` + `ruff check --fix`. Fi
 ### Testing
 
 Tests run via `make test-docker` in Docker, not locally. Test structure mirrors `backend/`: `tests/api/`, `tests/services/`, `tests/repositories/`, `tests/models/`.
+
+`make test-docker` binds port 5433. If another repo/worktree already runs `aide-db-test-1` on 5433, stop it first: `docker stop aide-db-test-1`. Only one test DB instance at a time.
+
+SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
+
+### Alembic migrations
+
+After `make alembic-gen`, review the generated file. Auto-generate picks up pre-existing schema drift (nullability mismatches, missing indexes). Strip unrelated operations before committing — keep each migration focused on one model change.
+
+### Local package CLI scripts
+
+For packages with `[project.scripts]` (e.g. `crawler/`), add hatchling build-system so `uv` installs the entry point:
+
+```toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["package_name"]
+```
