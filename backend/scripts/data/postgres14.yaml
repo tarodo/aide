@@ -1,0 +1,178 @@
+kind:
+  code: rdbms
+  name: Relational Database
+flavor:
+  code: postgres14
+  name: PostgreSQL
+  vendor: PostgreSQL Global Development Group
+  versions: ["14"]
+types:
+  - code: smallint
+    params_schema: {}
+    render_template: smallint
+  - code: integer
+    params_schema: {}
+    render_template: integer
+  - code: bigint
+    params_schema: {}
+    render_template: bigint
+  - code: decimal
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 1, max: 1000}
+      scale:     {type: int, required: false, default: null, min: -1000, max: 1000}
+    render_template: "decimal({precision},{scale})"
+  - code: numeric
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 1, max: 1000}
+      scale:     {type: int, required: false, default: null, min: -1000, max: 1000}
+    render_template: "numeric({precision},{scale})"
+  - code: real
+    params_schema: {}
+    render_template: real
+  - code: double
+    params_schema: {}
+    render_template: double precision
+  - code: smallserial
+    params_schema: {}
+    render_template: smallserial
+  - code: serial
+    params_schema: {}
+    render_template: serial
+  - code: bigserial
+    params_schema: {}
+    render_template: bigserial
+  - code: money
+    params_schema: {}
+    render_template: money
+  - code: char
+    params_schema:
+      length: {type: int, required: false, default: null}
+    render_template: "char({length})"
+  - code: varchar
+    params_schema:
+      length: {type: int, required: false, default: null}
+    render_template: "varchar({length})"
+  - code: text
+    params_schema: {}
+    render_template: text
+  - code: bytea
+    params_schema: {}
+    render_template: bytea
+  - code: date
+    params_schema: {}
+    render_template: date
+  - code: time
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
+    render_template: "time({precision})"
+  - code: timetz
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
+    render_template: "time({precision}) with time zone"
+  - code: timestamp
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
+    render_template: "timestamp({precision})"
+  - code: timestamptz
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
+    render_template: "timestamp({precision}) with time zone"
+  - code: interval
+    params_schema:
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
+    render_template: "interval({precision})"
+  - code: boolean
+    params_schema: {}
+    render_template: boolean
+  - code: enum
+    params_schema: {}
+    render_template: null
+  - code: point
+    params_schema: {}
+    render_template: point
+  - code: line
+    params_schema: {}
+    render_template: line
+  - code: lseg
+    params_schema: {}
+    render_template: lseg
+  - code: box
+    params_schema: {}
+    render_template: box
+  - code: path
+    params_schema: {}
+    render_template: path
+  - code: polygon
+    params_schema: {}
+    render_template: polygon
+  - code: circle
+    params_schema: {}
+    render_template: circle
+  - code: inet
+    params_schema: {}
+    render_template: inet
+  - code: cidr
+    params_schema: {}
+    render_template: cidr
+  - code: macaddr
+    params_schema: {}
+    render_template: macaddr
+  - code: macaddr8
+    params_schema: {}
+    render_template: macaddr8
+  - code: bit
+    params_schema:
+      length: {type: int, required: false, default: null}
+    render_template: "bit({length})"
+  - code: varbit
+    params_schema:
+      length: {type: int, required: false, default: null}
+    render_template: "bit varying({length})"
+  - code: tsvector
+    params_schema: {}
+    render_template: tsvector
+  - code: tsquery
+    params_schema: {}
+    render_template: tsquery
+  - code: uuid
+    params_schema: {}
+    render_template: uuid
+  - code: xml
+    params_schema: {}
+    render_template: xml
+  - code: json
+    params_schema: {}
+    render_template: json
+  - code: jsonb
+    params_schema: {}
+    render_template: jsonb
+  - code: array
+    params_schema: {}
+    render_template: null
+  - code: int4range
+    params_schema: {}
+    render_template: int4range
+  - code: int8range
+    params_schema: {}
+    render_template: int8range
+  - code: numrange
+    params_schema: {}
+    render_template: numrange
+  - code: tsrange
+    params_schema: {}
+    render_template: tsrange
+  - code: tstzrange
+    params_schema: {}
+    render_template: tstzrange
+  - code: daterange
+    params_schema: {}
+    render_template: daterange
+  - code: oid
+    params_schema: {}
+    render_template: oid
+  - code: pg_lsn
+    params_schema: {}
+    render_template: pg_lsn
+  - code: txid_snapshot
+    params_schema: {}
+    render_template: txid_snapshot

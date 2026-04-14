@@ -101,9 +101,7 @@ async def run_crawl(
                 "new_datasets": len(diff.new_datasets),
                 "removed_datasets": len(diff.removed_datasets),
                 "new_fields": sum(len(v) for v in diff.new_fields.values()),
-                "removed_fields": sum(
-                    len(v) for v in diff.removed_fields.values()
-                ),
+                "removed_fields": sum(len(v) for v in diff.removed_fields.values()),
                 "type_changes": len(diff.type_changes),
             }
             await client.crawl_runs.update(
