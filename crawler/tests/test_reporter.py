@@ -23,11 +23,15 @@ def _make_diff() -> DiffResult:
                     NormalizedField(
                         name="id",
                         path="id",
+                        nullable=False,
+                        position=0,
                         type_mapping=TypeMapping("integer", {}),
                     ),
                     NormalizedField(
                         name="total",
                         path="total",
+                        nullable=True,
+                        position=1,
                         type_mapping=TypeMapping(
                             "numeric", {"precision": 10, "scale": 2}
                         ),

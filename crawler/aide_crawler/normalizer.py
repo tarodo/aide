@@ -11,7 +11,9 @@ from aide_crawler.type_map import TypeMapping, resolve_type
 class NormalizedField:
     name: str
     path: str
-    type_mapping: TypeMapping | None
+    nullable: bool
+    position: int
+    type_mapping: TypeMapping
 
 
 @dataclass
@@ -43,12 +45,14 @@ def normalize(inspection: InspectionResult) -> NormalizedResult:
         object_name = f"{table.schema_name}.{table.table_name}"
 
         fields = []
-        for col in table.columns:
+        for idx, col in enumerate(table.columns):
             type_mapping = resolve_type(inspection.dialect_name, col.type)
             fields.append(
                 NormalizedField(
                     name=col.name,
                     path=col.name,
+                    nullable=bool(col.nullable),
+                    position=idx,
                     type_mapping=type_mapping,
                 )
             )
