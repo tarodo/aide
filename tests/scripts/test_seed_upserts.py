@@ -130,7 +130,13 @@ async def test_upsert_data_type_inserts_when_missing(transactional_session):
     assert status == "inserted"
     assert obj.code == "varchar"
     assert obj.params_schema == {
-        "length": {"type": "int", "required": False, "default": None}
+        "length": {
+            "type": "int",
+            "required": False,
+            "default": None,
+            "min": None,
+            "max": None,
+        }
     }
 
 

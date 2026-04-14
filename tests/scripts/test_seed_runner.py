@@ -78,6 +78,17 @@ def test_postgres14_yaml_loads_and_covers_all_expected_codes():
     assert not extra, f"Unexpected types: {sorted(extra)}"
 
 
+def test_postgres14_yaml_numeric_has_precision_limits():
+    parsed = load_seed_file(POSTGRES14_YAML)
+    numeric = next(t for t in parsed.types if t.code == "numeric")
+    assert numeric.params_schema["precision"].min == 1
+    assert numeric.params_schema["precision"].max == 1000
+
+    ts = next(t for t in parsed.types if t.code == "timestamp")
+    assert ts.params_schema["precision"].min == 0
+    assert ts.params_schema["precision"].max == 6
+
+
 @pytest.mark.asyncio
 async def test_seed_from_real_postgres14_yaml(transactional_session):
     report = await seed_from_file(transactional_session, POSTGRES14_YAML)

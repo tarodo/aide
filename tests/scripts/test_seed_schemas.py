@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from pydantic import ValidationError
 
-from backend.scripts._seed_core import SeedFile, load_seed_file
+from backend.scripts._seed_core import SeedFile, SeedParamSpec, load_seed_file
 
 
 def test_seed_file_parses_minimal_valid_doc():
@@ -93,3 +93,15 @@ def test_load_seed_file_raises_on_unknown_field(tmp_path):
     )
     with pytest.raises(Exception):
         load_seed_file(p)
+
+
+def test_seed_param_spec_accepts_min_max():
+    spec = SeedParamSpec(type="int", required=False, default=None, min=1, max=1000)
+    assert spec.min == 1
+    assert spec.max == 1000
+
+
+def test_seed_param_spec_defaults_min_max_to_none():
+    spec = SeedParamSpec(type="int", required=False, default=None)
+    assert spec.min is None
+    assert spec.max is None

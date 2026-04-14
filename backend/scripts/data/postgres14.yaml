@@ -18,13 +18,13 @@ types:
     render_template: bigint
   - code: decimal
     params_schema:
-      precision: {type: int, required: false, default: null}
-      scale:     {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 1, max: 1000}
+      scale:     {type: int, required: false, default: null, min: -1000, max: 1000}
     render_template: "decimal({precision},{scale})"
   - code: numeric
     params_schema:
-      precision: {type: int, required: false, default: null}
-      scale:     {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 1, max: 1000}
+      scale:     {type: int, required: false, default: null, min: -1000, max: 1000}
     render_template: "numeric({precision},{scale})"
   - code: real
     params_schema: {}
@@ -63,23 +63,23 @@ types:
     render_template: date
   - code: time
     params_schema:
-      precision: {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
     render_template: "time({precision})"
   - code: timetz
     params_schema:
-      precision: {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
     render_template: "time({precision}) with time zone"
   - code: timestamp
     params_schema:
-      precision: {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
     render_template: "timestamp({precision})"
   - code: timestamptz
     params_schema:
-      precision: {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
     render_template: "timestamp({precision}) with time zone"
   - code: interval
     params_schema:
-      precision: {type: int, required: false, default: null}
+      precision: {type: int, required: false, default: null, min: 0, max: 6}
     render_template: "interval({precision})"
   - code: boolean
     params_schema: {}

@@ -21,6 +21,8 @@ class SeedParamSpec(BaseModel):
     type: Literal["int", "str", "bool"]
     required: bool = False
     default: Any = None
+    min: int | None = None
+    max: int | None = None
 
 
 class SeedKind(BaseModel):
