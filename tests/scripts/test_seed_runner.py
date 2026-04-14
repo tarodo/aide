@@ -1,12 +1,15 @@
 import textwrap
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from backend.core.settings import settings
 from backend.models.data_type import DataType
 from backend.models.system_flavor import SystemFlavor
 from backend.models.system_kind import SystemKind
 from backend.scripts._seed_core import seed_from_file
+from backend.scripts.seed_data_types import _main as seed_main
 
 SAMPLE_YAML = textwrap.dedent("""
     kind: {code: rdbms, name: Relational Database}
@@ -75,3 +78,57 @@ async def test_seed_from_file_updates_changed_template(transactional_session, tm
     report = await seed_from_file(transactional_session, p)
     assert report.types_updated == 1
     assert report.types_unchanged == 1
+
+
+@pytest.mark.asyncio
+async def test_cli_dry_run_rolls_back(tmp_path):
+    """Dry run: seed runs inside its own session and rolls back."""
+    p = tmp_path / "seed.yaml"
+    p.write_text(SAMPLE_YAML)
+
+    engine = create_async_engine(settings.DATABASE_URL)
+    try:
+        report = await seed_main(
+            file=p,
+            dry_run=True,
+            session_factory=lambda: AsyncSession(engine, expire_on_commit=False),
+        )
+        assert report.types_inserted == 2
+
+        # Verify nothing persisted.
+        async with AsyncSession(engine, expire_on_commit=False) as session:
+            rows = (await session.execute(select(DataType))).scalars().all()
+            assert all(r.code not in {"bigint", "varchar"} for r in rows)
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_cli_commit_persists(tmp_path):
+    """Real commit path persists. Test cleans up after itself."""
+    p = tmp_path / "seed.yaml"
+    p.write_text(SAMPLE_YAML)
+
+    engine = create_async_engine(settings.DATABASE_URL)
+    try:
+        report = await seed_main(
+            file=p,
+            dry_run=False,
+            session_factory=lambda: AsyncSession(engine, expire_on_commit=False),
+        )
+        assert report.types_inserted == 2
+
+        async with AsyncSession(engine, expire_on_commit=False) as session:
+            rows = (await session.execute(select(DataType))).scalars().all()
+            assert {"bigint", "varchar"}.issubset({r.code for r in rows})
+    finally:
+        async with AsyncSession(engine, expire_on_commit=False) as session:
+            await session.execute(
+                delete(DataType).where(DataType.code.in_(["bigint", "varchar"]))
+            )
+            await session.execute(
+                delete(SystemFlavor).where(SystemFlavor.code == "postgres14")
+            )
+            await session.execute(delete(SystemKind).where(SystemKind.code == "rdbms"))
+            await session.commit()
+        await engine.dispose()
