@@ -1,4 +1,5 @@
 import textwrap
+from pathlib import Path
 
 import pytest
 from sqlalchemy import delete, select
@@ -8,8 +9,83 @@ from backend.core.settings import settings
 from backend.models.data_type import DataType
 from backend.models.system_flavor import SystemFlavor
 from backend.models.system_kind import SystemKind
-from backend.scripts._seed_core import seed_from_file
+from backend.scripts._seed_core import load_seed_file, seed_from_file
 from backend.scripts.seed_data_types import _main as seed_main
+
+POSTGRES14_YAML = Path("backend/scripts/data/postgres14.yaml")
+
+EXPECTED_PG14_TYPE_CODES = {
+    "smallint",
+    "integer",
+    "bigint",
+    "decimal",
+    "numeric",
+    "real",
+    "double",
+    "smallserial",
+    "serial",
+    "bigserial",
+    "money",
+    "char",
+    "varchar",
+    "text",
+    "bytea",
+    "date",
+    "time",
+    "timetz",
+    "timestamp",
+    "timestamptz",
+    "interval",
+    "boolean",
+    "enum",
+    "point",
+    "line",
+    "lseg",
+    "box",
+    "path",
+    "polygon",
+    "circle",
+    "inet",
+    "cidr",
+    "macaddr",
+    "macaddr8",
+    "bit",
+    "varbit",
+    "tsvector",
+    "tsquery",
+    "uuid",
+    "xml",
+    "json",
+    "jsonb",
+    "array",
+    "int4range",
+    "int8range",
+    "numrange",
+    "tsrange",
+    "tstzrange",
+    "daterange",
+    "oid",
+    "pg_lsn",
+    "txid_snapshot",
+}
+
+
+def test_postgres14_yaml_loads_and_covers_all_expected_codes():
+    parsed = load_seed_file(POSTGRES14_YAML)
+    assert parsed.flavor.code == "postgres14"
+    codes = {t.code for t in parsed.types}
+    missing = EXPECTED_PG14_TYPE_CODES - codes
+    extra = codes - EXPECTED_PG14_TYPE_CODES
+    assert not missing, f"Missing types: {sorted(missing)}"
+    assert not extra, f"Unexpected types: {sorted(extra)}"
+
+
+@pytest.mark.asyncio
+async def test_seed_from_real_postgres14_yaml(transactional_session):
+    report = await seed_from_file(transactional_session, POSTGRES14_YAML)
+    assert report.kind in {"inserted", "unchanged", "updated", "restored"}
+    assert report.types_inserted == len(EXPECTED_PG14_TYPE_CODES)
+
 
 SAMPLE_YAML = textwrap.dedent("""
     kind: {code: rdbms, name: Relational Database}
