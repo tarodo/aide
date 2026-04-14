@@ -200,3 +200,29 @@ async def upsert_data_type(
         return existing, "updated"
 
     return existing, "unchanged"
+
+
+async def seed_from_file(session: AsyncSession, path: Path | str) -> SeedReport:
+    seed = load_seed_file(path)
+    report = SeedReport()
+
+    kind_obj, kind_status = await upsert_system_kind(session, seed.kind)
+    report.kind = kind_status
+
+    flavor_obj, flavor_status = await upsert_system_flavor(
+        session, seed.flavor, kind_obj.id
+    )
+    report.flavor = flavor_status
+
+    for type_spec in seed.types:
+        _, t_status = await upsert_data_type(session, type_spec, flavor_obj.id)
+        if t_status == "inserted":
+            report.types_inserted += 1
+        elif t_status == "updated":
+            report.types_updated += 1
+        elif t_status == "restored":
+            report.types_restored += 1
+        elif t_status == "unchanged":
+            report.types_unchanged += 1
+
+    return report
