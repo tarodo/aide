@@ -5,6 +5,9 @@ from backend.models.system_kind import SystemKind
 from backend.scripts._seed_core import (
     SeedFlavor,
     SeedKind,
+    SeedParamSpec,
+    SeedType,
+    upsert_data_type,
     upsert_system_flavor,
     upsert_system_kind,
 )
@@ -103,4 +106,68 @@ async def test_upsert_flavor_noop_when_unchanged(transactional_session):
     spec = SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"])
     await upsert_system_flavor(transactional_session, spec, kind.id)
     _, status = await upsert_system_flavor(transactional_session, spec, kind.id)
+    assert status == "unchanged"
+
+
+@pytest.mark.asyncio
+async def test_upsert_data_type_inserts_when_missing(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    flavor, _ = await upsert_system_flavor(
+        transactional_session,
+        SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"]),
+        kind.id,
+    )
+    spec = SeedType(
+        code="varchar",
+        params_schema={
+            "length": SeedParamSpec(type="int", required=False, default=None)
+        },
+        render_template="varchar({length})",
+    )
+    obj, status = await upsert_data_type(transactional_session, spec, flavor.id)
+    assert status == "inserted"
+    assert obj.code == "varchar"
+    assert obj.params_schema == {
+        "length": {"type": "int", "required": False, "default": None}
+    }
+
+
+@pytest.mark.asyncio
+async def test_upsert_data_type_updates_when_template_changes(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    flavor, _ = await upsert_system_flavor(
+        transactional_session,
+        SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"]),
+        kind.id,
+    )
+    await upsert_data_type(
+        transactional_session,
+        SeedType(code="bigint", params_schema={}, render_template="bigint"),
+        flavor.id,
+    )
+    _, status = await upsert_data_type(
+        transactional_session,
+        SeedType(code="bigint", params_schema={}, render_template="int8"),
+        flavor.id,
+    )
+    assert status == "updated"
+
+
+@pytest.mark.asyncio
+async def test_upsert_data_type_noop_when_unchanged(transactional_session):
+    kind, _ = await upsert_system_kind(
+        transactional_session, SeedKind(code="rdbms", name="R")
+    )
+    flavor, _ = await upsert_system_flavor(
+        transactional_session,
+        SeedFlavor(code="postgres14", name="PostgreSQL", versions=["14"]),
+        kind.id,
+    )
+    spec = SeedType(code="bigint", params_schema={}, render_template="bigint")
+    await upsert_data_type(transactional_session, spec, flavor.id)
+    _, status = await upsert_data_type(transactional_session, spec, flavor.id)
     assert status == "unchanged"

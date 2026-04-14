@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.models.data_type import DataType
 from backend.models.system_flavor import SystemFlavor
 from backend.models.system_kind import SystemKind
 
@@ -149,6 +150,52 @@ async def upsert_system_flavor(
         existing.vendor = spec.vendor
         existing.versions = list(spec.versions)
         existing.kind_id = kind_id
+        await session.flush()
+        return existing, "updated"
+
+    return existing, "unchanged"
+
+
+def _param_specs_to_json(params: dict[str, SeedParamSpec]) -> dict[str, dict]:
+    return {k: v.model_dump() for k, v in params.items()}
+
+
+async def upsert_data_type(
+    session: AsyncSession, spec: SeedType, flavor_id: uuid.UUID
+) -> tuple[DataType, UpsertStatus]:
+    target_params = _param_specs_to_json(spec.params_schema)
+
+    stmt = select(DataType).where(
+        DataType.system_flavor_id == flavor_id, DataType.code == spec.code
+    )
+    existing = (await session.execute(stmt)).scalars().first()
+
+    if existing is None:
+        obj = DataType(
+            system_flavor_id=flavor_id,
+            code=spec.code,
+            params_schema=target_params,
+            render_template=spec.render_template,
+        )
+        session.add(obj)
+        await session.flush()
+        return obj, "inserted"
+
+    fields_changed = (
+        existing.params_schema != target_params
+        or existing.render_template != spec.render_template
+    )
+
+    if existing.deleted_at is not None:
+        existing.deleted_at = None
+        existing.params_schema = target_params
+        existing.render_template = spec.render_template
+        await session.flush()
+        return existing, "restored"
+
+    if fields_changed:
+        existing.params_schema = target_params
+        existing.render_template = spec.render_template
         await session.flush()
         return existing, "updated"
 
