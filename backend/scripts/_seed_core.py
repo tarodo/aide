@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Literal
 
+import yaml
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
@@ -52,3 +54,11 @@ class SeedFile(BaseModel):
             dups = {c for c in codes if codes.count(c) > 1}
             raise ValueError(f"Duplicate type codes in seed file: {sorted(dups)}")
         return v
+
+
+def load_seed_file(path: Path | str) -> SeedFile:
+    path = Path(path)
+    raw = yaml.safe_load(path.read_text())
+    if not isinstance(raw, dict):
+        raise ValueError(f"Seed file {path} did not parse to a mapping")
+    return SeedFile.model_validate(raw)
