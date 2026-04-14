@@ -38,7 +38,9 @@ async def _find_or_create_schema_v1(client, *, dataset_id: uuid.UUID) -> uuid.UU
         page_num += 1
 
     created = await client.dataset_schemas.create(
-        DatasetSchemaCreate(dataset_id=dataset_id, version_num=1)
+        DatasetSchemaCreate(  # type: ignore[call-arg]
+            dataset_id=dataset_id, version_num=1
+        )
     )
     return created.id
 
