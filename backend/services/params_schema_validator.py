@@ -28,6 +28,9 @@ def validate_type_params(
         raise AppException(errors.TYPE_INSTANCE_PARAMS_INVALID)
 
     for key, rule in params_schema.items():
+        if not isinstance(rule, dict):
+            # Unrecognised rule format — skip validation for this param.
+            continue
         required = bool(rule.get("required", False))
         if key not in provided:
             if required:
