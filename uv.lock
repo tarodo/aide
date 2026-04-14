@@ -11,6 +11,7 @@ name = "aide"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aide-schemas" },
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "bcrypt" },
@@ -39,6 +40,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aide-schemas", editable = "schemas" },
     { name = "alembic", specifier = ">=1.17.1" },
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "bcrypt", specifier = ">=5.0.0" },
@@ -64,6 +66,17 @@ dev = [
     { name = "ruff", specifier = ">=0.14.3" },
     { name = "types-python-jose", specifier = ">=3.3.4" },
 ]
+
+[[package]]
+name = "aide-schemas"
+version = "0.1.0"
+source = { editable = "schemas" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.0.0" }]
 
 [[package]]
 name = "alembic"

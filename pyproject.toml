@@ -5,6 +5,7 @@ description = "AIDE Data Contract Service Ingestion Level"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aide-schemas",
     "alembic>=1.17.1",
     "asyncpg>=0.29.0",
     "bcrypt>=5.0.0",
@@ -36,6 +37,9 @@ exclude = ["tests/"]
 
 [tool.black]
 target-version = ["py313"]
+
+[tool.uv.sources]
+aide-schemas = { path = "schemas", editable = true }
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
