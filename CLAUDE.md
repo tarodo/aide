@@ -83,6 +83,10 @@ When adding or modifying SQLAlchemy models, update `docs/AIDE_data_model.json` (
 
 Run `make format` after code changes. This runs `black` + `ruff check --fix`. Fix any remaining ruff errors manually.
 
+### Commit messages
+
+Generate commit messages via the `caveman:caveman-commit` skill. Conventional Commits, imperative subject ≤50 chars, body only for non-obvious *why*. No AI attribution trailers.
+
 ### Testing
 
 Tests run via `make test-docker` in Docker, not locally. Test structure mirrors `backend/`: `tests/api/`, `tests/services/`, `tests/repositories/`, `tests/models/`.
