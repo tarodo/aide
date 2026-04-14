@@ -1,3 +1,4 @@
+from .crawl_run import CrawlRun, CrawlStatus
 from .credential_ref import CredentialRef as CredentialRef
 from .refresh_token import RefreshToken as RefreshToken
 from .cast_rule import CastRule, CastSafety
@@ -52,4 +53,6 @@ __all__ = [
     "DatasetSchema",
     "FieldBinding",
     "TypeInstance",
+    "CrawlRun",
+    "CrawlStatus",
 ]
