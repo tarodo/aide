@@ -26,9 +26,9 @@ kind:
   name: Relational Database
 flavor:
   code: postgres14
-  name: PostgreSQL 14
+  name: PostgreSQL
   vendor: PostgreSQL Global Development Group
-  versions: ["14"]
+  versions: ["14", "15"]
 types:
   - code: varchar
     params_schema:
@@ -51,6 +51,13 @@ types:
 - Empty object `{}` means "no params".
 
 **`render_template`**: Python `str.format`-style template used to render a `TypeInstance` back to PG native SQL (e.g. `varchar({length})` → `varchar(255)`). Nullable for types with non-trivial rendering (handled later by code).
+
+## Flavor Code Convention
+
+- `code` = min supported version (e.g. `postgres14`). Uniqueness enforced by existing `uq_system_flavors_code_active` index.
+- `name` = product name only (`PostgreSQL`), no version.
+- `versions` = array of all versions that share this exact type set (e.g. `["14","15"]` while PG15 adds no new types).
+- New row (`postgres16`, etc.) created only when a later release diverges (adds/removes/changes a type). Existing `postgres14` row keeps its original versions list.
 
 ## Type Coverage (PG14, everything built-in)
 
