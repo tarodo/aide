@@ -1,0 +1,30 @@
+[project]
+name = "aide-crawler"
+version = "0.1.0"
+description = "RDBMS metadata crawler for AIDE metastore"
+requires-python = ">=3.13"
+dependencies = [
+    "aide-sdk",
+    "aide-schemas",
+    "sqlalchemy>=2.0.44",
+    "typer>=0.12.0",
+    "pyyaml>=6.0",
+    "psycopg>=3.1.18",
+    "psycopg-binary>=3.2.12",
+]
+
+[project.scripts]
+aide-crawler = "aide_crawler.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.uv.sources]
+aide-sdk = { path = "../sdk", editable = true }
+aide-schemas = { path = "../schemas", editable = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
