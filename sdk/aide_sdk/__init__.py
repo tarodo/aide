@@ -1,3 +1,4 @@
+from aide_sdk.client import AideClient
 from aide_sdk.exceptions import (
     AideApiError,
     AuthError,
@@ -7,6 +8,7 @@ from aide_sdk.exceptions import (
 )
 
 __all__ = [
+    "AideClient",
     "AideApiError",
     "AuthError",
     "ConflictError",
