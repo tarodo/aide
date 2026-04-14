@@ -25,6 +25,7 @@ packages = ["aide_crawler"]
 
 [dependency-groups]
 dev = [
+    "email-validator>=2.3.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
 ]
