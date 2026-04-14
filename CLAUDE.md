@@ -67,6 +67,14 @@ status: MyStatus
 
 **Rationale:** Native PG enums require painful migrations (`ALTER TYPE` cannot run inside a transaction, values cannot be removed). String columns with app-level validation are simpler to evolve.
 
+### Timestamp columns (soft-delete mixin)
+
+`deleted_at` and other `SoftDeleteMetaDataMixin` timestamps are `TIMESTAMP WITHOUT TIME ZONE`. When setting them manually (e.g. in tests to trigger soft-delete branches), use naive datetimes: `datetime.now(timezone.utc).replace(tzinfo=None)`. Aware datetimes are rejected by asyncpg.
+
+### Package layout
+
+Root `pyproject.toml` is the backend package (no separate `backend/pyproject.toml`). Add backend deps to the root file.
+
 ### Data model documentation
 
 When adding or modifying SQLAlchemy models, update `docs/AIDE_data_model.json` (ChartDB format) to keep the ER diagram in sync. Add/update tables, fields, and relationships matching the model changes.
@@ -80,6 +88,8 @@ Run `make format` after code changes. This runs `black` + `ruff check --fix`. Fi
 Tests run via `make test-docker` in Docker, not locally. Test structure mirrors `backend/`: `tests/api/`, `tests/services/`, `tests/repositories/`, `tests/models/`.
 
 `make test-docker` binds port 5433. If another repo/worktree already runs `aide-db-test-1` on 5433, stop it first: `docker stop aide-db-test-1`. Only one test DB instance at a time.
+
+After changing deps (`uv sync`) or adding a new local workspace package, rebuild the test image: `docker compose build test`. Otherwise `make test-docker` fails with `ModuleNotFoundError`.
 
 SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
 

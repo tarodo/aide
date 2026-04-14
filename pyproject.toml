@@ -16,7 +16,7 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "pyyaml>=6.0",
     "slowapi>=0.1.9",
-    "sqlalchemy>=2.0.44",
+    "sqlalchemy[asyncio]>=2.0.44",
     "structlog>=25.5.0",
 ]
 

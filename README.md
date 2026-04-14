@@ -109,6 +109,23 @@ make alembic-gen MSG="migration message"  # Generate new migration
 make alembic-head    # Apply pending migrations
 ```
 
+### Seeding data types
+
+Pre-load PG14 built-in data types (plus `SystemKind` + `SystemFlavor` rows) from the curated YAML. Run inside the compose network so the `db` hostname resolves:
+
+```sh
+make seed-data-types
+```
+
+Or run the script directly for other flavors / `--dry-run`:
+
+```sh
+docker compose run --rm app python -m backend.scripts.seed_data_types \
+  --file backend/scripts/data/postgres14.yaml --dry-run
+```
+
+The script is idempotent — re-running after editing the YAML applies only diffs. Removing a type from YAML does NOT delete the row (protects existing `TypeInstance` FKs). New flavors get their own YAML under `backend/scripts/data/`.
+
 ## Testing
 
 ```sh

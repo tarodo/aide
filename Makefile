@@ -49,3 +49,8 @@ alembic-gen:
 
 alembic-head:
 	docker compose run --rm app uv run alembic -c backend/alembic.ini upgrade head
+
+# Seed data types from a YAML (defaults to postgres14)
+seed-data-types:
+	docker compose run --rm app python -m backend.scripts.seed_data_types \
+		--file backend/scripts/data/postgres14.yaml
