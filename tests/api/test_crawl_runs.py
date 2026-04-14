@@ -190,3 +190,37 @@ class TestCrawlRunAPI:
         assert data["total"] >= 1
         for item in data["items"]:
             assert item["system_id"] == str(test_system.id)
+
+    async def test_update_crawl_run_with_diff_payload(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_crawl_run: CrawlRun,
+    ):
+        diff_payload = {
+            "schema_version": 1,
+            "new_datasets_applied": [],
+            "existing_datasets_diff": [],
+            "removed_datasets": [],
+        }
+        update_data = {
+            "status": "completed",
+            "diff_payload": diff_payload,
+            "row_version": 1,
+        }
+        response = await async_client.put(
+            f"/api/v1/crawl-runs/{test_crawl_run.id}",
+            json=update_data,
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        res_json = response.json()
+        assert res_json["diff_payload"]["schema_version"] == 1
+
+        # Verify GET returns the same diff_payload
+        get_response = await async_client.get(
+            f"/api/v1/crawl-runs/{test_crawl_run.id}",
+            headers=superuser_token_headers,
+        )
+        assert get_response.status_code == 200
+        assert get_response.json()["diff_payload"]["schema_version"] == 1

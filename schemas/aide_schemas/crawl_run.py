@@ -29,12 +29,14 @@ class CrawlRunUpdate(VersionedUpdateMixin, NoteMixin):
     status: CrawlStatus | None = None
     finished_at: datetime | None = None
     summary: dict[str, Any] | None = None
+    diff_payload: dict[str, Any] | None = None
     error_message: str | None = None
 
 
 class CrawlRunRead(CrawlRunBase, MetaDataMixin):
     finished_at: datetime | None = None
     summary: dict[str, Any] | None = None
+    diff_payload: dict[str, Any] | None = None
     error_message: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
