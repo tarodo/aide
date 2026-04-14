@@ -56,6 +56,7 @@ REFRESH_TOKEN_REVOKED = "REFRESH_TOKEN_REVOKED"
 ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
 HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 VERSION_CONFLICT = "VERSION_CONFLICT"
+CRAWL_RUN_NOT_FOUND = "CRAWL_RUN_NOT_FOUND"
 
 ErrorInfo = Tuple[int, str]
 
@@ -229,6 +230,10 @@ ERROR_MAP = {
     VERSION_CONFLICT: (
         status.HTTP_409_CONFLICT,
         "The entity has been modified by another user. Please reload and try again.",
+    ),
+    CRAWL_RUN_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested crawl run was not found.",
     ),
 }
 

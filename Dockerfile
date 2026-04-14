@@ -5,6 +5,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
+COPY schemas/ schemas/
 RUN uv sync --locked --no-install-project --all-groups
 
 # === Dev ===

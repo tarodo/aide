@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 import structlog
 
 from backend.api.v1 import cast_rules as v1_cast_rules
+from backend.api.v1 import crawl_runs as v1_crawl_runs
 from backend.api.v1 import credential_refs as v1_credential_refs
 from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import datasets as v1_datasets
@@ -232,6 +233,12 @@ app.include_router(
     v1_type_instances.router,
     prefix=f"{api_v1_prefix}/type-instances",
     tags=["Type Instances"],
+)
+
+app.include_router(
+    v1_crawl_runs.router,
+    prefix=f"{api_v1_prefix}/crawl-runs",
+    tags=["Crawl Runs"],
 )
 
 

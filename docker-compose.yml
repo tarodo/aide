@@ -51,6 +51,7 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./tests:/app/tests
+      - ./schemas:/app/schemas
     depends_on:
       - db-test
 

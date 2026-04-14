@@ -1,4 +1,5 @@
 from .cast_rule import CastRuleCreate, CastRuleRead, CastRuleUpdate
+from .crawl_run import CrawlRunCreate, CrawlRunRead, CrawlRunUpdate
 from .credential_ref import CredentialRefCreate, CredentialRefRead, CredentialRefUpdate
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
 from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
@@ -43,6 +44,9 @@ __all__ = [
     "CastRuleCreate",
     "CastRuleRead",
     "CastRuleUpdate",
+    "CrawlRunCreate",
+    "CrawlRunRead",
+    "CrawlRunUpdate",
     "FieldCreate",
     "FieldRead",
     "FieldUpdate",

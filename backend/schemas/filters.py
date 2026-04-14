@@ -166,3 +166,15 @@ USER_SORTABLE = {
     "created_at",
     "updated_at",
 }
+
+
+# ── CrawlRun ─────────────────────────────────────────────────────────────
+class CrawlRunFilter(BaseFilter):
+    system_id: uuid.UUID | None = None
+    status: str | None = None
+    status__in: str | None = None
+    started_at__gte: datetime | None = None
+    started_at__lte: datetime | None = None
+
+
+CRAWL_RUN_SORTABLE = {"status", "started_at", "finished_at", "created_at"}

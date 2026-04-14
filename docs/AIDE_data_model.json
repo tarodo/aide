@@ -2,7 +2,7 @@
   "id": "0",
   "name": "AIDE V3",
   "createdAt": "2025-11-14T17:14:17.452Z",
-  "updatedAt": "2026-04-13T12:00:00.000Z",
+  "updatedAt": "2026-04-14T00:00:00.000Z",
   "databaseType": "postgresql",
   "tables": [
     {
@@ -2720,6 +2720,191 @@
       "createdAt": 1712534400000,
       "order": 16,
       "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_crawl_runs",
+      "name": "crawl_runs",
+      "schema": "public",
+      "x": 2195,
+      "y": -1400,
+      "fields": [
+        {
+          "id": "f_cr_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_system_id",
+          "name": "system_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_status",
+          "name": "status",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(20)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "running / completed / failed"
+        },
+        {
+          "id": "f_cr_started_at",
+          "name": "started_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "timestamptz"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_finished_at",
+          "name": "finished_at",
+          "type": {
+            "id": "timestamptz",
+            "name": "timestamptz"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_config",
+          "name": "config",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_summary",
+          "name": "summary",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_error_message",
+          "name": "error_message",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [],
+      "color": "#ff6b8a",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 17,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
@@ -3012,6 +3197,20 @@
       "targetTableId": "t_refresh_tokens",
       "sourceFieldId": "f_users_id",
       "targetFieldId": "f_rt_user_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_sys_cr",
+      "name": "system_to_crawl_run",
+      "sourceSchema": "public",
+      "sourceTableId": "t_systems",
+      "targetSchema": "public",
+      "targetTableId": "t_crawl_runs",
+      "sourceFieldId": "f_sys_id",
+      "targetFieldId": "f_cr_system_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,
