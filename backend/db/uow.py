@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.repositories.cast_rule import CastRuleRepository
+from backend.repositories.crawl_run import CrawlRunRepository
 from backend.repositories.dataset_schema import DatasetSchemaRepository
 from backend.repositories.credential_ref import CredentialRefRepository
 from backend.repositories.dataset import DatasetRepository
@@ -33,6 +34,7 @@ class UnitOfWork:
         self.systems = SystemRepository(self.session)
         self.datasets = DatasetRepository(self.session)
         self.cast_rules = CastRuleRepository(self.session)
+        self.crawl_runs = CrawlRunRepository(self.session)
         self.fields = FieldRepository(self.session)
         self.dataset_schemas = DatasetSchemaRepository(self.session)
         self.field_bindings = FieldBindingRepository(self.session)
