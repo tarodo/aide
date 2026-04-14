@@ -67,9 +67,10 @@ Boundary:
   - Loads `GET /data_types?system_flavor_id=X` once per run.
   - Exposes `resolve(code: str) → UUID`; raises `TypeNotInFlavorError` if code missing.
 - `crawler/aide_crawler/applier.py` (new)
-  - `apply_new_datasets(client, datasets, type_cache) → list[AppliedDataset]`.
+  - `apply_new_datasets(client, datasets, type_cache, dialect_name) → list[AppliedDataset]`.
   - Idempotent: re-checks dataset existence by `(system_id, object_name)` before create; re-checks field existence by `(dataset_id, name, parent_id is null)` before create.
-  - Creates `TypeInstance` per field with `{data_type_id, type_params}`.
+  - Full write chain per new dataset: `Dataset` (kind=`rdbms`) → `DatasetSchema` (version_num=1) → per column `{Field, TypeInstance, FieldBinding(position, is_nullable)}`.
+  - `NormalizedField` gains `nullable: bool` and `position: int` (currently absent) so binding data is available downstream.
 - `crawler/aide_crawler/differ.py`
   - Refactor to return classified structure: `(to_apply: list[NormalizedDataset], to_diff: DiffPayload)`.
   - Existing-dataset path computes: `new_fields`, `removed_fields`, `type_changes` (compare by `(code, normalized_params)`).
@@ -79,7 +80,7 @@ Boundary:
 
 ### SDK
 
-- Confirm `DatasetCreate`, `FieldCreate`, `TypeInstanceCreate` exist in `schemas/aide_schemas/` and are exported by `aide_sdk`. Add missing pieces if needed. No API surface change expected.
+- `DatasetsResource`, `FieldsResource`, `TypeInstancesResource`, `DatasetSchemasResource` already exist. No new resources. Crawler consumes all four.
 
 ## Data model: `diff_payload`
 
@@ -131,7 +132,7 @@ Failure modes, all terminate the run with `crawl_run.status=failed` and a descri
 | Flavor has zero DataTypes | existing check in `runner.py` retained |
 | Network / auth | existing behavior |
 
-Apply stage is not transactional across datasets. Idempotency (existence check before create) protects reruns after a partial failure. A single dataset may end up partially populated if the process is killed mid-apply; the next run completes the remaining fields.
+Apply stage is not transactional across datasets. Idempotency (existence check before create) protects reruns after a partial failure. A single dataset may end up partially populated (Dataset created, DatasetSchema or some FieldBindings missing) if the process is killed mid-apply; the next run detects partial state by listing existing Fields for the dataset and completing the missing FieldBinding/TypeInstance rows.
 
 ## Edge cases
 
