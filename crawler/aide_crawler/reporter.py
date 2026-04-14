@@ -57,9 +57,7 @@ def report_text(diff: DiffResult, out: IO[str] = sys.stdout) -> None:
     out.write("--- Summary ---\n")
     out.write(f"  New datasets:     {len(diff.new_datasets)}\n")
     out.write(f"  Removed datasets: {len(diff.removed_datasets)}\n")
-    out.write(
-        f"  New fields:       {sum(len(v) for v in diff.new_fields.values())}\n"
-    )
+    out.write(f"  New fields:       {sum(len(v) for v in diff.new_fields.values())}\n")
     out.write(
         f"  Removed fields:   {sum(len(v) for v in diff.removed_fields.values())}\n"
     )

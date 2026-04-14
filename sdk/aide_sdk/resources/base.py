@@ -38,9 +38,7 @@ class BaseResource(Generic[CreateT, ReadT, UpdateT]):
         return self._read_schema.model_validate(data)
 
     async def create(self, obj_in: CreateT) -> ReadT:
-        data = await self._http.post(
-            self._path, json=obj_in.model_dump(mode="json")
-        )
+        data = await self._http.post(self._path, json=obj_in.model_dump(mode="json"))
         return self._read_schema.model_validate(data)
 
     async def update(self, obj_id: UUID, obj_in: UpdateT) -> ReadT:

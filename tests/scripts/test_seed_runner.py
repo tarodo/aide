@@ -2,10 +2,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy import select
 
-from backend.core.settings import settings
 from backend.models.data_type import DataType
 from backend.models.system_flavor import SystemFlavor
 from backend.models.system_kind import SystemKind
@@ -157,54 +155,43 @@ async def test_seed_from_file_updates_changed_template(transactional_session, tm
 
 
 @pytest.mark.asyncio
-async def test_cli_dry_run_rolls_back(tmp_path):
-    """Dry run: seed runs inside its own session and rolls back."""
+async def test_main_dry_run_rolls_back(transactional_session, tmp_path):
+    """_main rolls back when dry_run=True."""
     p = tmp_path / "seed.yaml"
     p.write_text(SAMPLE_YAML)
 
-    engine = create_async_engine(settings.DATABASE_URL)
-    try:
-        report = await seed_main(
-            file=p,
-            dry_run=True,
-            session_factory=lambda: AsyncSession(engine, expire_on_commit=False),
-        )
-        assert report.types_inserted == 2
+    report = await seed_main(transactional_session, file=p, dry_run=True)
+    assert report.types_inserted == 2
 
-        # Verify nothing persisted.
-        async with AsyncSession(engine, expire_on_commit=False) as session:
-            rows = (await session.execute(select(DataType))).scalars().all()
-            assert all(r.code not in {"bigint", "varchar"} for r in rows)
-    finally:
-        await engine.dispose()
+    # After rollback, the rows should be gone.
+    rows = (
+        (
+            await transactional_session.execute(
+                select(DataType).where(DataType.code.in_(["bigint", "varchar"]))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert rows == []
 
 
 @pytest.mark.asyncio
-async def test_cli_commit_persists(tmp_path):
-    """Real commit path persists. Test cleans up after itself."""
+async def test_main_commit_persists(transactional_session, tmp_path):
+    """_main commits when dry_run=False; transactional_session outer rollback still cleans up."""
     p = tmp_path / "seed.yaml"
     p.write_text(SAMPLE_YAML)
 
-    engine = create_async_engine(settings.DATABASE_URL)
-    try:
-        report = await seed_main(
-            file=p,
-            dry_run=False,
-            session_factory=lambda: AsyncSession(engine, expire_on_commit=False),
-        )
-        assert report.types_inserted == 2
+    report = await seed_main(transactional_session, file=p, dry_run=False)
+    assert report.types_inserted == 2
 
-        async with AsyncSession(engine, expire_on_commit=False) as session:
-            rows = (await session.execute(select(DataType))).scalars().all()
-            assert {"bigint", "varchar"}.issubset({r.code for r in rows})
-    finally:
-        async with AsyncSession(engine, expire_on_commit=False) as session:
-            await session.execute(
-                delete(DataType).where(DataType.code.in_(["bigint", "varchar"]))
+    rows = (
+        (
+            await transactional_session.execute(
+                select(DataType).where(DataType.code.in_(["bigint", "varchar"]))
             )
-            await session.execute(
-                delete(SystemFlavor).where(SystemFlavor.code == "postgres14")
-            )
-            await session.execute(delete(SystemKind).where(SystemKind.code == "rdbms"))
-            await session.commit()
-        await engine.dispose()
+        )
+        .scalars()
+        .all()
+    )
+    assert {r.code for r in rows} == {"bigint", "varchar"}

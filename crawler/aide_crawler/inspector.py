@@ -5,7 +5,6 @@ from typing import Any
 
 from sqlalchemy import create_engine, inspect
 
-
 DEFAULT_EXCLUDE_SCHEMAS: dict[str, set[str]] = {
     "postgresql": {"information_schema", "pg_catalog", "pg_toast"},
     "mysql": {"information_schema", "mysql", "performance_schema", "sys"},
@@ -76,9 +75,7 @@ def run_inspection(
         target_schemas = [s for s in all_schemas if s not in excluded]
 
     exclude_table_set = set(exclude_tables or [])
-    include_table_set: set[str] | None = (
-        set(include_tables) if include_tables else None
-    )
+    include_table_set: set[str] | None = set(include_tables) if include_tables else None
     tables: list[TableInfo] = []
 
     def _should_include(schema: str, name: str) -> bool:

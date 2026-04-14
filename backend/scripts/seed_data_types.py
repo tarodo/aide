@@ -3,42 +3,25 @@ from __future__ import annotations
 import argparse
 import asyncio
 from pathlib import Path
-from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.db.uow import UnitOfWork
+from backend.db.session import AsyncSessionLocal
 from backend.scripts._seed_core import SeedReport, seed_from_file
 
 
-async def _main(
-    file: Path,
-    dry_run: bool = False,
-    session_factory: Callable[[], AsyncSession] | None = None,
-) -> SeedReport:
-    if session_factory is not None:
-        session = session_factory()
-        try:
-            report = await seed_from_file(session, file)
-            if dry_run:
-                await session.rollback()
-            else:
-                await session.commit()
-            return report
-        finally:
-            await session.close()
+async def _main(session: AsyncSession, file: Path, dry_run: bool = False) -> SeedReport:
+    report = await seed_from_file(session, file)
+    if dry_run:
+        await session.rollback()
     else:
-        uow = UnitOfWork()
-        await uow.__aenter__()
-        try:
-            report = await seed_from_file(uow.session, file)
-            if dry_run:
-                await uow.rollback()
-            else:
-                await uow.commit()
-            return report
-        finally:
-            await uow.session.close()
+        await session.commit()
+    return report
+
+
+async def _run_cli(file: Path, dry_run: bool) -> SeedReport:
+    async with AsyncSessionLocal() as session:
+        return await _main(session, file, dry_run=dry_run)
 
 
 def _print_report(report: SeedReport, dry_run: bool) -> None:
@@ -55,7 +38,7 @@ def _entry() -> None:
     parser.add_argument("--file", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    report = asyncio.run(_main(args.file, dry_run=args.dry_run))
+    report = asyncio.run(_run_cli(args.file, args.dry_run))
     _print_report(report, dry_run=args.dry_run)
 
 

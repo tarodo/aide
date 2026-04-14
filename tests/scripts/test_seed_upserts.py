@@ -42,12 +42,12 @@ async def test_upsert_kind_updates_when_name_changes(transactional_session):
 
 @pytest.mark.asyncio
 async def test_upsert_kind_restores_soft_deleted(transactional_session):
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     obj, _ = await upsert_system_kind(
         transactional_session, SeedKind(code="rdbms", name="R")
     )
-    obj.deleted_at = datetime.utcnow()
+    obj.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await transactional_session.flush()
 
     obj2, status = await upsert_system_kind(
