@@ -31,3 +31,5 @@ tasks/
 .cursor/
 
 docs_temp/
+
+.superpowers/
