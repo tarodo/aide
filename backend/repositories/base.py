@@ -130,6 +130,13 @@ class BaseRepository(Generic[ModelType]):
         await self.session.refresh(obj_in)
         return obj_in
 
+    async def create_many(self, *, objs: list[ModelType]) -> list[ModelType]:
+        if not objs:
+            return []
+        self.session.add_all(objs)
+        await self.session.flush()
+        return objs
+
     async def update(self, *, db_obj: ModelType) -> ModelType:
         self.session.add(db_obj)
         await self.session.flush()
