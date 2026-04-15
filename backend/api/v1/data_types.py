@@ -38,6 +38,7 @@ crud_router = create_crud_router(
     filter_model=DataTypeFilter,
     sortable_fields=DATA_TYPE_SORTABLE,
     default_sort="code",
+    supports_batch=True,
 )
 
 router.include_router(crud_router)
