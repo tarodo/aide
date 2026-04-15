@@ -82,3 +82,46 @@ def test_normalize_view():
     )
     result = normalize(inspection)
     assert result.datasets[0].is_view is True
+
+
+def test_normalize_preserves_nullable_and_position():
+    inspection = InspectionResult(
+        dialect_name="postgresql",
+        database_name="db",
+        schemas=["public"],
+        tables=[
+            TableInfo(
+                schema_name="public",
+                table_name="t",
+                is_view=False,
+                columns=[
+                    ColumnInfo(
+                        name="id",
+                        type=sa_types.BigInteger(),
+                        nullable=False,
+                        default=None,
+                        comment=None,
+                    ),
+                    ColumnInfo(
+                        name="note",
+                        type=sa_types.Text(),
+                        nullable=True,
+                        default=None,
+                        comment=None,
+                    ),
+                ],
+                pk_columns=["id"],
+                unique_constraints=[],
+                foreign_keys=[],
+                indexes=[],
+                comment=None,
+            ),
+        ],
+    )
+    result = normalize(inspection)
+    fields = result.datasets[0].fields
+    assert fields[0].position == 0
+    assert fields[0].nullable is False
+    assert fields[0].type_mapping.data_type_code == "bigint"
+    assert fields[1].position == 1
+    assert fields[1].nullable is True

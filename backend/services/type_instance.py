@@ -13,6 +13,7 @@ from backend.schemas.type_instance import (
     TypeInstanceUpdate,
 )
 from backend.services.base import GenericService
+from backend.services.params_schema_validator import validate_type_params
 
 
 class TypeInstanceService(
@@ -34,8 +35,10 @@ class TypeInstanceService(
         obj_in: TypeInstanceCreate,
         creator_id: uuid.UUID | None,
     ) -> None:
-        if not await uow.data_types.get(obj_in.data_type_id):
+        data_type = await uow.data_types.get(obj_in.data_type_id)
+        if not data_type:
             raise AppException(errors.DATA_TYPE_NOT_FOUND)
+        validate_type_params(data_type.params_schema or {}, obj_in.type_params)
 
         if obj_in.parent_id is not None:
             if obj_in.slot is None:
@@ -62,9 +65,13 @@ class TypeInstanceService(
         updater_id: uuid.UUID | None,
     ) -> None:
         update_data = obj_in.model_dump(exclude_unset=True)
-        if "data_type_id" in update_data:
-            if not await uow.data_types.get(update_data["data_type_id"]):
+        if "type_params" in update_data or "data_type_id" in update_data:
+            target_id = update_data.get("data_type_id", db_obj.data_type_id)
+            target_type = await uow.data_types.get(target_id)
+            if not target_type:
                 raise AppException(errors.DATA_TYPE_NOT_FOUND)
+            target_params = update_data.get("type_params", db_obj.type_params)
+            validate_type_params(target_type.params_schema or {}, target_params)
 
     async def get_tree(self, uow: UnitOfWork, root_id: uuid.UUID) -> TypeInstanceTree:
         async with uow:

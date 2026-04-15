@@ -4,118 +4,54 @@ import json
 import sys
 from typing import IO
 
-from aide_crawler.differ import DiffResult
+from aide_crawler.differ import DiffPayload
 
 
-def report_text(diff: DiffResult, out: IO[str] = sys.stdout) -> None:
-    """Human-readable diff report."""
-    out.write("=== AIDE Crawler Diff Report ===\n\n")
+def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
+    out.write("=== AIDE Crawler Report ===\n\n")
 
-    if diff.new_datasets:
-        out.write(f"--- New datasets ({len(diff.new_datasets)}) ---\n")
-        for ds in diff.new_datasets:
-            out.write(f"  + {ds.object_name}")
-            if ds.is_view:
-                out.write(" (view)")
-            out.write(f"  [{len(ds.fields)} columns]\n")
+    if payload.new_datasets_applied:
+        out.write(f"--- Applied ({len(payload.new_datasets_applied)}) ---\n")
+        for d in payload.new_datasets_applied:
+            out.write(f"  Applied: {d['object_name']}  [{d['fields_count']} fields]\n")
         out.write("\n")
 
-    if diff.removed_datasets:
-        out.write(f"--- Removed datasets ({len(diff.removed_datasets)}) ---\n")
-        for ds in diff.removed_datasets:
-            out.write(f"  - {ds['object_name']}\n")
-        out.write("\n")
-
-    if diff.new_fields:
-        total = sum(len(v) for v in diff.new_fields.values())
-        out.write(f"--- New fields ({total}) ---\n")
-        for obj_name, fields in diff.new_fields.items():
-            for f in fields:
-                type_str = (
-                    f.type_mapping.data_type_code if f.type_mapping else "unknown"
+    if payload.existing_datasets_diff:
+        out.write(
+            f"--- Existing datasets with changes "
+            f"({len(payload.existing_datasets_diff)}) ---\n"
+        )
+        for entry in payload.existing_datasets_diff:
+            out.write(f"  * {entry['object_name']}\n")
+            for nf in entry["new_fields"]:
+                out.write(f"      + {nf['name']} ({nf['code']})\n")
+            for rf in entry["removed_fields"]:
+                out.write(f"      - {rf['name']}\n")
+            for tc in entry.get("type_changes", []):
+                out.write(
+                    f"      ~ {tc['field_name']}: "
+                    f"{tc['old']['code']} -> {tc['new']['code']}\n"
                 )
-                out.write(f"  + {obj_name}.{f.name} ({type_str})\n")
         out.write("\n")
 
-    if diff.removed_fields:
-        total = sum(len(v) for v in diff.removed_fields.values())
-        out.write(f"--- Removed fields ({total}) ---\n")
-        for obj_name, fields in diff.removed_fields.items():
-            for f in fields:
-                out.write(f"  - {obj_name}.{f['name']}\n")
-        out.write("\n")
-
-    if diff.type_changes:
-        out.write(f"--- Type changes ({len(diff.type_changes)}) ---\n")
-        for tc in diff.type_changes:
-            out.write(
-                f"  ~ {tc.dataset_object_name}.{tc.field_name}: "
-                f"{tc.old_type} -> {tc.new_type}\n"
-            )
+    if payload.removed_datasets:
+        out.write(f"--- Removed datasets ({len(payload.removed_datasets)}) ---\n")
+        for d in payload.removed_datasets:
+            out.write(f"  - {d['object_name']}\n")
         out.write("\n")
 
     out.write("--- Summary ---\n")
-    out.write(f"  New datasets:     {len(diff.new_datasets)}\n")
-    out.write(f"  Removed datasets: {len(diff.removed_datasets)}\n")
-    out.write(f"  New fields:       {sum(len(v) for v in diff.new_fields.values())}\n")
-    out.write(
-        f"  Removed fields:   {sum(len(v) for v in diff.removed_fields.values())}\n"
-    )
-    out.write(f"  Type changes:     {len(diff.type_changes)}\n")
+    for k, v in payload.counts().items():
+        out.write(f"  {k}: {v}\n")
 
 
-def report_json(diff: DiffResult, out: IO[str] = sys.stdout) -> None:
-    """Machine-readable JSON diff report."""
-    data = {
-        "new_datasets": [
-            {
-                "object_name": ds.object_name,
-                "is_view": ds.is_view,
-                "fields_count": len(ds.fields),
-            }
-            for ds in diff.new_datasets
-        ],
-        "removed_datasets": [
-            {"object_name": ds["object_name"], "id": ds.get("id")}
-            for ds in diff.removed_datasets
-        ],
-        "new_fields": {
-            obj: [
-                {
-                    "name": f.name,
-                    "type": f.type_mapping.data_type_code if f.type_mapping else None,
-                }
-                for f in fields
-            ]
-            for obj, fields in diff.new_fields.items()
-        },
-        "removed_fields": {
-            obj: [{"name": f["name"]} for f in fields]
-            for obj, fields in diff.removed_fields.items()
-        },
-        "type_changes": [
-            {
-                "dataset": tc.dataset_object_name,
-                "field": tc.field_name,
-                "old_type": tc.old_type,
-                "new_type": tc.new_type,
-            }
-            for tc in diff.type_changes
-        ],
-        "summary": {
-            "new_datasets": len(diff.new_datasets),
-            "removed_datasets": len(diff.removed_datasets),
-            "new_fields": sum(len(v) for v in diff.new_fields.values()),
-            "removed_fields": sum(len(v) for v in diff.removed_fields.values()),
-            "type_changes": len(diff.type_changes),
-        },
-    }
-    json.dump(data, out, indent=2, default=str)
+def report_json(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
+    json.dump(payload.to_dict(), out, indent=2, default=str)
     out.write("\n")
 
 
-def format_report(diff: DiffResult, fmt: str, out: IO[str] = sys.stdout) -> None:
+def format_report(payload: DiffPayload, fmt: str, out: IO[str] = sys.stdout) -> None:
     if fmt == "json":
-        report_json(diff, out)
+        report_json(payload, out)
     else:
-        report_text(diff, out)
+        report_text(payload, out)

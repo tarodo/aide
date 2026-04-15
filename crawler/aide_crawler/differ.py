@@ -1,118 +1,146 @@
+"""Diff crawler output against metastore state.
+
+classify_and_diff splits crawled datasets into:
+  - to_apply: datasets absent in metastore (passed to applier unchanged)
+  - DiffPayload: structured diff for existing and removed datasets
+
+TODO: type_changes stays empty in v1. Computing it requires reading the
+current DatasetSchema's FieldBindings and the TypeInstance each binding
+points at, then comparing against the newly-resolved (code, params).
+Track as follow-up.
+"""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any
 from uuid import UUID
 
 from aide_sdk import AideClient
 
-from aide_crawler.normalizer import NormalizedDataset, NormalizedField, NormalizedResult
+from aide_crawler.normalizer import NormalizedDataset, NormalizedResult
 
 
 @dataclass
-class TypeChange:
-    dataset_object_name: str
-    field_name: str
-    old_type: str
-    new_type: str
-    old_params: dict[str, Any]
-    new_params: dict[str, Any]
+class DiffPayload:
+    new_datasets_applied: list[dict[str, Any]] = field(default_factory=list)
+    existing_datasets_diff: list[dict[str, Any]] = field(default_factory=list)
+    removed_datasets: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return schema_version-tagged JSON-ready dict."""
+        return {"schema_version": 1, **asdict(self)}
+
+    def counts(self) -> dict[str, int]:
+        return {
+            "new_datasets_applied": len(self.new_datasets_applied),
+            "new_fields": sum(
+                len(e["new_fields"]) for e in self.existing_datasets_diff
+            ),
+            "removed_fields": sum(
+                len(e["removed_fields"]) for e in self.existing_datasets_diff
+            ),
+            "removed_datasets": len(self.removed_datasets),
+            "type_changes": sum(
+                len(e.get("type_changes", [])) for e in self.existing_datasets_diff
+            ),
+        }
 
 
-@dataclass
-class IndexChange:
-    dataset_object_name: str
-    index_name: str
-    columns: list[str]
-    is_unique: bool
+async def _list_existing_datasets(
+    client: AideClient, system_id: UUID
+) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    page = 1
+    while True:
+        resp = await client.datasets.list(
+            page=page, size=100, params={"system_id": str(system_id)}
+        )
+        for item in resp.items:
+            ds = item.model_dump()
+            out[ds["object_name"]] = ds
+        if page >= resp.pages:
+            break
+        page += 1
+    return out
 
 
-@dataclass
-class DiffResult:
-    new_datasets: list[NormalizedDataset]
-    removed_datasets: list[dict[str, Any]]
-    new_fields: dict[str, list[NormalizedField]]
-    removed_fields: dict[str, list[dict[str, Any]]]
-    type_changes: list[TypeChange]
-    new_indexes: dict[str, list[IndexChange]]
-    removed_indexes: dict[str, list[IndexChange]]
+async def _list_existing_fields(
+    client: AideClient, dataset_id: Any
+) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    page = 1
+    while True:
+        resp = await client.fields.list(
+            page=page, size=100, params={"dataset_id": str(dataset_id)}
+        )
+        for item in resp.items:
+            f = item.model_dump()
+            out[f["name"]] = f
+        if page >= resp.pages:
+            break
+        page += 1
+    return out
 
 
-async def compute_diff(
+async def classify_and_diff(
     client: AideClient,
     system_id: UUID,
     normalized: NormalizedResult,
-) -> DiffResult:
-    """Compare normalized crawl result against current metastore state."""
+) -> tuple[list[NormalizedDataset], DiffPayload]:
+    """Split crawled datasets into (to_apply, diff_payload).
 
-    existing_datasets: dict[str, dict[str, Any]] = {}
-    page_num = 1
-    while True:
-        page = await client.datasets.list(
-            page=page_num, size=100, params={"system_id": str(system_id)}
-        )
-        for item in page.items:
-            ds = item.model_dump()
-            existing_datasets[ds["object_name"]] = ds
-        if page_num >= page.pages:
-            break
-        page_num += 1
+    - to_apply: datasets absent in metastore; passed to applier as-is.
+    - diff_payload: structured diff for existing + removed datasets.
 
+    TODO: type_changes stays empty in v1. Computing it requires reading
+    the current DatasetSchema's FieldBindings and the TypeInstance each
+    binding points at, then comparing against the newly-resolved (code,
+    params). Track as follow-up.
+    """
+    existing = await _list_existing_datasets(client, system_id)
+    existing_names = set(existing)
     crawled_names = {d.object_name for d in normalized.datasets}
-    existing_names = set(existing_datasets.keys())
 
-    new_datasets = [
+    payload = DiffPayload()
+    to_apply: list[NormalizedDataset] = [
         d for d in normalized.datasets if d.object_name not in existing_names
     ]
 
-    removed_datasets = [
-        existing_datasets[name] for name in existing_names - crawled_names
-    ]
-
-    new_fields: dict[str, list[NormalizedField]] = {}
-    removed_fields: dict[str, list[dict[str, Any]]] = {}
-    type_changes: list[TypeChange] = []
+    for name in sorted(existing_names - crawled_names):
+        payload.removed_datasets.append(
+            {"object_name": name, "dataset_id": str(existing[name]["id"])}
+        )
 
     for nd in normalized.datasets:
         if nd.object_name not in existing_names:
             continue
-
-        ds = existing_datasets[nd.object_name]
+        ds = existing[nd.object_name]
         ds_id = ds["id"]
-
-        existing_field_map: dict[str, dict[str, Any]] = {}
-        fp = 1
-        while True:
-            fpage = await client.fields.list(
-                page=fp, size=100, params={"dataset_id": str(ds_id)}
-            )
-            for f in fpage.items:
-                fd = f.model_dump()
-                existing_field_map[fd["name"]] = fd
-            if fp >= fpage.pages:
-                break
-            fp += 1
+        existing_fields = await _list_existing_fields(client, ds_id)
 
         crawled_field_names = {f.name for f in nd.fields}
-        existing_field_names = set(existing_field_map.keys())
-
-        nf = [f for f in nd.fields if f.name not in existing_field_names]
-        if nf:
-            new_fields[nd.object_name] = nf
-
-        rf = [
-            existing_field_map[name]
-            for name in existing_field_names - crawled_field_names
+        new_fields = [
+            {
+                "name": f.name,
+                "code": f.type_mapping.data_type_code,
+                "params": f.type_mapping.type_params or {},
+            }
+            for f in nd.fields
+            if f.name not in existing_fields
         ]
-        if rf:
-            removed_fields[nd.object_name] = rf
+        removed_fields = [
+            {"name": name, "field_id": str(existing_fields[name]["id"])}
+            for name in sorted(set(existing_fields) - crawled_field_names)
+        ]
+        payload.existing_datasets_diff.append(
+            {
+                "object_name": nd.object_name,
+                "dataset_id": str(ds_id),
+                "new_fields": new_fields,
+                "removed_fields": removed_fields,
+                "type_changes": [],  # TODO: see module docstring
+            }
+        )
 
-    return DiffResult(
-        new_datasets=new_datasets,
-        removed_datasets=removed_datasets,
-        new_fields=new_fields,
-        removed_fields=removed_fields,
-        type_changes=type_changes,
-        new_indexes={},
-        removed_indexes={},
-    )
+    return to_apply, payload

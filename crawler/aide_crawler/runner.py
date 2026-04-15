@@ -5,13 +5,15 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from aide_schemas.crawl_run import CrawlRunCreate, CrawlRunUpdate
+from aide_schemas.crawl_run import CrawlRunCreate, CrawlRunUpdate, CrawlStatus
 from aide_sdk import AideClient
 
-from aide_crawler.differ import compute_diff
+from aide_crawler.applier import apply_new_datasets
+from aide_crawler.differ import classify_and_diff
 from aide_crawler.inspector import run_inspection
 from aide_crawler.normalizer import normalize
 from aide_crawler.reporter import format_report
+from aide_crawler.type_cache import TypeCache
 
 
 async def run_crawl(
@@ -49,8 +51,8 @@ async def run_crawl(
             raise SystemExit(1)
         system = systems_page.items[0]
         system_id = system.id
-
         flavor_id = system.flavor_id
+
         dt_page = await client.data_types.list(
             params={"system_flavor_id": str(flavor_id)}
         )
@@ -62,6 +64,12 @@ async def run_crawl(
             )
             raise SystemExit(1)
 
+        type_cache = await TypeCache.load(
+            client,
+            flavor_id=flavor_id,
+            flavor_code=getattr(system, "flavor_code", None),
+        )
+
         crawl_config: dict[str, Any] = {
             "include_schemas": include_schemas,
             "exclude_schemas": exclude_schemas,
@@ -71,7 +79,7 @@ async def run_crawl(
         crawl_run = await client.crawl_runs.create(
             CrawlRunCreate(
                 system_id=system_id,
-                status="running",
+                status=CrawlStatus.RUNNING,
                 started_at=datetime.now(timezone.utc),
                 config=crawl_config,
             )
@@ -88,28 +96,37 @@ async def run_crawl(
 
             normalized = normalize(inspection)
 
-            diff = await compute_diff(client, system_id, normalized)
+            to_apply, payload = await classify_and_diff(client, system_id, normalized)
+
+            applied = await apply_new_datasets(
+                client,
+                system_id=system_id,
+                datasets=to_apply,
+                type_cache=type_cache,
+            )
+            payload.new_datasets_applied = [
+                {
+                    "object_name": a.object_name,
+                    "dataset_id": str(a.dataset_id),
+                    "fields_count": a.fields_count,
+                }
+                for a in applied
+            ]
 
             if output_file:
                 with open(output_file, "w") as f:
-                    format_report(diff, output_format, f)
+                    format_report(payload, output_format, f)
                 print(f"Report written to {output_file}", file=sys.stderr)
             else:
-                format_report(diff, output_format)
+                format_report(payload, output_format)
 
-            summary = {
-                "new_datasets": len(diff.new_datasets),
-                "removed_datasets": len(diff.removed_datasets),
-                "new_fields": sum(len(v) for v in diff.new_fields.values()),
-                "removed_fields": sum(len(v) for v in diff.removed_fields.values()),
-                "type_changes": len(diff.type_changes),
-            }
             await client.crawl_runs.update(
                 crawl_run.id,
                 CrawlRunUpdate(
-                    status="completed",
+                    status=CrawlStatus.COMPLETED,
                     finished_at=datetime.now(timezone.utc),
-                    summary=summary,
+                    summary=payload.counts(),
+                    diff_payload=payload.to_dict(),
                     row_version=crawl_run.row_version,
                 ),
             )
@@ -118,7 +135,7 @@ async def run_crawl(
             await client.crawl_runs.update(
                 crawl_run.id,
                 CrawlRunUpdate(
-                    status="failed",
+                    status=CrawlStatus.FAILED,
                     finished_at=datetime.now(timezone.utc),
                     error_message=str(exc),
                     row_version=crawl_run.row_version,
