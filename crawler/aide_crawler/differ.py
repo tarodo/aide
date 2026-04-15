@@ -123,6 +123,25 @@ def _tree_to_node(tree: Any, type_cache: TypeCache) -> TypeNode:
     return TypeNode(data_type_code=code, type_params=params, children=children)
 
 
+def _filter_node(node: TypeNode, type_cache: TypeCache) -> TypeNode:
+    """Drop params that aren't in the data_type's params_schema.
+
+    Mirrors what applier does before POSTing. Required so differ compares
+    what is actually persisted, not what SA inspection produced.
+    """
+    allowed = type_cache.allowed_params(node.data_type_code)
+    filtered_params = {k: v for k, v in node.type_params.items() if k in allowed}
+    filtered_children = [
+        TypeChild(slot=c.slot, node=_filter_node(c.node, type_cache))
+        for c in node.children
+    ]
+    return TypeNode(
+        data_type_code=node.data_type_code,
+        type_params=filtered_params,
+        children=filtered_children,
+    )
+
+
 def _nodes_equal(a: TypeNode, b: TypeNode) -> bool:
     if a.data_type_code != b.data_type_code:
         return False
@@ -207,15 +226,16 @@ async def classify_and_diff(
                     binding["type_instance_id"]
                 )
                 current_node = _tree_to_node(ti_tree, type_cache)
-                if not _nodes_equal(current_node, nf.type_node):
+                crawled_node = _filter_node(nf.type_node, type_cache)
+                if not _nodes_equal(current_node, crawled_node):
                     type_changes.append(
                         {
                             "field_name": nf.name,
                             "field_id": str(existing_field["id"]),
                             "before": _flatten_root(current_node),
-                            "after": _flatten_root(nf.type_node),
+                            "after": _flatten_root(crawled_node),
                             "full_before": _node_to_dict(current_node),
-                            "full_after": _node_to_dict(nf.type_node),
+                            "full_after": _node_to_dict(crawled_node),
                         }
                     )
 
