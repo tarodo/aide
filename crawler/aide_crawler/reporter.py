@@ -38,7 +38,9 @@ def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
             for change in entry.get("type_changes", []):
                 before_str = _fmt_type(change["before"])
                 after_str = _fmt_type(change["after"])
-                out.write(f"      ~ {change['field_name']}: {before_str} -> {after_str}\n")
+                out.write(
+                    f"      ~ {change['field_name']}: {before_str} -> {after_str}\n"
+                )
         out.write("\n")
 
     if payload.removed_datasets:
