@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from aide_crawler.inspector import InspectionResult
-from aide_crawler.type_map import TypeMapping, resolve_type
+from aide_crawler.type_map import TypeNode, resolve_type
 
 
 @dataclass
@@ -13,7 +13,7 @@ class NormalizedField:
     path: str
     nullable: bool
     position: int
-    type_mapping: TypeMapping
+    type_node: TypeNode
 
 
 @dataclass
@@ -46,14 +46,14 @@ def normalize(inspection: InspectionResult) -> NormalizedResult:
 
         fields = []
         for idx, col in enumerate(table.columns):
-            type_mapping = resolve_type(inspection.dialect_name, col.type)
+            type_node = resolve_type(inspection.dialect_name, col.type)
             fields.append(
                 NormalizedField(
                     name=col.name,
                     path=col.name,
                     nullable=bool(col.nullable),
                     position=idx,
-                    type_mapping=type_mapping,
+                    type_node=type_node,
                 )
             )
 
