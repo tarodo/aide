@@ -9,7 +9,7 @@ import pytest
 
 from aide_crawler.differ import DiffPayload, classify_and_diff
 from aide_crawler.normalizer import NormalizedDataset, NormalizedField, NormalizedResult
-from aide_crawler.type_map import TypeMapping
+from aide_crawler.type_map import TypeNode
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -86,7 +86,7 @@ def _nf(name, code="integer", params=None):
         path=name,
         nullable=False,
         position=0,
-        type_mapping=TypeMapping(code, params or {}),
+        type_node=TypeNode(data_type_code=code, type_params=params or {}),
     )
 
 

@@ -1,3 +1,4 @@
+# crawler/aide_crawler/applier.py
 from __future__ import annotations
 
 import uuid
@@ -11,6 +12,7 @@ from aide_schemas.type_instance import TypeInstanceCreate
 
 from aide_crawler.normalizer import NormalizedDataset
 from aide_crawler.type_cache import TypeCache
+from aide_crawler.type_map import TypeNode
 
 
 @dataclass
@@ -81,6 +83,38 @@ async def _list_bindings_field_ids(client, *, schema_id: uuid.UUID) -> set[uuid.
     return result
 
 
+async def _create_type_instance_tree(
+    client,
+    *,
+    node: TypeNode,
+    type_cache: TypeCache,
+    parent_id: uuid.UUID | None = None,
+    slot: str | None = None,
+) -> uuid.UUID:
+    """Create a TypeInstance for `node` and recurse into its children.
+
+    Returns the id of the root TypeInstance (the one bound to the field).
+    """
+    data_type_id = type_cache.resolve(node.data_type_code)
+    ti = await client.type_instances.create(
+        TypeInstanceCreate(
+            data_type_id=data_type_id,
+            type_params=node.type_params or None,
+            parent_id=parent_id,
+            slot=slot,
+        )
+    )
+    for child in node.children:
+        await _create_type_instance_tree(
+            client,
+            node=child.node,
+            type_cache=type_cache,
+            parent_id=ti.id,
+            slot=child.slot,
+        )
+    return ti.id
+
+
 async def apply_new_datasets(
     client,
     *,
@@ -142,19 +176,16 @@ async def apply_new_datasets(
                 fields_written += 1
                 continue
 
-            data_type_id = type_cache.resolve(nf.type_mapping.data_type_code)
-            type_params = nf.type_mapping.type_params or None
-            ti = await client.type_instances.create(
-                TypeInstanceCreate(
-                    data_type_id=data_type_id,
-                    type_params=type_params,
-                )
+            root_ti_id = await _create_type_instance_tree(
+                client,
+                node=nf.type_node,
+                type_cache=type_cache,
             )
             await client.field_bindings.create(
                 FieldBindingCreate(
                     field_id=field_id,
                     dataset_schema_id=schema_id,
-                    type_instance_id=ti.id,
+                    type_instance_id=root_ti_id,
                     position=nf.position,
                     is_nullable=nf.nullable,
                 )

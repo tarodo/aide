@@ -123,8 +123,8 @@ async def classify_and_diff(
         new_fields = [
             {
                 "name": f.name,
-                "code": f.type_mapping.data_type_code,
-                "params": f.type_mapping.type_params or {},
+                "code": f.type_node.data_type_code,
+                "params": f.type_node.type_params or {},
             }
             for f in nd.fields
             if f.name not in existing_fields
