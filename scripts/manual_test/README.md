@@ -34,7 +34,7 @@ uv run python -m backend.scripts.seed_data_types --file backend/scripts/data/pos
 Use Swagger at `http://localhost:8000/docs` or curl:
 
 - `POST /api/v1/users` — create a user (or use an existing admin from seed)
-- `POST /api/v1/auth/login` — get token
+- `POST /api/v1/login/` — get token (OAuth2 form: `username`, `password`)
 - `POST /api/v1/systems` with `code=demo_pg14`, `flavor_code=postgres14` (match the code from the seed YAML)
 
 Remember the `system_code` and credentials.
