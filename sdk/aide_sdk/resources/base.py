@@ -43,6 +43,39 @@ class BaseResource(Generic[CreateT, ReadT, UpdateT]):
         data = await self._http.post(self._path, json=obj_in.model_dump(mode="json"))
         return self._read_adapter.validate_python(data)
 
+    async def create_many(
+        self,
+        items: list[CreateT],
+        *,
+        chunk_size: int = 500,
+    ) -> list[ReadT]:
+        """Create many objects via batch endpoint, auto-chunking.
+
+        All-or-nothing per chunk. If a mid-sequence chunk fails, earlier
+        chunks are already committed server-side; the exception propagates
+        and earlier-chunk results are NOT returned.
+        """
+        if not items:
+            return []
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
+
+        from aide_schemas.batch import BatchCreateResponse
+
+        results: list[ReadT] = []
+        response_adapter: TypeAdapter[Any] = TypeAdapter(
+            BatchCreateResponse[self._read_schema]  # type: ignore[name-defined]
+        )
+        for start in range(0, len(items), chunk_size):
+            chunk = items[start : start + chunk_size]
+            data = await self._http.post(
+                f"{self._path}/batch",
+                json={"items": [x.model_dump(mode="json") for x in chunk]},
+            )
+            envelope = response_adapter.validate_python(data)
+            results.extend(envelope.items)
+        return results
+
     async def update(self, obj_id: UUID, obj_in: UpdateT) -> ReadT:
         data = await self._http.put(
             f"{self._path}/{obj_id}",
