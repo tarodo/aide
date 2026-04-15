@@ -49,6 +49,7 @@ crud_router = create_crud_router(
     delete_error_codes=[TYPE_INSTANCE_NOT_FOUND],
     filter_model=TypeInstanceFilter,
     sortable_fields=TYPE_INSTANCE_SORTABLE,
+    supports_batch=True,
 )
 
 router.include_router(crud_router)

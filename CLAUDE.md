@@ -93,6 +93,10 @@ Tests run via `make test-docker` in Docker, not locally. Test structure mirrors 
 
 `make test-docker` binds port 5433. If another repo/worktree already runs `aide-db-test-1` on 5433, stop it first: `docker stop aide-db-test-1`. Only one test DB instance at a time.
 
+Narrow scope: `PYTEST_ARGS="-v tests/path/test_file.py" make test-docker` (passes args to pytest inside the container).
+
+Test layer patterns: **API/repo tests** use the `transactional_session` fixture from `tests/conftest.py` (real DB, rolls back per-test). **Service tests** use mocked UoW — see `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`.
+
 After changing deps (`uv sync`) or adding a new local workspace package, rebuild the test image: `docker compose build test`. Otherwise `make test-docker` fails with `ModuleNotFoundError`.
 
 SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
@@ -117,3 +121,9 @@ packages = ["package_name"]
 ### Data type seeding
 
 Data types are pre-loaded per flavor from YAML files in `backend/scripts/data/`. Flavor `code` = min supported version; `versions` lists all compatible versions. Re-run `seed_data_types.py` after editing a YAML — it is idempotent. Removing a type from YAML does NOT delete the row (protects existing `TypeInstance` FKs); prune manually if required.
+
+### Known quirks
+
+- `BaseResource.list` shadows the `list` builtin inside the SDK class scope — use `typing.List[X]` (not `list[X]`) for type annotations on methods of `sdk/aide_sdk/resources/base.py`.
+- Pre-existing mypy errors in `backend/scripts/_seed_core.py` (yaml stubs) and `sdk/aide_sdk/resources/datasets.py` (type assignment) are unrelated to most work — ignore when evaluating your diff.
+- SQLAlchemy `flush()` on PG populates server-generated columns (id, timestamps, row_version) via RETURNING — no explicit `refresh()` needed for `add_all` + `flush` batch inserts.

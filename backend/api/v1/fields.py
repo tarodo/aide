@@ -54,6 +54,7 @@ crud_router = create_crud_router(
     filter_model=FieldFilter,
     sortable_fields=FIELD_SORTABLE,
     default_sort="name",
+    supports_batch=True,
 )
 
 router.include_router(crud_router)

@@ -131,6 +131,37 @@ class GenericService(
             )
             return self.read_schema.model_validate(created_obj)
 
+    async def create_many(
+        self,
+        uow: UnitOfWork,
+        items: list[CreateSchemaType],
+        creator_id: uuid.UUID | None = None,
+    ) -> list[ReadSchemaType]:
+        """Create many objects in a single transaction (all-or-nothing)."""
+        if not items:
+            return []
+
+        async with uow:
+            repo: BaseRepository[ModelType] = self._get_repository(uow.session)
+
+            db_objs: list[ModelType] = []
+            for obj_in in items:
+                await self._pre_create(uow, obj_in, creator_id)
+                db_obj = self.model(**obj_in.model_dump())
+                if creator_id and hasattr(db_obj, "created_by"):
+                    setattr(db_obj, "created_by", creator_id)
+                    setattr(db_obj, "updated_by", creator_id)
+                db_objs.append(db_obj)
+
+            created = await repo.create_many(objs=db_objs)
+            logger.info(
+                "entity.batch_created",
+                entity=self._entity_name,
+                count=len(created),
+                user_id=str(creator_id) if creator_id else None,
+            )
+            return [self.read_schema.model_validate(o) for o in created]
+
     async def _pre_update(
         self,
         uow: UnitOfWork,

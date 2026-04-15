@@ -46,6 +46,7 @@ crud_router = create_crud_router(
     delete_error_codes=[FIELD_BINDING_NOT_FOUND],
     filter_model=FieldBindingFilter,
     sortable_fields=FIELD_BINDING_SORTABLE,
+    supports_batch=True,
 )
 
 router.include_router(crud_router)
