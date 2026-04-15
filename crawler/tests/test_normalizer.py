@@ -1,6 +1,10 @@
 from sqlalchemy import types as sa_types
 
-from aide_crawler.inspector import ColumnInfo, InspectionResult, TableInfo
+from aide_crawler.inspector import (
+    ColumnInfo,
+    InspectionResult,
+    TableInfo,
+)
 from aide_crawler.normalizer import normalize
 
 
@@ -42,11 +46,35 @@ def test_normalize_single_table():
     )
     assert len(result.datasets) == 1
     ds = result.datasets[0]
-    assert ds.object_name == "public.t"
+    assert ds.object_name == "testdb.public.t"
     assert ds.catalog_name == "testdb"
     assert ds.fields[0].type_node.data_type_code == "integer"
     assert ds.fields[1].type_node.data_type_code == "varchar"
     assert ds.fields[1].type_node.type_params == {"length": 100}
+
+
+def test_normalize_object_name_without_database_name():
+    ins = InspectionResult(
+        dialect_name="postgresql",
+        database_name=None,
+        schemas=["public"],
+        tables=[
+            TableInfo(
+                schema_name="public",
+                table_name="t",
+                is_view=False,
+                columns=[],
+                pk_columns=[],
+                unique_constraints=[],
+                foreign_keys=[],
+                indexes=[],
+                comment=None,
+            )
+        ],
+    )
+    result = normalize(ins)
+    assert result.datasets[0].object_name == "public.t"
+    assert result.datasets[0].catalog_name is None
 
 
 def test_normalize_view():

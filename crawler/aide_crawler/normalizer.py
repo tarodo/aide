@@ -42,7 +42,12 @@ def normalize(inspection: InspectionResult) -> NormalizedResult:
     datasets: list[NormalizedDataset] = []
 
     for table in inspection.tables:
-        object_name = f"{table.schema_name}.{table.table_name}"
+        if inspection.database_name:
+            object_name = (
+                f"{inspection.database_name}.{table.schema_name}.{table.table_name}"
+            )
+        else:
+            object_name = f"{table.schema_name}.{table.table_name}"
 
         fields = []
         for idx, col in enumerate(table.columns):
