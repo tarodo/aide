@@ -97,8 +97,8 @@ def resolve_type(dialect_name: str, sa_type: Any) -> TypeNode:
 
     # PG BIT branches on .varying; not amenable to the flat dialect map.
     if dialect_name == "postgresql" and isinstance(sa_type, pg.BIT):
-        code = "varbit" if getattr(sa_type, "varying", False) else "bit"
-        return TypeNode(data_type_code=code, type_params=_extract_params(sa_type))
+        bit_code = "varbit" if getattr(sa_type, "varying", False) else "bit"
+        return TypeNode(data_type_code=bit_code, type_params=_extract_params(sa_type))
 
     # Timezone-aware time/timestamp special-case (PG only).
     if dialect_name == "postgresql":
@@ -114,7 +114,7 @@ def resolve_type(dialect_name: str, sa_type: Any) -> TypeNode:
             )
 
     cls_name = type(sa_type).__name__
-    code = DIALECT_TYPE_MAP.get((dialect_name, cls_name))
+    code: str | None = DIALECT_TYPE_MAP.get((dialect_name, cls_name))
     if code is None:
         for sa_class, generic_code in GENERIC_TYPE_MAP:
             if isinstance(sa_type, sa_class):
