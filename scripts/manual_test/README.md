@@ -31,11 +31,11 @@ uv run python -m backend.scripts.seed_data_types --file backend/scripts/data/pos
 
 ### 3. Create user + system in metastore
 
-Use Swagger at `http://localhost:8001/docs` or curl:
+Use Swagger at `http://localhost:8000/docs` or curl:
 
 - `POST /api/v1/users` — create a user (or use an existing admin from seed)
-- `POST /api/v1/auth/login` — get token -- eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYTEzYWQxOWItYTdlYS00YTkwLThmNDMtNDBmMGMzNDE3NzEzIiwiZXhwIjoxNzc2MjQyMjQ5fQ.ptubGv6NDi47p6DP3aQNuoV81GRPY00-LTLUd7aQTKQ
-- `POST /api/v1/systems` with `code=demo_pg14`, `flavor_code=postgres14` (match the code from the seed YAML) -- df302112-dfbd-4f3c-b797-954af6f68313
+- `POST /api/v1/auth/login` — get token
+- `POST /api/v1/systems` with `code=demo_pg14`, `flavor_code=postgres14` (match the code from the seed YAML)
 
 Remember the `system_code` and credentials.
 
@@ -58,22 +58,12 @@ cd crawler
 uv run aide-crawler crawl \
   --system-code demo_pg14 \
   --connection-url "postgresql+psycopg://crawler:crawler@localhost:5434/target" \
-  --metastore-url http://localhost:8001 \
+  --metastore-url http://localhost:8000 \
   --metastore-user <user> \
   --metastore-password <pw> \
   --schemas demo \
   --format text
 ```
-
-cd crawler
-uv run aide-crawler crawl \
-  --system-code df302112-dfbd-4f3c-b797-954af6f68313 \
-  --connection-url "postgresql+psycopg://crawler:crawler@localhost:5434/target" \
-  --metastore-url http://localhost:8001 \
-  --metastore-user admin@example.com \
-  --metastore-password changeme \
-  --schemas demo \
-  --format text
 
 - 1st run → all tables appear as new in diff, applier creates datasets
 - 2nd run on unchanged schema → empty diff

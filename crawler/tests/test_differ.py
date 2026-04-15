@@ -119,7 +119,14 @@ def _build_client(
     c.field_bindings.list = AsyncMock(side_effect=_bindings_list)
 
     async def _get_tree(ti_id):
-        return trees_by_ti[ti_id]
+        from aide_sdk.exceptions import NotFoundError
+
+        tree = trees_by_ti.get(ti_id)
+        if tree is None:
+            raise NotFoundError(
+                status_code=404, error_code="NOT_FOUND", detail=str(ti_id)
+            )
+        return tree
 
     c.type_instances = AsyncMock()
     c.type_instances.get_tree = AsyncMock(side_effect=_get_tree)
@@ -308,3 +315,121 @@ async def test_missing_type_instance_reported_as_missing():
     assert len(changes) == 1
     assert changes[0]["before"] == {"code": "__missing__", "params": {}}
     assert changes[0]["after"] == {"code": "integer", "params": {}}
+
+
+@pytest.mark.asyncio
+async def test_all_new_datasets_go_to_apply():
+    """No matching dataset in metastore → routed to to_apply, not to existing diff."""
+    cache = _Cache({})
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={},
+        bindings_by_schema={},
+        trees_by_ti={},
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer")])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    to_apply, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    assert [d.object_name for d in to_apply] == ["target.demo.t"]
+    assert payload.existing_datasets_diff == []
+    assert payload.removed_datasets == []
+
+
+@pytest.mark.asyncio
+async def test_removed_dataset_listed():
+    """Dataset present in metastore but absent in crawl → removed_datasets."""
+    ds_id = uuid.uuid4()
+    cache = _Cache({})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.gone")],
+        existing_fields_by_ds={},
+        schemas_by_ds={},
+        bindings_by_schema={},
+        trees_by_ti={},
+    )
+
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[])
+
+    to_apply, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    assert to_apply == []
+    assert len(payload.removed_datasets) == 1
+    assert payload.removed_datasets[0]["object_name"] == "target.demo.gone"
+    assert payload.removed_datasets[0]["dataset_id"] == str(ds_id)
+
+
+@pytest.mark.asyncio
+async def test_existing_with_removed_field():
+    """Field present in metastore but absent in crawl → removed_fields entry."""
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    drop_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    dt_int = uuid.uuid4()
+
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={
+            str(ds_id): [
+                _model(id=keep_id, name="id"),
+                _model(id=drop_id, name="legacy"),
+            ]
+        },
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=keep_id, type_instance_id=keep_ti)]
+        },
+        trees_by_ti={keep_ti: _ti_tree(dt_int)},
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer")])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    entry = payload.existing_datasets_diff[0]
+    assert entry["new_fields"] == []
+    assert [rf["name"] for rf in entry["removed_fields"]] == ["legacy"]
+    assert entry["removed_fields"][0]["field_id"] == str(drop_id)
+    assert entry["type_changes"] == []
+
+
+def test_diff_payload_to_dict_carries_schema_version():
+    from aide_crawler.differ import DiffPayload
+
+    payload = DiffPayload()
+    out = payload.to_dict()
+    assert out["schema_version"] == 1
+    assert out["new_datasets_applied"] == []
+    assert out["existing_datasets_diff"] == []
+    assert out["removed_datasets"] == []
+
+
+def test_diff_payload_counts_aggregates_all_axes():
+    from aide_crawler.differ import DiffPayload
+
+    payload = DiffPayload(
+        new_datasets_applied=[{"object_name": "a"}, {"object_name": "b"}],
+        existing_datasets_diff=[
+            {
+                "new_fields": [{"name": "x"}, {"name": "y"}],
+                "removed_fields": [{"name": "z"}],
+                "type_changes": [{"field_name": "q"}],
+            }
+        ],
+        removed_datasets=[{"object_name": "c"}],
+    )
+    counts = payload.counts()
+    assert counts == {
+        "new_datasets_applied": 2,
+        "new_fields": 2,
+        "removed_fields": 1,
+        "removed_datasets": 1,
+        "type_changes": 1,
+    }
