@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     REQUEST_ID_HEADER: str = "X-Request-ID"
     ENV: str = "dev"
     SLOW_QUERY_THRESHOLD_MS: int = 500
+    MAX_BATCH_SIZE: int = 500
     FIRST_SUPERUSER_EMAIL: str | None = None
     FIRST_SUPERUSER_PASSWORD: str | None = None
     FIRST_SUPERUSER_FULL_NAME: str | None = None
