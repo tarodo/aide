@@ -15,7 +15,7 @@ class HttpClient:
         self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> HttpClient:
-        self._client = httpx.AsyncClient()
+        self._client = httpx.AsyncClient(follow_redirects=True)
         return self
 
     async def __aexit__(self, *args: Any) -> None:
