@@ -4,6 +4,9 @@ from typing import Any, List, Sequence, Type, TypeVar
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
+from backend.core.settings import settings
+from backend.schemas.batch import BatchCreateRequest, BatchCreateResponse
+
 from backend.api.dependencies import (
     PaginationParams,
     get_current_superuser,
@@ -50,6 +53,8 @@ def create_crud_router(
     filter_model: Type[BaseFilter] | None = None,
     sortable_fields: set[str] | None = None,
     default_sort: str = "id",
+    supports_batch: bool = False,
+    batch_create_dependencies: Sequence[Any] | None = None,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -163,6 +168,44 @@ def create_crud_router(
     ) -> Any:
         creator_id = current_user.id
         return await service.create(uow=uow, obj_in=obj_in, creator_id=creator_id)
+
+    if supports_batch:
+        _batch_deps = (
+            batch_create_dependencies
+            if batch_create_dependencies is not None
+            else create_dependencies
+        )
+
+        @router.post(
+            "/batch",
+            response_model=BatchCreateResponse[read_schema],  # type: ignore[valid-type]
+            status_code=status.HTTP_201_CREATED,
+            summary=f"Batch-create {entity_name}s (all-or-nothing)",
+            dependencies=_batch_deps,
+            responses={
+                **build_error_responses(
+                    *(create_error_codes or []), UNAUTHORIZED, FORBIDDEN
+                ),
+            },
+        )
+        async def create_batch(
+            payload: BatchCreateRequest[create_schema],  # type: ignore[valid-type]
+            service: ServiceType = Depends(service_dependency),
+            uow: UnitOfWork = Depends(UnitOfWork),
+            current_user: User = Depends(get_current_user),
+        ) -> Any:
+            if len(payload.items) > settings.MAX_BATCH_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(
+                        f"Batch too large: {len(payload.items)} items; "
+                        f"max is {settings.MAX_BATCH_SIZE}"
+                    ),
+                )
+            created = await service.create_many(
+                uow=uow, items=payload.items, creator_id=current_user.id
+            )
+            return BatchCreateResponse(items=created, count=len(created))
 
     @router.get(
         "/{obj_id}",
