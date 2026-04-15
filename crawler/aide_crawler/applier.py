@@ -241,18 +241,19 @@ async def apply_new_datasets(
                 client, field_root_nodes=fields_to_bind, type_cache=type_cache
             )
 
-        # Phase 3 (per-item): bindings.
-        for field_id, nf in nf_by_field_id:
-            root_ti_id = field_root_ti[field_id]
-            await client.field_bindings.create(
-                FieldBindingCreate(
-                    field_id=field_id,
-                    dataset_schema_id=schema_id,
-                    type_instance_id=root_ti_id,
-                    position=nf.position,
-                    is_nullable=nf.nullable,
-                )
+        # Phase 3: batch-create all missing field bindings.
+        bindings_to_create: list[FieldBindingCreate] = [
+            FieldBindingCreate(  # type: ignore[call-arg]
+                field_id=field_id,
+                dataset_schema_id=schema_id,
+                type_instance_id=field_root_ti[field_id],
+                position=nf.position,
+                is_nullable=nf.nullable,
             )
+            for field_id, nf in nf_by_field_id
+        ]
+        if bindings_to_create:
+            await client.field_bindings.create_many(bindings_to_create)
 
         # fields_written counts all fields accounted for (both already-bound and newly-bound).
         fields_written = len(nd.fields)

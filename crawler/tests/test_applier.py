@@ -62,6 +62,9 @@ def _mock_client(
         return_value=_page([_obj(field_id=fid) for fid in (bindings_field_ids or [])])
     )
     c.field_bindings.create = AsyncMock(side_effect=lambda _p: _obj(id=uuid.uuid4()))
+    c.field_bindings.create_many = AsyncMock(
+        side_effect=lambda items: [_obj(id=uuid.uuid4()) for _ in items]
+    )
 
     return c
 
@@ -155,7 +158,11 @@ async def test_new_dataset_happy_path():
     ti_batch_items = client.type_instances.create_many.await_args[0][0]
     assert len(ti_batch_items) == 3
     client.type_instances.create.assert_not_awaited()
-    assert client.field_bindings.create.call_count == 3
+    # All 3 bindings created via a single batch call
+    client.field_bindings.create_many.assert_awaited_once()
+    fb_batch_items = client.field_bindings.create_many.await_args[0][0]
+    assert len(fb_batch_items) == 3
+    client.field_bindings.create.assert_not_awaited()
     # No schema list result → list was called but returned empty, so create was used
     client.dataset_schemas.list.assert_called_once()
 
@@ -238,7 +245,11 @@ async def test_partial_rerun_bindings_missing():
     ti_batch_items = client.type_instances.create_many.await_args[0][0]
     assert len(ti_batch_items) == 2
     client.type_instances.create.assert_not_called()
-    assert client.field_bindings.create.call_count == 2
+    # 2 bindings created via a single batch call
+    client.field_bindings.create_many.assert_awaited_once()
+    fb_batch_items = client.field_bindings.create_many.await_args[0][0]
+    assert len(fb_batch_items) == 2
+    client.field_bindings.create.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -283,7 +294,11 @@ async def test_partial_rerun_half_fields():
     ti_batch_items = client.type_instances.create_many.await_args[0][0]
     assert len(ti_batch_items) == 2
     client.type_instances.create.assert_not_awaited()
-    assert client.field_bindings.create.call_count == 2
+    # 2 bindings created via a single batch call
+    client.field_bindings.create_many.assert_awaited_once()
+    fb_batch_items = client.field_bindings.create_many.await_args[0][0]
+    assert len(fb_batch_items) == 2
+    client.field_bindings.create.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -348,8 +363,10 @@ async def test_array_field_creates_two_type_instances_with_parent_link():
     assert depth1_items[0].parent_id == root_id
     assert depth1_items[0].slot == "item"
 
-    binding_call = client.field_bindings.create.call_args[0][0]
-    assert binding_call.type_instance_id == root_id
+    client.field_bindings.create_many.assert_awaited_once()
+    fb_items = client.field_bindings.create_many.await_args[0][0]
+    assert len(fb_items) == 1
+    assert fb_items[0].type_instance_id == root_id
 
 
 @pytest.mark.asyncio
@@ -435,3 +452,48 @@ async def test_applier_batches_type_instances_by_depth():
 
     # Per-item create NOT called for type_instances.
     assert client.type_instances.create.await_count == 0
+
+
+@pytest.mark.asyncio
+async def test_applier_batches_bindings():
+    """Field bindings are created via a single create_many call per dataset."""
+    client = _mock_client()
+
+    async def _fields_create_many(items):
+        return [_obj(id=uuid.uuid4(), name=p.name) for p in items]
+
+    client.fields.create_many = AsyncMock(side_effect=_fields_create_many)
+
+    async def _ti_create_many(items):
+        return [_obj(id=uuid.uuid4()) for _ in items]
+
+    client.type_instances.create_many = AsyncMock(side_effect=_ti_create_many)
+
+    async def _fb_create_many(items):
+        return [_obj(id=uuid.uuid4()) for _ in items]
+
+    client.field_bindings.create_many = AsyncMock(side_effect=_fb_create_many)
+
+    cache = _Cache(["bigint"])
+
+    dataset = _nd(
+        name="public.users",
+        fields=[_nf("c_a"), _nf("c_b"), _nf("c_c"), _nf("c_d")],
+    )
+
+    await apply_new_datasets(
+        client,
+        system_id=uuid.uuid4(),
+        datasets=[dataset],
+        type_cache=cache,
+    )
+
+    client.field_bindings.create_many.assert_awaited_once()
+    call = client.field_bindings.create_many.await_args
+    args, kwargs = call
+    items = args[0] if args else kwargs.get("items")
+    assert len(items) == 4
+    # Order matches input field order
+    assert [i.position for i in items] == [0, 0, 0, 0]  # _nf default position
+    # Per-item create NOT called
+    client.field_bindings.create.assert_not_awaited()
