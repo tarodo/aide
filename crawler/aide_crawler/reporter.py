@@ -7,6 +7,14 @@ from typing import IO
 from aide_crawler.differ import DiffPayload
 
 
+def _fmt_type(t: dict) -> str:
+    params = t.get("params") or {}
+    if not params:
+        return t["code"]
+    kv = ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
+    return f"{t['code']}({kv})"
+
+
 def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
     out.write("=== AIDE Crawler Report ===\n\n")
 
@@ -27,11 +35,10 @@ def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
                 out.write(f"      + {nf['name']} ({nf['code']})\n")
             for rf in entry["removed_fields"]:
                 out.write(f"      - {rf['name']}\n")
-            for tc in entry.get("type_changes", []):
-                out.write(
-                    f"      ~ {tc['field_name']}: "
-                    f"{tc['old']['code']} -> {tc['new']['code']}\n"
-                )
+            for change in entry.get("type_changes", []):
+                before_str = _fmt_type(change["before"])
+                after_str = _fmt_type(change["after"])
+                out.write(f"      ~ {change['field_name']}: {before_str} -> {after_str}\n")
         out.write("\n")
 
     if payload.removed_datasets:
