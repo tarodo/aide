@@ -96,10 +96,12 @@ async def _create_type_instance_tree(
     Returns the id of the root TypeInstance (the one bound to the field).
     """
     data_type_id = type_cache.resolve(node.data_type_code)
+    allowed = type_cache.allowed_params(node.data_type_code)
+    filtered = {k: v for k, v in node.type_params.items() if k in allowed}
     ti = await client.type_instances.create(
         TypeInstanceCreate(
             data_type_id=data_type_id,
-            type_params=node.type_params or None,
+            type_params=filtered or None,
             parent_id=parent_id,
             slot=slot,
         )

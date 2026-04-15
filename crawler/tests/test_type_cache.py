@@ -13,9 +13,10 @@ class _Page:
 
 
 class _Item:
-    def __init__(self, id, code):
+    def __init__(self, id, code, params_schema=None):
         self.id = id
         self.code = code
+        self.params_schema = params_schema or {}
 
 
 class _DataTypesStub:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from typing import Any
 
 from aide_crawler.errors import TypeNotInFlavorError
 
@@ -10,6 +11,7 @@ from aide_crawler.errors import TypeNotInFlavorError
 class TypeCache:
     flavor_code: str | None = None
     _by_code: dict[str, uuid.UUID] = field(default_factory=dict)
+    _params_schema_by_code: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
     async def load(
@@ -29,6 +31,7 @@ class TypeCache:
             )
             for item in resp.items:
                 cache._by_code[item.code] = item.id
+                cache._params_schema_by_code[item.code] = item.params_schema or {}
             if page_num >= resp.pages:
                 break
             page_num += 1
@@ -39,6 +42,9 @@ class TypeCache:
             return self._by_code[code]
         except KeyError:
             raise TypeNotInFlavorError(code, self.flavor_code) from None
+
+    def allowed_params(self, code: str) -> set[str]:
+        return set(self._params_schema_by_code.get(code, {}).keys())
 
     def __len__(self) -> int:
         return len(self._by_code)

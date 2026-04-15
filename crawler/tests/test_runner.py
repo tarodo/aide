@@ -40,8 +40,12 @@ async def test_runner_happy_path_empty_inspection(monkeypatch):
     # First call (total check), second call (TypeCache.load)
     client.data_types.list = AsyncMock(
         side_effect=[
-            _page([_obj(id=uuid.uuid4(), code="bigint")], total=1),
-            _page([_obj(id=uuid.uuid4(), code="bigint")], pages=1, total=1),
+            _page([_obj(id=uuid.uuid4(), code="bigint", params_schema={})], total=1),
+            _page(
+                [_obj(id=uuid.uuid4(), code="bigint", params_schema={})],
+                pages=1,
+                total=1,
+            ),
         ]
     )
     client.crawl_runs = AsyncMock()
@@ -129,8 +133,8 @@ async def test_runner_failure_updates_crawl_run(monkeypatch):
     client.data_types = AsyncMock()
     client.data_types.list = AsyncMock(
         side_effect=[
-            _page([_obj(id=uuid.uuid4(), code="bigint")], total=1),
-            _page([_obj(id=uuid.uuid4(), code="bigint")], total=1),
+            _page([_obj(id=uuid.uuid4(), code="bigint", params_schema={})], total=1),
+            _page([_obj(id=uuid.uuid4(), code="bigint", params_schema={})], total=1),
         ]
     )
     client.crawl_runs = AsyncMock()
