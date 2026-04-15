@@ -165,19 +165,25 @@ async def apply_new_datasets(
         existing_fields = await _list_fields_map(client, dataset_id=dataset_id)
         existing_bindings = await _list_bindings_field_ids(client, schema_id=schema_id)
 
+        # Phase 1: batch-create any missing fields.
+        to_create_fields: list[FieldCreate] = [
+            FieldCreate(  # type: ignore[call-arg]
+                dataset_id=dataset_id,
+                name=nf.name,
+                path=nf.path,
+            )
+            for nf in nd.fields
+            if nf.name not in existing_fields
+        ]
+        field_map: dict[str, uuid.UUID] = dict(existing_fields)
+        if to_create_fields:
+            created_fields = await client.fields.create_many(to_create_fields)
+            for cf in created_fields:
+                field_map[cf.name] = cf.id
+
         fields_written = 0
         for nf in nd.fields:
-            if nf.name in existing_fields:
-                field_id = existing_fields[nf.name]
-            else:
-                created_field = await client.fields.create(
-                    FieldCreate(
-                        dataset_id=dataset_id,
-                        name=nf.name,
-                        path=nf.path,
-                    )
-                )
-                field_id = created_field.id
+            field_id = field_map[nf.name]
 
             if field_id in existing_bindings:
                 fields_written += 1

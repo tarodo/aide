@@ -47,6 +47,9 @@ def _mock_client(
     c.fields.create = AsyncMock(
         side_effect=lambda p: _obj(id=uuid.uuid4(), name=p.name)
     )
+    c.fields.create_many = AsyncMock(
+        side_effect=lambda items: [_obj(id=uuid.uuid4(), name=p.name) for p in items]
+    )
 
     c.type_instances = AsyncMock()
     c.type_instances.create = AsyncMock(side_effect=lambda _p: _obj(id=uuid.uuid4()))
@@ -139,7 +142,11 @@ async def test_new_dataset_happy_path():
 
     client.datasets.create.assert_called_once()
     client.dataset_schemas.create.assert_called_once()
-    assert client.fields.create.call_count == 3
+    # All 3 missing fields created via a single batch call
+    client.fields.create_many.assert_awaited_once()
+    batch_items = client.fields.create_many.await_args[0][0]
+    assert len(batch_items) == 3
+    client.fields.create.assert_not_awaited()
     assert client.type_instances.create.call_count == 3
     assert client.field_bindings.create.call_count == 3
     # No schema list result → list was called but returned empty, so create was used
@@ -253,10 +260,12 @@ async def test_partial_rerun_half_fields():
     client.datasets.create.assert_not_called()
     # schema was absent → one create
     client.dataset_schemas.create.assert_called_once()
-    # only "email" field is new
-    assert client.fields.create.call_count == 1
-    created_field_arg = client.fields.create.call_args[0][0]
-    assert created_field_arg.name == "email"
+    # only "email" field is new — created via single batch call
+    client.fields.create_many.assert_awaited_once()
+    batch_items = client.fields.create_many.await_args[0][0]
+    assert len(batch_items) == 1
+    assert batch_items[0].name == "email"
+    client.fields.create.assert_not_awaited()
     # all 2 bindings created (none were present)
     assert client.type_instances.create.call_count == 2
     assert client.field_bindings.create.call_count == 2
@@ -308,3 +317,33 @@ async def test_array_field_creates_two_type_instances_with_parent_link():
 
     binding_call = client.field_bindings.create.call_args[0][0]
     assert binding_call.type_instance_id == created_ids[0]
+
+
+@pytest.mark.asyncio
+async def test_applier_batches_missing_fields():
+    """All missing fields in one dataset are created via a single create_many call."""
+    client = _mock_client()
+
+    dataset = _nd(
+        name="public.users",
+        fields=[_nf("col_a"), _nf("col_b"), _nf("col_c")],
+    )
+    cache = _Cache(["bigint"])
+
+    await apply_new_datasets(
+        client,
+        system_id=SYSTEM_ID,
+        datasets=[dataset],
+        type_cache=cache,
+    )
+
+    # Batch fields called exactly once with all 3 missing fields
+    client.fields.create_many.assert_awaited_once()
+    batch_args = client.fields.create_many.await_args
+    args, kwargs = batch_args
+    items = args[0] if args else kwargs.get("items")
+    assert len(items) == 3
+    assert [i.name for i in items] == ["col_a", "col_b", "col_c"]
+
+    # Per-item create NOT called (for fields specifically)
+    client.fields.create.assert_not_awaited()
