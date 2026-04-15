@@ -154,6 +154,10 @@ async def _batch_create_type_trees(
             )
         created = await client.type_instances.create_many(items)
         for (_d, path, _pp, _n, _s), ti in zip(level, created):
+            if path in path_to_id:
+                raise RuntimeError(
+                    f"Duplicate TypeInstance path {path}; sibling slots must be unique"
+                )
             path_to_id[path] = ti.id
             if path in field_id_by_root_path:
                 field_root_ti[field_id_by_root_path[path]] = ti.id

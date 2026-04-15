@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
-T = TypeVar("T")
+T = TypeVar("T", bound=BaseModel)
 
 
 class BatchCreateRequest(BaseModel, Generic[T]):

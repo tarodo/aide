@@ -155,33 +155,35 @@ class TestBatchEndpoints:
         test_dataset: Dataset,
         transactional_session: AsyncSession,
     ):
-        """Batch with a duplicate name mid-list → ≥400, DB rolled back (fresh_col absent)."""
-        # Seed a field that will conflict
-        dup_field = Field(dataset=test_dataset, name="dup_col")
-        transactional_session.add(dup_field)
-        await transactional_session.commit()
+        """Two items with the same new name in one batch: both pass _pre_create
+        (DB empty), both get added via add_all, flush() raises
+        UniqueViolationError, UoW.__aexit__ rolls back. Proves DB-level
+        transactional rollback (not just the app-level _pre_create short-circuit).
+        """
+        from sqlalchemy.exc import IntegrityError
 
         payload = {
             "items": [
-                {"dataset_id": str(test_dataset.id), "name": "fresh_col"},
-                {"dataset_id": str(test_dataset.id), "name": "dup_col"},
+                {"dataset_id": str(test_dataset.id), "name": "same_name"},
+                {"dataset_id": str(test_dataset.id), "name": "same_name"},
             ]
         }
-        response = await async_client.post(
-            "/api/v1/fields/batch",
-            json=payload,
-            headers=superuser_token_headers,
-        )
-        assert response.status_code >= 400
+        with pytest.raises(IntegrityError):
+            await async_client.post(
+                "/api/v1/fields/batch",
+                json=payload,
+                headers=superuser_token_headers,
+            )
 
-        # Rollback proven: fresh_col must not exist in DB
+        # Rollback proven: zero rows with same_name despite the first item
+        # having been added to the session before flush failed.
         result = await transactional_session.execute(
             select(Field).where(
                 Field.dataset_id == test_dataset.id,
-                Field.name == "fresh_col",
+                Field.name == "same_name",
             )
         )
-        assert result.scalars().first() is None
+        assert result.scalars().all() == []
 
     async def test_fields_batch_too_large(
         self,
