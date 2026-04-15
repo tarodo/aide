@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, List, Type, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, TypeAdapter
@@ -45,10 +45,10 @@ class BaseResource(Generic[CreateT, ReadT, UpdateT]):
 
     async def create_many(
         self,
-        items: list[CreateT],
+        items: List[CreateT],
         *,
         chunk_size: int = 500,
-    ) -> list[ReadT]:
+    ) -> List[ReadT]:
         """Create many objects via batch endpoint, auto-chunking.
 
         All-or-nothing per chunk. If a mid-sequence chunk fails, earlier
@@ -62,7 +62,7 @@ class BaseResource(Generic[CreateT, ReadT, UpdateT]):
 
         from aide_schemas.batch import BatchCreateResponse
 
-        results: list[ReadT] = []
+        results: List[ReadT] = []
         response_adapter: TypeAdapter[Any] = TypeAdapter(
             BatchCreateResponse[self._read_schema]  # type: ignore[name-defined]
         )
