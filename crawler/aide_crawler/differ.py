@@ -13,6 +13,7 @@ from typing import Any
 from uuid import UUID
 
 from aide_sdk import AideClient
+from aide_sdk.exceptions import NotFoundError
 
 from aide_crawler.normalizer import NormalizedDataset, NormalizedResult
 from aide_crawler.type_cache import TypeCache
@@ -222,10 +223,18 @@ async def classify_and_diff(
                 binding = bindings.get(existing_field["id"])
                 if binding is None:
                     continue
-                ti_tree = await client.type_instances.get_tree(
-                    binding["type_instance_id"]
-                )
-                current_node = _tree_to_node(ti_tree, type_cache)
+                try:
+                    ti_tree = await client.type_instances.get_tree(
+                        binding["type_instance_id"]
+                    )
+                except NotFoundError:
+                    current_node = TypeNode(
+                        data_type_code="__missing__", type_params={}
+                    )
+                else:
+                    current_node = _filter_node(
+                        _tree_to_node(ti_tree, type_cache), type_cache
+                    )
                 crawled_node = _filter_node(nf.type_node, type_cache)
                 if not _nodes_equal(current_node, crawled_node):
                     type_changes.append(

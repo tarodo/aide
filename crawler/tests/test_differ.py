@@ -60,10 +60,15 @@ def _nd(object_name: str, fields: list[NormalizedField]) -> NormalizedDataset:
 
 
 class _Cache(TypeCache):
-    def __init__(self, id_to_code: dict[uuid.UUID, str]):
+    def __init__(
+        self,
+        id_to_code: dict[uuid.UUID, str],
+        params_schema_by_code: dict[str, dict] | None = None,
+    ):
         super().__init__(flavor_code="postgres14")
         self._by_code = {code: id_ for id_, code in id_to_code.items()}
         self._code_by_id = dict(id_to_code)
+        self._params_schema_by_code = params_schema_by_code or {}
 
 
 def _ti_tree(data_type_id, slot=None, type_params=None, children=None):
@@ -166,7 +171,10 @@ async def test_varchar_to_text_reports_type_change():
     dt_varchar = uuid.uuid4()
     dt_text = uuid.uuid4()
 
-    cache = _Cache({dt_varchar: "varchar", dt_text: "text"})
+    cache = _Cache(
+        {dt_varchar: "varchar", dt_text: "text"},
+        params_schema_by_code={"varchar": {"length": {"type": "int"}}, "text": {}},
+    )
 
     client = _build_client(
         existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
@@ -264,3 +272,39 @@ async def test_added_field_is_new_not_type_change():
     entry = payload.existing_datasets_diff[0]
     assert entry["new_fields"][0]["name"] == "id"
     assert entry["type_changes"] == []
+
+
+@pytest.mark.asyncio
+async def test_missing_type_instance_reported_as_missing():
+    """get_tree → NotFoundError must not abort the diff; field is marked __missing__."""
+    from aide_sdk.exceptions import NotFoundError
+
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+    ti_id = uuid.uuid4()
+    dt_int = uuid.uuid4()
+
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): [_model(id=field_id, name="id")]},
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=field_id, type_instance_id=ti_id)]
+        },
+        trees_by_ti={},
+    )
+    client.type_instances.get_tree = AsyncMock(
+        side_effect=NotFoundError(status_code=404, error_code="X", detail="gone")
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer")])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    changes = payload.existing_datasets_diff[0]["type_changes"]
+    assert len(changes) == 1
+    assert changes[0]["before"] == {"code": "__missing__", "params": {}}
+    assert changes[0]["after"] == {"code": "integer", "params": {}}

@@ -8,11 +8,23 @@ from aide_crawler.differ import DiffPayload
 
 
 def _fmt_type(t: dict) -> str:
+    """Render a type node (leaf or composite).
+
+    Accepts either the flat `{code, params}` shape or the full
+    `{code, params, children}` tree. Children render as `code<slot: inner, ...>`
+    so compound type changes like `array<item: integer> -> array<item: bigint>`
+    are readable.
+    """
     params = t.get("params") or {}
-    if not params:
-        return t["code"]
-    kv = ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
-    return f"{t['code']}({kv})"
+    head = t["code"]
+    if params:
+        kv = ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
+        head = f"{head}({kv})"
+    children = t.get("children") or []
+    if not children:
+        return head
+    inner = ", ".join(f"{c['slot']}: {_fmt_type(c['node'])}" for c in children)
+    return f"{head}<{inner}>"
 
 
 def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
@@ -36,8 +48,8 @@ def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
             for rf in entry["removed_fields"]:
                 out.write(f"      - {rf['name']}\n")
             for change in entry.get("type_changes", []):
-                before_str = _fmt_type(change["before"])
-                after_str = _fmt_type(change["after"])
+                before_str = _fmt_type(change.get("full_before") or change["before"])
+                after_str = _fmt_type(change.get("full_after") or change["after"])
                 out.write(
                     f"      ~ {change['field_name']}: {before_str} -> {after_str}\n"
                 )

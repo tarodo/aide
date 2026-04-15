@@ -127,7 +127,12 @@ async def apply_new_datasets(
 ) -> list[AppliedDataset]:
     """Write the full ER chain for each new dataset.
 
-    Idempotent: safe to rerun after a partial failure.
+    Idempotent for the *structural* chain: safe to rerun after a partial
+    failure. A field whose binding already exists is skipped — including
+    when the column's type has changed upstream. The stale TypeInstance
+    tree is left untouched; differ surfaces the change in its report but
+    nothing here rewrites it. In-place TypeInstance updates are not yet
+    supported.
     """
     existing_dataset_ids = existing_dataset_ids or {}
     results: list[AppliedDataset] = []
