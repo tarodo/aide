@@ -11,6 +11,7 @@ from aide_crawler.errors import TypeNotInFlavorError
 class TypeCache:
     flavor_code: str | None = None
     _by_code: dict[str, uuid.UUID] = field(default_factory=dict)
+    _code_by_id: dict[uuid.UUID, str] = field(default_factory=dict)
     _params_schema_by_code: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
@@ -31,6 +32,7 @@ class TypeCache:
             )
             for item in resp.items:
                 cache._by_code[item.code] = item.id
+                cache._code_by_id[item.id] = item.code
                 cache._params_schema_by_code[item.code] = item.params_schema or {}
             if page_num >= resp.pages:
                 break
@@ -42,6 +44,15 @@ class TypeCache:
             return self._by_code[code]
         except KeyError:
             raise TypeNotInFlavorError(code, self.flavor_code) from None
+
+    def code_for(self, data_type_id: uuid.UUID) -> str | None:
+        """Reverse lookup: id → code. Returns None for unknown ids.
+
+        Unknown ids can happen if the metastore holds a data_type that
+        no longer belongs to the flavor (stale record); differ treats
+        such bindings as "unknown type" rather than crashing.
+        """
+        return self._code_by_id.get(data_type_id)
 
     def allowed_params(self, code: str) -> set[str]:
         return set(self._params_schema_by_code.get(code, {}).keys())
