@@ -36,6 +36,26 @@ VALUES
   ('SKU-1', 'Widget', 9.99, ARRAY['new','sale'], ARRAY[10,20,5], '{"color":"red"}'),
   ('SKU-2', 'Gadget', 19.50, ARRAY['popular'],   ARRAY[15,15,8], '{"color":"blue"}');
 
+CREATE TABLE demo.types_zoo (
+    id              bigserial PRIMARY KEY,
+    code_char       char(8),
+    bits_fixed      bit(8),
+    bits_varying    bit varying(16),
+    money_amount    money,
+    macaddr8_addr   macaddr8,
+    text_search     tsvector,
+    text_query      tsquery,
+    int4_window     int4range,
+    int8_window     int8range,
+    num_window      numrange,
+    ts_window       tsrange,
+    tstz_window     tstzrange,
+    date_window     daterange,
+    ts_with_tz      timestamptz,
+    time_with_tz    timetz,
+    nested_array    integer[]
+);
+
 \dt demo.*
 SQL
 
