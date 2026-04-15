@@ -44,7 +44,6 @@ CREATE TABLE demo.types_zoo (
     money_amount    money,
     macaddr8_addr   macaddr8,
     text_search     tsvector,
-    text_query      tsquery,
     int4_window     int4range,
     int8_window     int8range,
     num_window      numrange,
