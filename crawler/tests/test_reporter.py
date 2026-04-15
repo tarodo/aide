@@ -1,3 +1,4 @@
+import io
 from io import StringIO
 
 from aide_crawler.differ import DiffPayload
@@ -75,6 +76,86 @@ def test_report_json_schema_version():
     buf = StringIO()
     report_json(payload, buf)
     assert '"schema_version": 1' in buf.getvalue()
+
+
+def test_report_renders_type_changes_in_text():
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "target.demo.products",
+                "dataset_id": "00000000-0000-0000-0000-000000000001",
+                "new_fields": [],
+                "removed_fields": [],
+                "type_changes": [
+                    {
+                        "field_name": "name",
+                        "field_id": "00000000-0000-0000-0000-000000000002",
+                        "before": {"code": "varchar", "params": {"length": 255}},
+                        "after": {"code": "text", "params": {}},
+                        "full_before": {},
+                        "full_after": {},
+                    }
+                ],
+            }
+        ],
+    )
+    buf = io.StringIO()
+    report_text(payload, buf)
+    text = buf.getvalue()
+    assert "~ name: varchar(length=255) -> text" in text
+
+
+def test_report_renders_composite_type_change():
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "target.demo.products",
+                "dataset_id": "00000000-0000-0000-0000-000000000001",
+                "new_fields": [],
+                "removed_fields": [],
+                "type_changes": [
+                    {
+                        "field_name": "nums",
+                        "field_id": "00000000-0000-0000-0000-000000000002",
+                        "before": {"code": "array", "params": {}},
+                        "after": {"code": "array", "params": {}},
+                        "full_before": {
+                            "code": "array",
+                            "params": {},
+                            "children": [
+                                {
+                                    "slot": "item",
+                                    "node": {
+                                        "code": "integer",
+                                        "params": {},
+                                        "children": [],
+                                    },
+                                }
+                            ],
+                        },
+                        "full_after": {
+                            "code": "array",
+                            "params": {},
+                            "children": [
+                                {
+                                    "slot": "item",
+                                    "node": {
+                                        "code": "bigint",
+                                        "params": {},
+                                        "children": [],
+                                    },
+                                }
+                            ],
+                        },
+                    }
+                ],
+            }
+        ],
+    )
+    buf = io.StringIO()
+    report_text(payload, out=buf)
+    text = buf.getvalue()
+    assert "~ nums: array<item: integer> -> array<item: bigint>" in text
 
 
 def test_format_report_dispatches_by_fmt():

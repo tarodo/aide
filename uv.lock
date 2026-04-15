@@ -74,11 +74,11 @@ name = "aide-schemas"
 version = "0.1.0"
 source = { editable = "schemas" }
 dependencies = [
-    { name = "pydantic" },
+    { name = "pydantic", extra = ["email"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.0.0" }]
+requires-dist = [{ name = "pydantic", extras = ["email"], specifier = ">=2.0.0" }]
 
 [[package]]
 name = "alembic"

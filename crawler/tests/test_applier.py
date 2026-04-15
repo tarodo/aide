@@ -8,7 +8,7 @@ import pytest
 from aide_crawler.applier import AppliedDataset, apply_new_datasets
 from aide_crawler.normalizer import NormalizedDataset, NormalizedField
 from aide_crawler.type_cache import TypeCache
-from aide_crawler.type_map import TypeMapping
+from aide_crawler.type_map import TypeChild, TypeNode
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -66,13 +66,18 @@ def _nf(
     position: int = 0,
     nullable: bool = False,
     params: dict | None = None,
+    children: list[TypeChild] | None = None,
 ) -> NormalizedField:
     return NormalizedField(
         name=name,
         path=name,
         nullable=nullable,
         position=position,
-        type_mapping=TypeMapping(data_type_code=code, type_params=params or {}),
+        type_node=TypeNode(
+            data_type_code=code,
+            type_params=params or {},
+            children=children or [],
+        ),
     )
 
 
@@ -255,3 +260,51 @@ async def test_partial_rerun_half_fields():
     # all 2 bindings created (none were present)
     assert client.type_instances.create.call_count == 2
     assert client.field_bindings.create.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_array_field_creates_two_type_instances_with_parent_link():
+    """Array column → root TI for 'array' + child TI for element type with slot='item'."""
+    array_field = _nf(
+        "tags",
+        code="array",
+        position=0,
+        children=[
+            TypeChild(
+                slot="item", node=TypeNode(data_type_code="text", type_params={})
+            ),
+        ],
+    )
+    nd = _nd(fields=[array_field])
+    cache = _Cache(["array", "text"])
+    array_dt_id = cache._by_code["array"]
+    text_dt_id = cache._by_code["text"]
+
+    created_ids: list[uuid.UUID] = []
+
+    async def _create_ti(payload):
+        new_id = uuid.uuid4()
+        created_ids.append(new_id)
+        return _obj(id=new_id)
+
+    client = _mock_client()
+    client.type_instances.create = AsyncMock(side_effect=_create_ti)
+
+    await apply_new_datasets(
+        client, system_id=SYSTEM_ID, datasets=[nd], type_cache=cache
+    )
+
+    assert client.type_instances.create.call_count == 2
+    first_call = client.type_instances.create.call_args_list[0][0][0]
+    second_call = client.type_instances.create.call_args_list[1][0][0]
+
+    assert first_call.data_type_id == array_dt_id
+    assert first_call.parent_id is None
+    assert first_call.slot is None
+
+    assert second_call.data_type_id == text_dt_id
+    assert second_call.parent_id == created_ids[0]
+    assert second_call.slot == "item"
+
+    binding_call = client.field_bindings.create.call_args[0][0]
+    assert binding_call.type_instance_id == created_ids[0]

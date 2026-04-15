@@ -13,9 +13,10 @@ class _Page:
 
 
 class _Item:
-    def __init__(self, id, code):
+    def __init__(self, id, code, params_schema=None):
         self.id = id
         self.code = code
+        self.params_schema = params_schema or {}
 
 
 class _DataTypesStub:
@@ -79,3 +80,14 @@ async def test_resolve_missing_without_flavor_code():
     cache = await TypeCache.load(client, flavor_id=flavor_id)
     with pytest.raises(TypeNotInFlavorError):
         cache.resolve("integer")
+
+
+@pytest.mark.asyncio
+async def test_code_for_reverse_lookup():
+    flavor_id = uuid.uuid4()
+    id_int = uuid.uuid4()
+    client = _ClientStub([_Item(id_int, "integer")])
+    cache = await TypeCache.load(client, flavor_id=flavor_id, flavor_code="postgres14")
+
+    assert cache.code_for(id_int) == "integer"
+    assert cache.code_for(uuid.uuid4()) is None

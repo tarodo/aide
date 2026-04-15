@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from typing import Any
+
 
 class CrawlerError(Exception):
     """Base class for crawler-specific errors."""
 
 
 class UnknownTypeError(CrawlerError):
-    def __init__(self, dialect: str, sa_class_name: str):
-        super().__init__(
-            f"Unknown SQL type: dialect={dialect} sa_class={sa_class_name}"
-        )
+    def __init__(self, dialect: str, sa_type: Any):
+        super().__init__(f"Unknown SQL type: dialect={dialect} sa_type={sa_type!r}")
         self.dialect = dialect
-        self.sa_class_name = sa_class_name
+        self.sa_type = sa_type
+        self.sa_class_name = type(sa_type).__name__
 
 
 class TypeNotInFlavorError(CrawlerError):
