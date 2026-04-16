@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from datetime import datetime, timezone
 from typing import Any
@@ -8,12 +9,14 @@ from typing import Any
 from aide_schemas.crawl_run import CrawlRunCreate, CrawlRunUpdate, CrawlStatus
 from aide_sdk import AideClient
 
-from aide_crawler.applier import apply_new_datasets
+from aide_crawler.applier import apply_new_datasets, apply_versioned_datasets
 from aide_crawler.differ import classify_and_diff
 from aide_crawler.inspector import run_inspection
 from aide_crawler.normalizer import normalize
 from aide_crawler.reporter import format_report
 from aide_crawler.type_cache import TypeCache
+
+logger = logging.getLogger(__name__)
 
 
 async def run_crawl(
@@ -99,8 +102,15 @@ async def run_crawl(
             to_apply, to_version, payload = await classify_and_diff(
                 client, system_id, normalized, type_cache
             )
-            # to_version wired in Task 4; ignored here to keep Task 2 focused.
-            del to_version
+
+            # Warn on orphan-only existing datasets (no baseline schema version).
+            for entry in payload.existing_datasets_diff:
+                if entry.get("current_version_num") is None:
+                    logger.warning(
+                        "Dataset '%s' has no baseline DatasetSchema with bindings; "
+                        "skipping versioned apply (orphan-only state).",
+                        entry["object_name"],
+                    )
 
             applied = await apply_new_datasets(
                 client,
@@ -117,6 +127,16 @@ async def run_crawl(
                 for a in applied
             ]
 
+            versioned = await apply_versioned_datasets(
+                client, plans=to_version, type_cache=type_cache
+            )
+            # Fill new_version_num back into the DiffPayload entries.
+            by_ds_id = {str(v.dataset_id): v for v in versioned}
+            for entry in payload.existing_datasets_diff:
+                v = by_ds_id.get(entry["dataset_id"])
+                if v is not None:
+                    entry["new_version_num"] = v.new_version_num
+
             if output_file:
                 with open(output_file, "w") as f:
                     format_report(payload, output_format, f)
@@ -124,12 +144,29 @@ async def run_crawl(
             else:
                 format_report(payload, output_format)
 
+            summary = {
+                **payload.counts(),
+                "new_versions_created": len(versioned),
+                "versioned_datasets": [
+                    {
+                        "dataset_id": str(v.dataset_id),
+                        "object_name": v.object_name,
+                        "old_version": v.old_version_num,
+                        "new_version": v.new_version_num,
+                        "added": v.fields_added,
+                        "removed": v.fields_removed,
+                        "type_changes": v.type_changes,
+                    }
+                    for v in versioned
+                ],
+            }
+
             await client.crawl_runs.update(
                 crawl_run.id,
                 CrawlRunUpdate(
                     status=CrawlStatus.COMPLETED,
                     finished_at=datetime.now(timezone.utc),
-                    summary=payload.counts(),
+                    summary=summary,
                     diff_payload=payload.to_dict(),
                     row_version=crawl_run.row_version,
                 ),
