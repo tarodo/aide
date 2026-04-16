@@ -24,6 +24,20 @@ class AppliedDataset:
     fields_count: int
 
 
+@dataclass
+class VersionedDataset:
+    """Return record for apply_versioned_datasets — one per plan."""
+
+    dataset_id: uuid.UUID
+    object_name: str
+    dataset_schema_id: uuid.UUID
+    old_version_num: int
+    new_version_num: int
+    fields_added: int
+    fields_removed: int
+    type_changes: int
+
+
 async def _find_or_create_schema_v1(client, *, dataset_id: uuid.UUID) -> uuid.UUID:
     """Return the id of the version_num=1 schema, creating it if absent."""
     page_num = 1
@@ -268,6 +282,119 @@ async def apply_new_datasets(
                 dataset_id=dataset_id,
                 dataset_schema_id=schema_id,
                 fields_count=fields_written,
+            )
+        )
+
+    return results
+
+
+async def apply_versioned_datasets(
+    client,
+    *,
+    plans: list,  # list[VersionedDatasetPlan] — avoid circular import in annotation
+    type_cache: TypeCache,
+) -> list[VersionedDataset]:
+    """Create a new DatasetSchema version per plan, with full FieldBinding set.
+
+    For each plan:
+      1. POST /dataset-schemas/ with version_num = plan.next_version_num.
+      2. POST /fields/batch for added fields (Field rows are dataset-level).
+      3. POST /type-instances/batch for added + type-changed fields (one
+         per-depth batch handled by _batch_create_type_trees).
+      4. POST /field-bindings/batch with one entry per field in
+         plan.all_fields; unchanged fields reuse the existing
+         type_instance_id from plan.unchanged_field_bindings.
+
+    Failures on any step propagate — matches apply_new_datasets policy.
+    A partial-failure run leaves an orphan DatasetSchema row, which the
+    differ filters out via the non-orphan baseline rule on the next crawl.
+    """
+    results: list[VersionedDataset] = []
+
+    for plan in plans:
+        # --- 1. New DatasetSchema row ---
+        new_schema = await client.dataset_schemas.create(
+            DatasetSchemaCreate(  # type: ignore[call-arg]
+                dataset_id=plan.dataset_id,
+                version_num=plan.next_version_num,
+            )
+        )
+        new_schema_id = new_schema.id
+
+        # --- 2. New Field rows (added fields only) ---
+        field_ids_by_name: dict[str, uuid.UUID] = {
+            name: snap.field_id for name, snap in plan.unchanged_field_bindings.items()
+        }
+        if plan.added_fields:
+            created_fields = await client.fields.create_many(
+                [
+                    FieldCreate(  # type: ignore[call-arg]
+                        dataset_id=plan.dataset_id,
+                        name=nf.name,
+                        path=nf.path,
+                    )
+                    for nf in plan.added_fields
+                ]
+            )
+            for cf in created_fields:
+                field_ids_by_name[cf.name] = cf.id
+
+        # --- 3. TypeInstance trees for added + type-changed fields ---
+        fields_needing_trees = plan.added_fields + plan.type_changed_fields
+        if fields_needing_trees:
+            # Type-changed fields use their existing Field row (not in the
+            # created_fields batch). Look up field_id by name — it lives in
+            # the metastore already, so fetch it.
+            type_changed_names = {nf.name for nf in plan.type_changed_fields}
+            if type_changed_names:
+                all_field_rows = await _list_fields_map(
+                    client, dataset_id=plan.dataset_id
+                )
+                for name in type_changed_names:
+                    if name not in field_ids_by_name:
+                        field_ids_by_name[name] = all_field_rows[name]
+            field_root_nodes: list[tuple[uuid.UUID, TypeNode]] = [
+                (field_ids_by_name[nf.name], nf.type_node)
+                for nf in fields_needing_trees
+            ]
+            new_ti_by_field = await _batch_create_type_trees(
+                client, field_root_nodes=field_root_nodes, type_cache=type_cache
+            )
+        else:
+            new_ti_by_field = {}
+
+        # --- 4. Full FieldBinding set for the new version ---
+        bindings_to_create: list[FieldBindingCreate] = []
+        for idx, nf in enumerate(plan.all_fields):
+            snap = plan.unchanged_field_bindings.get(nf.name)
+            if snap is not None:
+                field_id = snap.field_id
+                type_instance_id = snap.type_instance_id
+            else:
+                field_id = field_ids_by_name[nf.name]
+                type_instance_id = new_ti_by_field[field_id]
+            bindings_to_create.append(
+                FieldBindingCreate(  # type: ignore[call-arg]
+                    field_id=field_id,
+                    dataset_schema_id=new_schema_id,
+                    type_instance_id=type_instance_id,
+                    position=idx,
+                    is_nullable=nf.nullable,
+                )
+            )
+        if bindings_to_create:
+            await client.field_bindings.create_many(bindings_to_create)
+
+        results.append(
+            VersionedDataset(
+                dataset_id=plan.dataset_id,
+                object_name=plan.object_name,
+                dataset_schema_id=new_schema_id,
+                old_version_num=plan.current_version_num,
+                new_version_num=plan.next_version_num,
+                fields_added=len(plan.added_fields),
+                fields_removed=len(plan.removed_field_ids),
+                type_changes=len(plan.type_changed_fields),
             )
         )
 

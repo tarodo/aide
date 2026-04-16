@@ -497,3 +497,323 @@ async def test_applier_batches_bindings():
     assert [i.position for i in items] == [0, 0, 0, 0]  # _nf default position
     # Per-item create NOT called
     client.field_bindings.create.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# apply_versioned_datasets
+# ---------------------------------------------------------------------------
+
+
+def _snapshot(field_id: uuid.UUID, ti_id: uuid.UUID):
+    """Build a FieldBindingSnapshot for test fixtures."""
+    from aide_crawler.differ import FieldBindingSnapshot
+
+    return FieldBindingSnapshot(field_id=field_id, type_instance_id=ti_id)
+
+
+def _plan(
+    *,
+    dataset_id: uuid.UUID,
+    object_name: str = "public.orders",
+    current_version_num: int = 1,
+    next_version_num: int = 2,
+    all_fields: list,
+    unchanged: dict | None = None,
+    added: list | None = None,
+    type_changed: list | None = None,
+    removed_ids: list | None = None,
+):
+    from aide_crawler.differ import VersionedDatasetPlan
+
+    return VersionedDatasetPlan(
+        dataset_id=dataset_id,
+        object_name=object_name,
+        current_version_num=current_version_num,
+        next_version_num=next_version_num,
+        all_fields=all_fields,
+        unchanged_field_bindings=unchanged or {},
+        added_fields=added or [],
+        type_changed_fields=type_changed or [],
+        removed_field_ids=removed_ids or [],
+    )
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_posts_schema_with_next_version_num():
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    fields = [_nf("id", position=0)]
+    plan = _plan(
+        dataset_id=ds_id,
+        current_version_num=1,
+        next_version_num=2,
+        all_fields=fields,
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+    )
+    client = _mock_client()
+    cache = _Cache(["bigint"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    client.dataset_schemas.create.assert_awaited_once()
+    created_arg = client.dataset_schemas.create.await_args.args[0]
+    assert created_arg.dataset_id == ds_id
+    assert created_arg.version_num == 2
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_allocates_version_skipping_orphans():
+    """next_version_num=3 (baseline v1, orphan v2) → POSTs v3, not v2."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    fields = [_nf("id", position=0)]
+    plan = _plan(
+        dataset_id=ds_id,
+        current_version_num=1,
+        next_version_num=3,
+        all_fields=fields,
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+    )
+    client = _mock_client()
+    cache = _Cache(["bigint"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    created_arg = client.dataset_schemas.create.await_args.args[0]
+    assert created_arg.version_num == 3
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_reuses_unchanged_type_instance():
+    """Unchanged fields → binding cites existing type_instance_id; no new TI posts."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    id_field = uuid.uuid4()
+    total_field = uuid.uuid4()
+    id_ti = uuid.uuid4()
+    total_ti = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    fields = [_nf("id", position=0), _nf("total", position=1)]
+    plan = _plan(
+        dataset_id=ds_id,
+        all_fields=fields,
+        unchanged={
+            "id": _snapshot(id_field, id_ti),
+            "total": _snapshot(total_field, total_ti),
+        },
+    )
+
+    client = _mock_client()
+    client.dataset_schemas.create = AsyncMock(return_value=_obj(id=schema_id))
+    cache = _Cache(["bigint"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    # No TypeInstance creation — nothing changed.
+    client.type_instances.create_many.assert_not_called()
+    client.type_instances.create.assert_not_called()
+    # No field creation — nothing added.
+    client.fields.create_many.assert_not_called()
+    # One binding batch with both fields pointing at existing TIs.
+    client.field_bindings.create_many.assert_awaited_once()
+    items = client.field_bindings.create_many.await_args.args[0]
+    assert len(items) == 2
+    by_field = {i.field_id: i for i in items}
+    assert by_field[id_field].type_instance_id == id_ti
+    assert by_field[id_field].dataset_schema_id == schema_id
+    assert by_field[id_field].position == 0
+    assert by_field[total_field].type_instance_id == total_ti
+    assert by_field[total_field].position == 1
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_creates_fields_and_trees_for_added():
+    """Added field → fields.create_many called; TI batch creates a new tree."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    new_field_id = uuid.uuid4()
+    new_ti_id = uuid.uuid4()
+
+    all_fields = [_nf("id", position=0), _nf("email", code="text", position=1)]
+    added = [_nf("email", code="text", position=1)]
+    plan = _plan(
+        dataset_id=ds_id,
+        all_fields=all_fields,
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+        added=added,
+    )
+
+    client = _mock_client()
+    client.dataset_schemas.create = AsyncMock(return_value=_obj(id=schema_id))
+    client.fields.create_many = AsyncMock(
+        return_value=[_obj(id=new_field_id, name="email")]
+    )
+    client.type_instances.create_many = AsyncMock(return_value=[_obj(id=new_ti_id)])
+    cache = _Cache(["bigint", "text"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    # Field create_many called once with exactly one added field
+    client.fields.create_many.assert_awaited_once()
+    created_fields_arg = client.fields.create_many.await_args.args[0]
+    assert len(created_fields_arg) == 1
+    assert created_fields_arg[0].name == "email"
+    assert created_fields_arg[0].dataset_id == ds_id
+
+    # Type instance batch called; depth 0 only for a flat "text" node
+    assert client.type_instances.create_many.await_count == 1
+
+    # Bindings batch has 2 entries; email points to new TI
+    client.field_bindings.create_many.assert_awaited_once()
+    items = client.field_bindings.create_many.await_args.args[0]
+    by_field = {i.field_id: i for i in items}
+    assert by_field[keep_id].type_instance_id == keep_ti
+    assert by_field[new_field_id].type_instance_id == new_ti_id
+    assert by_field[new_field_id].position == 1
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_rebuilds_tree_for_type_changes():
+    """Type-changed field → new TypeInstance; binding uses new TI (not old)."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    new_ti_id = uuid.uuid4()
+
+    changed_nf = _nf("n", code="bigint", position=0)
+    plan = _plan(
+        dataset_id=ds_id,
+        all_fields=[changed_nf],
+        unchanged={},
+        type_changed=[changed_nf],
+    )
+    # Feed in the pre-existing field_id via a helper: the plan's type_changed
+    # field references the same NormalizedField, but the applier must know
+    # the Field row already exists. We convey this via a small extension:
+    # type_changed fields' existing field_ids come from a separate dict on
+    # the plan. The applier fetches {name: field_id} for the dataset.
+    client = _mock_client(fields_map={"n": field_id})
+    client.dataset_schemas.create = AsyncMock(return_value=_obj(id=schema_id))
+    client.type_instances.create_many = AsyncMock(return_value=[_obj(id=new_ti_id)])
+    cache = _Cache(["bigint"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    # No new Field row for a type-changed column.
+    client.fields.create_many.assert_not_called()
+    # One TI batch call for the one type-changed field.
+    assert client.type_instances.create_many.await_count == 1
+    # Binding points to the new TI.
+    client.field_bindings.create_many.assert_awaited_once()
+    items = client.field_bindings.create_many.await_args.args[0]
+    assert len(items) == 1
+    assert items[0].field_id == field_id
+    assert items[0].type_instance_id == new_ti_id
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_omits_removed_fields():
+    """removed_field_ids are not in the new binding set (no binding row for them)."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    drop_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+
+    plan = _plan(
+        dataset_id=ds_id,
+        all_fields=[_nf("id", position=0)],
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+        removed_ids=[drop_id],
+    )
+    client = _mock_client()
+    client.dataset_schemas.create = AsyncMock(return_value=_obj(id=schema_id))
+    cache = _Cache(["bigint"])
+
+    await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    items = client.field_bindings.create_many.await_args.args[0]
+    field_ids_in_bindings = {i.field_id for i in items}
+    assert drop_id not in field_ids_in_bindings
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_409_reraises():
+    """Unique (dataset_id, version_num) collision → exception propagates."""
+    from aide_crawler.applier import apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    plan = _plan(
+        dataset_id=ds_id,
+        all_fields=[_nf("id", position=0)],
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+    )
+
+    class _Conflict(Exception):
+        pass
+
+    client = _mock_client()
+    client.dataset_schemas.create = AsyncMock(side_effect=_Conflict("409"))
+    cache = _Cache(["bigint"])
+
+    with pytest.raises(_Conflict):
+        await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    # No downstream calls after schema POST failed
+    client.fields.create_many.assert_not_called()
+    client.type_instances.create_many.assert_not_called()
+    client.field_bindings.create_many.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_versioned_apply_returns_result_records():
+    """Return value: one VersionedDataset per plan with the new schema id + version."""
+    from aide_crawler.applier import VersionedDataset, apply_versioned_datasets
+
+    ds_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    new_schema_id = uuid.uuid4()
+
+    plan = _plan(
+        dataset_id=ds_id,
+        object_name="public.orders",
+        current_version_num=1,
+        next_version_num=2,
+        all_fields=[_nf("id", position=0)],
+        unchanged={"id": _snapshot(keep_id, keep_ti)},
+    )
+    client = _mock_client()
+    client.dataset_schemas.create = AsyncMock(return_value=_obj(id=new_schema_id))
+    cache = _Cache(["bigint"])
+
+    results = await apply_versioned_datasets(client, plans=[plan], type_cache=cache)
+
+    assert len(results) == 1
+    r = results[0]
+    assert isinstance(r, VersionedDataset)
+    assert r.dataset_id == ds_id
+    assert r.object_name == "public.orders"
+    assert r.old_version_num == 1
+    assert r.new_version_num == 2
+    assert r.dataset_schema_id == new_schema_id
+    assert r.fields_added == 0
+    assert r.fields_removed == 0
+    assert r.type_changes == 0
