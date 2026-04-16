@@ -50,12 +50,12 @@ A data engineer can, end-to-end through the UI:
 | Layer | Choice | Rationale |
 |---|---|---|
 | Bundler / dev server | Vite 5 | Fast HMR, de-facto standard. |
-| UI framework | React 18 | Required by Mantine. |
-| Component library | Mantine v7 | Explicit user preference. |
+| UI framework | React 19.2+ | Required by Mantine 9. |
+| Component library | Mantine v9 | Latest stable (9.0.2, 2026-03-31); built-in Standard Schema form validation, no extra resolver package. |
 | Language | TypeScript (strict) | Catches drift with backend DTOs. |
 | Routing | React Router v6 | Familiar, low-friction. |
 | Server state | TanStack Query v5 | Cache, refetch, mutations. |
-| Forms | `@mantine/form` + Zod via `zodResolver` | Good integration with Mantine; Zod gives typed schemas. |
+| Forms | `@mantine/form` `schemaResolver` + Zod v4 | Built-in Standard Schema support in Mantine 9; no extra resolver package. |
 | API types | `openapi-typescript` codegen from FastAPI `/openapi.json` | Zero drift with backend. |
 | HTTP client | `ky` (thin fetch wrapper) | Retries, JSON, hooks for auth header. |
 | Icons | `@tabler/icons-react` (stroke 1.5) | Native fit with Mantine. |
@@ -317,13 +317,16 @@ Clear tokens from memory and storage, reset `QueryClient`, navigate to `/login`.
 
 ### Base pattern
 
-`@mantine/form` + Zod via `zodResolver`. Schemas live next to the form. We do **not** generate Zod from OpenAPI (lossy); TypeScript types come from the OpenAPI codegen, Zod schemas are hand-written for UI validation only. The server remains the source of truth.
+`@mantine/form` + Zod v4 via the built-in `schemaResolver` (Mantine 9 Standard Schema). Schemas live next to the form. We do **not** generate Zod from OpenAPI (lossy); TypeScript types come from the OpenAPI codegen, Zod schemas are hand-written for UI validation only. The server remains the source of truth.
 
 ```tsx
+import { useForm, schemaResolver } from '@mantine/form';
+import { z } from 'zod/v4';
+
 const schema = z.object({
   code: z.string().min(1).max(255),
   name: z.string().min(1),
-  flavor_id: z.string().uuid(),
+  flavor_id: z.uuid(),
   is_active: z.boolean(),
 });
 
@@ -331,7 +334,7 @@ type Values = z.infer<typeof schema>;
 
 const form = useForm<Values>({
   initialValues: { code: '', name: '', flavor_id: '', is_active: true },
-  validate: zodResolver(schema),
+  validate: schemaResolver(schema, { sync: true }),
 });
 ```
 

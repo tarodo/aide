@@ -6,7 +6,7 @@
 
 **Architecture:** Feature-based monorepo package. Vite dev server during development; static build served by nginx in production. `ky` HTTP client with `beforeRequest`/`afterResponse` hooks for bearer-token injection and single-flight 401 refresh. Auth state split — access token in React context + module-level ref (XSS-hardened), refresh token in `localStorage`. TanStack Query owns server state; `AuthContext` owns session lifecycle; React Router guards protected routes.
 
-**Tech Stack:** React 18, TypeScript 5.5+ (strict), Mantine v7, React Router v6, TanStack Query v5, `ky`, Zod, `@mantine/form` + `mantine-form-zod-resolver`, `@tabler/icons-react`, Vitest, React Testing Library, MSW v2, pnpm 9, Node.js 20 LTS.
+**Tech Stack:** React 19.2+, TypeScript 5.5+ (strict), Mantine v9 (9.0.2+), React Router v6, TanStack Query v5, `ky`, Zod v4, `@mantine/form` with built-in `schemaResolver` (Standard Schema), `@tabler/icons-react`, Vitest, React Testing Library, MSW v2, pnpm 9, Node.js 20 LTS.
 
 **Related docs:**
 - Spec: [docs/superpowers/specs/2026-04-15-frontend-mantine-spa-design.md](../specs/2026-04-15-frontend-mantine-spa-design.md)
@@ -77,7 +77,7 @@ File responsibilities:
 - `tsconfig.json` — TS app config (strict, ESM).
 - `tsconfig.node.json` — TS config used by Vite/Vitest config files.
 - `vitest.config.ts` — Vitest + jsdom + path aliases.
-- `postcss.config.cjs` — required by Mantine v7 (postcss-preset-mantine).
+- `postcss.config.cjs` — required by Mantine v9 (postcss-preset-mantine).
 - `src/main.tsx` — app bootstrap, providers chain.
 - `src/app/router.tsx` — route tree.
 - `src/app/theme.ts` — Mantine theme (B/W palette).
@@ -129,12 +129,12 @@ mkdir -p frontend/src frontend/scripts
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.4",
     "vite": "^5.4.1"
@@ -408,7 +408,7 @@ cd frontend && pnpm add -D postcss postcss-preset-mantine postcss-simple-vars
 
 - [ ] **Step 2: Write `frontend/postcss.config.cjs`**
 
-Mantine v7 requires this config. Without it, Mantine styles break.
+Mantine v9 requires this config. Without it, Mantine styles break.
 
 ```js
 module.exports = {
@@ -1887,12 +1887,14 @@ git commit -m "feat(frontend): add auth context + boot flow"
 - Modify: `frontend/src/features/auth/LoginPage.tsx`
 - Create: `frontend/src/features/auth/LoginPage.test.tsx`
 
-- [ ] **Step 1: Install Mantine form + Zod resolver + Zod**
+- [ ] **Step 1: Install Mantine form + Zod v4**
 
 Run:
 ```bash
-cd frontend && pnpm add @mantine/form zod mantine-form-zod-resolver
+cd frontend && pnpm add @mantine/form zod
 ```
+
+Mantine 9 ships a built-in `schemaResolver` (Standard Schema). No separate `mantine-form-zod-resolver` package needed — that package was removed in Mantine 9. Zod 4 is Standard Schema-compatible out of the box.
 
 - [ ] **Step 2: Write `frontend/src/shared/utils/notifications.ts`**
 
@@ -2002,11 +2004,10 @@ Expected: FAIL — `LoginPage` still returns the placeholder.
 
 ```tsx
 import { Button, Paper, PasswordInput, Stack, TextInput, Title } from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { zodResolver } from 'mantine-form-zod-resolver';
+import { schemaResolver, useForm } from '@mantine/form';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { notifyError } from '@/shared/utils/notifications';
 
@@ -2026,7 +2027,7 @@ export function LoginPage() {
 
   const form = useForm<Values>({
     initialValues: { email: '', password: '' },
-    validate: zodResolver(schema),
+    validate: schemaResolver(schema, { sync: true }),
   });
 
   async function onSubmit(values: Values) {
