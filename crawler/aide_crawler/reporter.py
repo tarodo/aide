@@ -55,6 +55,24 @@ def report_text(payload: DiffPayload, out: IO[str] = sys.stdout) -> None:
                 )
         out.write("\n")
 
+    versioned_entries = [
+        e
+        for e in payload.existing_datasets_diff
+        if e.get("new_version_num") is not None
+    ]
+    if versioned_entries:
+        out.write(f"--- Versioned Datasets ({len(versioned_entries)}) ---\n")
+        for entry in versioned_entries:
+            added = len(entry.get("new_fields", []))
+            removed = len(entry.get("removed_fields", []))
+            tchg = len(entry.get("type_changes", []))
+            out.write(
+                f"  {entry['object_name']}  "
+                f"v{entry['current_version_num']} -> v{entry['new_version_num']}  "
+                f"+{added}/-{removed}/~{tchg}\n"
+            )
+        out.write("\n")
+
     if payload.removed_datasets:
         out.write(f"--- Removed datasets ({len(payload.removed_datasets)}) ---\n")
         for d in payload.removed_datasets:
