@@ -433,3 +433,154 @@ def test_diff_payload_counts_aggregates_all_axes():
         "removed_datasets": 1,
         "type_changes": 1,
     }
+
+
+# ---------------------------------------------------------------------------
+# Baseline + max-version helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_find_baseline_schema_picks_latest_with_bindings():
+    """Two versions, both with bindings → baseline is the higher version_num."""
+    from aide_crawler.differ import _find_baseline_schema
+
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+    v2_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={
+            str(ds_id): [
+                _model(id=v1_id, version_num=1),
+                _model(id=v2_id, version_num=2),
+            ]
+        },
+        bindings_by_schema={
+            str(v1_id): [_model(field_id=field_id, type_instance_id=uuid.uuid4())],
+            str(v2_id): [_model(field_id=field_id, type_instance_id=uuid.uuid4())],
+        },
+        trees_by_ti={},
+    )
+
+    result = await _find_baseline_schema(client, ds_id)
+    assert result == (v2_id, 2)
+
+
+@pytest.mark.asyncio
+async def test_find_baseline_schema_skips_orphan():
+    """v1 has bindings, v2 is orphan (no bindings) → baseline is v1."""
+    from aide_crawler.differ import _find_baseline_schema
+
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+    v2_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={
+            str(ds_id): [
+                _model(id=v1_id, version_num=1),
+                _model(id=v2_id, version_num=2),
+            ]
+        },
+        bindings_by_schema={
+            str(v1_id): [_model(field_id=field_id, type_instance_id=uuid.uuid4())],
+            str(v2_id): [],
+        },
+        trees_by_ti={},
+    )
+
+    result = await _find_baseline_schema(client, ds_id)
+    assert result == (v1_id, 1)
+
+
+@pytest.mark.asyncio
+async def test_find_baseline_schema_returns_none_when_all_orphan():
+    """Every version has zero bindings → None."""
+    from aide_crawler.differ import _find_baseline_schema
+
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={str(ds_id): [_model(id=v1_id, version_num=1)]},
+        bindings_by_schema={str(v1_id): []},
+        trees_by_ti={},
+    )
+
+    result = await _find_baseline_schema(client, ds_id)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_find_baseline_schema_returns_none_when_no_schemas():
+    """Dataset has no DatasetSchema rows at all → None."""
+    from aide_crawler.differ import _find_baseline_schema
+
+    ds_id = uuid.uuid4()
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={str(ds_id): []},
+        bindings_by_schema={},
+        trees_by_ti={},
+    )
+
+    result = await _find_baseline_schema(client, ds_id)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_find_max_version_num_returns_highest_across_all():
+    """Max is computed over ALL rows, including orphans above the baseline."""
+    from aide_crawler.differ import _find_max_version_num
+
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+    v2_id = uuid.uuid4()  # orphan (no bindings)
+    v5_id = uuid.uuid4()  # orphan (no bindings)
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={
+            str(ds_id): [
+                _model(id=v1_id, version_num=1),
+                _model(id=v2_id, version_num=2),
+                _model(id=v5_id, version_num=5),
+            ]
+        },
+        bindings_by_schema={},
+        trees_by_ti={},
+    )
+
+    result = await _find_max_version_num(client, ds_id)
+    assert result == 5
+
+
+@pytest.mark.asyncio
+async def test_find_max_version_num_returns_zero_when_no_schemas():
+    """No rows → 0 (so next allocation starts at 1)."""
+    from aide_crawler.differ import _find_max_version_num
+
+    ds_id = uuid.uuid4()
+
+    client = _build_client(
+        existing_datasets=[],
+        existing_fields_by_ds={},
+        schemas_by_ds={str(ds_id): []},
+        bindings_by_schema={},
+        trees_by_ti={},
+    )
+
+    result = await _find_max_version_num(client, ds_id)
+    assert result == 0

@@ -81,19 +81,50 @@ async def _list_existing_fields(
     return out
 
 
-async def _find_schema_v1_id(client: AideClient, dataset_id: Any) -> UUID | None:
+async def _find_baseline_schema(
+    client: AideClient, dataset_id: Any
+) -> tuple[UUID, int] | None:
+    """Return (schema_id, version_num) for the latest schema version that has
+    at least one FieldBinding. Skips orphan versions left behind by a
+    partial prior crawl. Returns None if no non-orphan version exists.
+    """
+    best: tuple[UUID, int] | None = None
     page = 1
     while True:
         resp = await client.dataset_schemas.list(
             page=page, size=100, params={"dataset_id": str(dataset_id)}
         )
         for item in resp.items:
-            if item.version_num == 1:
-                return item.id
+            bindings = await client.field_bindings.list(
+                page=1, size=1, params={"dataset_schema_id": str(item.id)}
+            )
+            if not bindings.items:
+                continue
+            if best is None or item.version_num > best[1]:
+                best = (item.id, item.version_num)
         if page >= resp.pages:
             break
         page += 1
-    return None
+    return best
+
+
+async def _find_max_version_num(client: AideClient, dataset_id: Any) -> int:
+    """Return max(version_num) across ALL DatasetSchema rows for this dataset,
+    including orphans. Returns 0 if no rows exist.
+    """
+    max_num = 0
+    page = 1
+    while True:
+        resp = await client.dataset_schemas.list(
+            page=page, size=100, params={"dataset_id": str(dataset_id)}
+        )
+        for item in resp.items:
+            if item.version_num > max_num:
+                max_num = item.version_num
+        if page >= resp.pages:
+            break
+        page += 1
+    return max_num
 
 
 async def _bindings_by_field_id(
@@ -213,7 +244,8 @@ async def classify_and_diff(
         ]
 
         type_changes: list[dict[str, Any]] = []
-        schema_id = await _find_schema_v1_id(client, ds_id)
+        baseline = await _find_baseline_schema(client, ds_id)
+        schema_id = baseline[0] if baseline else None
         if schema_id is not None:
             bindings = await _bindings_by_field_id(client, schema_id)
             for nf in nd.fields:
