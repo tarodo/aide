@@ -137,7 +137,7 @@ Versioned Datasets:
   public.items    v1 → v2   +0/-1/~2
 ```
 
-JSON output: add `versioned_datasets[]` parallel to existing `new_datasets_applied[]`.
+JSON output: unchanged `DiffPayload` shape. Each `existing_datasets_diff` entry now carries `current_version_num` and `new_version_num` (the latter is `null` when no new version was created), so downstream consumers can filter on `new_version_num is not null` to enumerate versioned datasets. A separate parallel array would duplicate the same information.
 
 ### SDK, schemas, backend
 
