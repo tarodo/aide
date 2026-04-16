@@ -96,9 +96,11 @@ async def run_crawl(
 
             normalized = normalize(inspection)
 
-            to_apply, payload = await classify_and_diff(
+            to_apply, to_version, payload = await classify_and_diff(
                 client, system_id, normalized, type_cache
             )
+            # to_version wired in Task 4; ignored here to keep Task 2 focused.
+            del to_version
 
             applied = await apply_new_datasets(
                 client,

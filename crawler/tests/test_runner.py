@@ -66,7 +66,7 @@ async def test_runner_happy_path_empty_inspection(monkeypatch):
     )
     monkeypatch.setattr(
         "aide_crawler.runner.classify_and_diff",
-        AsyncMock(return_value=([], DiffPayload())),
+        AsyncMock(return_value=([], [], DiffPayload())),
     )
     monkeypatch.setattr(
         "aide_crawler.runner.apply_new_datasets", AsyncMock(return_value=[])

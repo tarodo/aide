@@ -162,7 +162,7 @@ async def test_unchanged_field_produces_no_type_change():
     nd = _nd("target.demo.t", [_nf("id", "integer")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     entry = payload.existing_datasets_diff[0]
     assert entry["type_changes"] == []
     assert entry["new_fields"] == []
@@ -196,7 +196,7 @@ async def test_varchar_to_text_reports_type_change():
     nd = _nd("target.demo.t", [_nf("name", "text")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     changes = payload.existing_datasets_diff[0]["type_changes"]
     assert len(changes) == 1
     change = changes[0]
@@ -249,7 +249,7 @@ async def test_array_element_change_reports_type_change():
     )
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     changes = payload.existing_datasets_diff[0]["type_changes"]
     assert len(changes) == 1
     assert changes[0]["before"] == {"code": "array", "params": {}}
@@ -275,7 +275,7 @@ async def test_added_field_is_new_not_type_change():
     nd = _nd("target.demo.t", [_nf("id", "integer")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     entry = payload.existing_datasets_diff[0]
     assert entry["new_fields"][0]["name"] == "id"
     assert entry["type_changes"] == []
@@ -310,7 +310,7 @@ async def test_missing_type_instance_reported_as_missing():
     nd = _nd("target.demo.t", [_nf("id", "integer")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     changes = payload.existing_datasets_diff[0]["type_changes"]
     assert len(changes) == 1
     assert changes[0]["before"] == {"code": "__missing__", "params": {}}
@@ -333,7 +333,7 @@ async def test_all_new_datasets_go_to_apply():
     nd = _nd("target.demo.t", [_nf("id", "integer")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    to_apply, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    to_apply, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     assert [d.object_name for d in to_apply] == ["target.demo.t"]
     assert payload.existing_datasets_diff == []
     assert payload.removed_datasets == []
@@ -355,7 +355,7 @@ async def test_removed_dataset_listed():
 
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[])
 
-    to_apply, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    to_apply, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     assert to_apply == []
     assert len(payload.removed_datasets) == 1
     assert payload.removed_datasets[0]["object_name"] == "target.demo.gone"
@@ -392,7 +392,7 @@ async def test_existing_with_removed_field():
     nd = _nd("target.demo.t", [_nf("id", "integer")])
     normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
 
-    _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    _, _, payload = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
     entry = payload.existing_datasets_diff[0]
     assert entry["new_fields"] == []
     assert [rf["name"] for rf in entry["removed_fields"]] == ["legacy"]
@@ -584,3 +584,221 @@ async def test_find_max_version_num_returns_zero_when_no_schemas():
 
     result = await _find_max_version_num(client, ds_id)
     assert result == 0
+
+
+# ---------------------------------------------------------------------------
+# VersionedDatasetPlan construction
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_emits_no_plan_when_no_changes():
+    """Existing dataset, no field diff → not in to_version list."""
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+    ti_id = uuid.uuid4()
+    dt_int = uuid.uuid4()
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): [_model(id=field_id, name="id")]},
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=field_id, type_instance_id=ti_id)]
+        },
+        trees_by_ti={ti_id: _ti_tree(dt_int)},
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer")])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    to_apply, to_version, _ = await classify_and_diff(
+        client, SYSTEM_ID, normalized, cache
+    )
+    assert to_apply == []
+    assert to_version == []
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_builds_plan_on_added_field():
+    """Added field → plan with added_fields, unchanged_field_bindings for kept field."""
+    from aide_crawler.differ import VersionedDatasetPlan
+
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    dt_int = uuid.uuid4()
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): [_model(id=keep_id, name="id")]},
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=keep_id, type_instance_id=keep_ti)]
+        },
+        trees_by_ti={keep_ti: _ti_tree(dt_int)},
+    )
+
+    nd = _nd(
+        "target.demo.t",
+        [_nf("id", "integer", position=0), _nf("email", "integer", position=1)],
+    )
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, to_version, payload = await classify_and_diff(
+        client, SYSTEM_ID, normalized, cache
+    )
+    assert len(to_version) == 1
+    plan = to_version[0]
+    assert isinstance(plan, VersionedDatasetPlan)
+    assert plan.dataset_id == ds_id
+    assert plan.current_version_num == 1
+    assert plan.next_version_num == 2
+    assert [f.name for f in plan.all_fields] == ["id", "email"]
+    assert [f.name for f in plan.added_fields] == ["email"]
+    assert plan.removed_field_ids == []
+    assert [f.name for f in plan.type_changed_fields] == []
+    assert set(plan.unchanged_field_bindings.keys()) == {"id"}
+    snap = plan.unchanged_field_bindings["id"]
+    assert snap.field_id == keep_id
+    assert snap.type_instance_id == keep_ti
+    # DiffPayload entry carries current_version_num
+    assert payload.existing_datasets_diff[0]["current_version_num"] == 1
+    assert payload.existing_datasets_diff[0]["new_version_num"] is None
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_plan_marks_type_changed_fields():
+    """Field with changed type goes into type_changed_fields, not unchanged."""
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    field_id = uuid.uuid4()
+    ti_id = uuid.uuid4()
+    dt_int = uuid.uuid4()
+    dt_bigint = uuid.uuid4()
+    cache = _Cache({dt_int: "integer", dt_bigint: "bigint"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): [_model(id=field_id, name="n")]},
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=field_id, type_instance_id=ti_id)]
+        },
+        trees_by_ti={ti_id: _ti_tree(dt_int)},
+    )
+
+    nd = _nd("target.demo.t", [_nf("n", "bigint", position=0)])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, to_version, _ = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    assert len(to_version) == 1
+    plan = to_version[0]
+    assert [f.name for f in plan.type_changed_fields] == ["n"]
+    assert "n" not in plan.unchanged_field_bindings
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_plan_captures_removed_fields():
+    """Removed field ID is recorded in plan.removed_field_ids."""
+    ds_id = uuid.uuid4()
+    schema_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    drop_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    dt_int = uuid.uuid4()
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={
+            str(ds_id): [
+                _model(id=keep_id, name="id"),
+                _model(id=drop_id, name="legacy"),
+            ]
+        },
+        schemas_by_ds={str(ds_id): [_model(id=schema_id, version_num=1)]},
+        bindings_by_schema={
+            str(schema_id): [_model(field_id=keep_id, type_instance_id=keep_ti)]
+        },
+        trees_by_ti={keep_ti: _ti_tree(dt_int)},
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer", position=0)])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, to_version, _ = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    assert len(to_version) == 1
+    plan = to_version[0]
+    assert plan.removed_field_ids == [drop_id]
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_plan_next_version_skips_orphan_numbers():
+    """v1 has bindings (baseline), v2 is orphan → next = 3, not 2."""
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+    v2_id = uuid.uuid4()
+    keep_id = uuid.uuid4()
+    keep_ti = uuid.uuid4()
+    dt_int = uuid.uuid4()
+    cache = _Cache({dt_int: "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): [_model(id=keep_id, name="id")]},
+        schemas_by_ds={
+            str(ds_id): [
+                _model(id=v1_id, version_num=1),
+                _model(id=v2_id, version_num=2),
+            ]
+        },
+        bindings_by_schema={
+            str(v1_id): [_model(field_id=keep_id, type_instance_id=keep_ti)],
+            str(v2_id): [],  # orphan
+        },
+        trees_by_ti={keep_ti: _ti_tree(dt_int)},
+    )
+
+    nd = _nd(
+        "target.demo.t",
+        [_nf("id", "integer", position=0), _nf("email", "integer", position=1)],
+    )
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, to_version, _ = await classify_and_diff(client, SYSTEM_ID, normalized, cache)
+    assert len(to_version) == 1
+    plan = to_version[0]
+    assert plan.current_version_num == 1
+    assert plan.next_version_num == 3
+
+
+@pytest.mark.asyncio
+async def test_classify_and_diff_skips_orphan_only_existing_dataset():
+    """Existing dataset with no baseline (all schemas orphan) → not in to_version;
+    DiffPayload entry has current_version_num=None.
+    """
+    ds_id = uuid.uuid4()
+    v1_id = uuid.uuid4()
+    cache = _Cache({uuid.uuid4(): "integer"})
+
+    client = _build_client(
+        existing_datasets=[_model(id=ds_id, object_name="target.demo.t")],
+        existing_fields_by_ds={str(ds_id): []},
+        schemas_by_ds={str(ds_id): [_model(id=v1_id, version_num=1)]},
+        bindings_by_schema={str(v1_id): []},
+        trees_by_ti={},
+    )
+
+    nd = _nd("target.demo.t", [_nf("id", "integer")])
+    normalized = NormalizedResult(dialect_name="postgresql", datasets=[nd])
+
+    _, to_version, payload = await classify_and_diff(
+        client, SYSTEM_ID, normalized, cache
+    )
+    assert to_version == []
+    assert payload.existing_datasets_diff[0]["current_version_num"] is None

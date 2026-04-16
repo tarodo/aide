@@ -15,7 +15,7 @@ from uuid import UUID
 from aide_sdk import AideClient
 from aide_sdk.exceptions import NotFoundError
 
-from aide_crawler.normalizer import NormalizedDataset, NormalizedResult
+from aide_crawler.normalizer import NormalizedDataset, NormalizedField, NormalizedResult
 from aide_crawler.type_cache import TypeCache
 from aide_crawler.type_map import TypeChild, TypeNode
 
@@ -43,6 +43,39 @@ class DiffPayload:
                 len(e.get("type_changes", [])) for e in self.existing_datasets_diff
             ),
         }
+
+
+@dataclass
+class FieldBindingSnapshot:
+    """Reference to an existing FieldBinding's field + type_instance.
+
+    Used by VersionedDatasetPlan to tell the applier which TypeInstance
+    tree to reuse (verbatim) for an unchanged field in the new version.
+    """
+
+    field_id: UUID
+    type_instance_id: UUID
+
+
+@dataclass
+class VersionedDatasetPlan:
+    """Everything the applier needs to create the next DatasetSchema version.
+
+    Built by classify_and_diff when a structural diff is detected against
+    an existing dataset. current_version_num is the baseline (latest with
+    bindings). next_version_num is max_version_num + 1 across all rows,
+    so orphan version numbers are skipped.
+    """
+
+    dataset_id: UUID
+    object_name: str
+    current_version_num: int
+    next_version_num: int
+    all_fields: list[NormalizedField]  # post-change field set, in source order
+    unchanged_field_bindings: dict[str, FieldBindingSnapshot]  # keyed by field name
+    added_fields: list[NormalizedField]
+    type_changed_fields: list[NormalizedField]
+    removed_field_ids: list[UUID]
 
 
 async def _list_existing_datasets(
@@ -205,8 +238,13 @@ async def classify_and_diff(
     system_id: UUID,
     normalized: NormalizedResult,
     type_cache: TypeCache,
-) -> tuple[list[NormalizedDataset], DiffPayload]:
-    """Split crawled datasets into (to_apply, diff_payload) with type-change detection."""
+) -> tuple[list[NormalizedDataset], list[VersionedDatasetPlan], DiffPayload]:
+    """Split crawled datasets into (to_apply_new, to_version, diff_payload).
+
+    - to_apply_new: datasets absent in metastore → go through apply_new_datasets
+    - to_version: existing datasets with a structural diff → apply_versioned_datasets
+    - diff_payload: human-readable audit; also persisted to crawl_runs.diff_payload
+    """
     existing = await _list_existing_datasets(client, system_id)
     existing_names = set(existing)
     crawled_names = {d.object_name for d in normalized.datasets}
@@ -215,6 +253,7 @@ async def classify_and_diff(
     to_apply: list[NormalizedDataset] = [
         d for d in normalized.datasets if d.object_name not in existing_names
     ]
+    to_version: list[VersionedDatasetPlan] = []
 
     for name in sorted(existing_names - crawled_names):
         payload.removed_datasets.append(
@@ -229,7 +268,7 @@ async def classify_and_diff(
         existing_fields = await _list_existing_fields(client, ds_id)
 
         crawled_field_names = {f.name for f in nd.fields}
-        new_fields = [
+        new_fields_desc = [
             {
                 "name": f.name,
                 "code": f.type_node.data_type_code,
@@ -238,20 +277,24 @@ async def classify_and_diff(
             for f in nd.fields
             if f.name not in existing_fields
         ]
-        removed_fields = [
+        removed_fields_desc = [
             {"name": name, "field_id": str(existing_fields[name]["id"])}
             for name in sorted(set(existing_fields) - crawled_field_names)
         ]
 
-        type_changes: list[dict[str, Any]] = []
         baseline = await _find_baseline_schema(client, ds_id)
-        schema_id = baseline[0] if baseline else None
-        if schema_id is not None:
+        type_changes: list[dict[str, Any]] = []
+        unchanged_snapshots: dict[str, FieldBindingSnapshot] = {}
+        type_changed_nfs: list[NormalizedField] = []
+        current_version_num: int | None = None
+
+        if baseline is not None:
+            schema_id, current_version_num = baseline
             bindings = await _bindings_by_field_id(client, schema_id)
             for nf in nd.fields:
                 existing_field = existing_fields.get(nf.name)
                 if existing_field is None:
-                    continue
+                    continue  # added field — handled separately
                 binding = bindings.get(existing_field["id"])
                 if binding is None:
                     continue
@@ -268,7 +311,13 @@ async def classify_and_diff(
                         _tree_to_node(ti_tree, type_cache), type_cache
                     )
                 crawled_node = _filter_node(nf.type_node, type_cache)
-                if not _nodes_equal(current_node, crawled_node):
+                if _nodes_equal(current_node, crawled_node):
+                    unchanged_snapshots[nf.name] = FieldBindingSnapshot(
+                        field_id=existing_field["id"],
+                        type_instance_id=binding["type_instance_id"],
+                    )
+                else:
+                    type_changed_nfs.append(nf)
                     type_changes.append(
                         {
                             "field_name": nf.name,
@@ -284,10 +333,36 @@ async def classify_and_diff(
             {
                 "object_name": nd.object_name,
                 "dataset_id": str(ds_id),
-                "new_fields": new_fields,
-                "removed_fields": removed_fields,
+                "current_version_num": current_version_num,
+                "new_version_num": None,  # filled by runner after applier succeeds
+                "new_fields": new_fields_desc,
+                "removed_fields": removed_fields_desc,
                 "type_changes": type_changes,
             }
         )
 
-    return to_apply, payload
+        has_diff = bool(new_fields_desc or removed_fields_desc or type_changes)
+        if not has_diff or baseline is None:
+            continue
+
+        assert current_version_num is not None  # implied by baseline is not None
+        added_nfs = [nf for nf in nd.fields if nf.name not in existing_fields]
+        max_version_num = await _find_max_version_num(client, ds_id)
+        to_version.append(
+            VersionedDatasetPlan(
+                dataset_id=ds_id,
+                object_name=nd.object_name,
+                current_version_num=current_version_num,
+                next_version_num=max_version_num + 1,
+                all_fields=list(nd.fields),
+                unchanged_field_bindings=unchanged_snapshots,
+                added_fields=added_nfs,
+                type_changed_fields=type_changed_nfs,
+                removed_field_ids=[
+                    existing_fields[name]["id"]
+                    for name in sorted(set(existing_fields) - crawled_field_names)
+                ],
+            )
+        )
+
+    return to_apply, to_version, payload
