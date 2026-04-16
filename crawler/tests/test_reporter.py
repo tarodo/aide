@@ -167,3 +167,119 @@ def test_format_report_dispatches_by_fmt():
     text_buf = StringIO()
     format_report(payload, "text", text_buf)
     assert text_buf.getvalue()  # non-empty
+
+
+def test_report_text_versioned_datasets_section():
+    """Existing dataset that got a new version → 'v1 -> v2' line + counts."""
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "public.orders",
+                "dataset_id": "xyz",
+                "current_version_num": 1,
+                "new_version_num": 2,
+                "new_fields": [{"name": "status", "code": "varchar", "params": {}}],
+                "removed_fields": [{"name": "legacy", "field_id": "f1"}],
+                "type_changes": [
+                    {
+                        "field_name": "amount",
+                        "field_id": "f2",
+                        "before": {"code": "numeric", "params": {}},
+                        "after": {"code": "bigint", "params": {}},
+                    }
+                ],
+            }
+        ]
+    )
+    buf = StringIO()
+    report_text(payload, buf)
+    out = buf.getvalue()
+    assert "Versioned" in out
+    assert "public.orders" in out
+    assert "v1" in out and "v2" in out
+    assert "+1" in out
+    assert "-1" in out
+    assert "~1" in out
+
+
+def test_report_text_skips_versioned_section_when_no_versioned():
+    """Existing datasets with current_version_num=None (orphan) or no diff → no
+    versioned section header should appear."""
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "public.orphan",
+                "dataset_id": "a",
+                "current_version_num": None,
+                "new_version_num": None,
+                "new_fields": [],
+                "removed_fields": [],
+                "type_changes": [],
+            }
+        ]
+    )
+    buf = StringIO()
+    report_text(payload, buf)
+    assert "Versioned Datasets" not in buf.getvalue()
+
+
+def test_report_text_lists_only_datasets_with_new_version():
+    """Datasets without new_version_num (e.g. unchanged) are not in versioned section."""
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "public.unchanged",
+                "dataset_id": "u",
+                "current_version_num": 1,
+                "new_version_num": None,
+                "new_fields": [],
+                "removed_fields": [],
+                "type_changes": [],
+            },
+            {
+                "object_name": "public.changed",
+                "dataset_id": "c",
+                "current_version_num": 1,
+                "new_version_num": 2,
+                "new_fields": [{"name": "x", "code": "text", "params": {}}],
+                "removed_fields": [],
+                "type_changes": [],
+            },
+        ]
+    )
+    buf = StringIO()
+    report_text(payload, buf)
+    out = buf.getvalue()
+    assert "public.changed" in out
+    # The versioned SECTION should mention changed only. Assert by checking that
+    # the 'v1 -> v2' line appears for changed and not for unchanged.
+    versioned_section_start = out.find("Versioned Datasets")
+    assert versioned_section_start >= 0
+    section = out[versioned_section_start:]
+    assert "public.changed" in section
+    assert "public.unchanged" not in section
+
+
+def test_report_json_carries_new_version_num():
+    """JSON output reflects new_version_num via DiffPayload.to_dict()."""
+    import json as _json
+
+    payload = DiffPayload(
+        existing_datasets_diff=[
+            {
+                "object_name": "public.orders",
+                "dataset_id": "xyz",
+                "current_version_num": 1,
+                "new_version_num": 2,
+                "new_fields": [],
+                "removed_fields": [],
+                "type_changes": [],
+            }
+        ]
+    )
+    buf = StringIO()
+    report_json(payload, buf)
+    data = _json.loads(buf.getvalue())
+    entry = data["existing_datasets_diff"][0]
+    assert entry["current_version_num"] == 1
+    assert entry["new_version_num"] == 2
