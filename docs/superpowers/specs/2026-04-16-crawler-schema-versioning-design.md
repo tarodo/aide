@@ -54,7 +54,7 @@ crawler run (existing steps unchanged up to classify_and_diff)
 
 **Replace `_find_schema_v1_id` with two helpers:**
 
-- `_find_baseline_schema(client, dataset_id)` → `(schema_id, version_num) | None`. Returns the **latest schema with at least one `FieldBinding`** — the baseline for diff computation. `None` if no such schema exists (treat as "dataset is new to crawler" and route through `apply_new_datasets`, not versioning; unusual but well-defined).
+- `_find_baseline_schema(client, dataset_id)` → `(schema_id, version_num) | None`. Returns the **latest schema with at least one `FieldBinding`** — the baseline for diff computation. `None` if no such schema exists (pathological state: dataset row present but every schema version is an orphan). In this case the differ emits an `existing_datasets_diff` entry with `current_version_num=null` and the runner logs a warning and **skips** the dataset from versioned apply. No automatic recovery in v1.
 - `_find_max_version_num(client, dataset_id)` → `int`. Returns the **highest `version_num` across all rows including orphans**. Used only for next-version allocation. Distinct from the baseline because an orphan (partial-run remnant) sits above the baseline and must not be reused.
 
 **`DiffPayload` per-dataset entries gain `current_version_num: int`** (the baseline used for the diff) and `new_version_num: int | None` (filled in by the applier once the new schema row is created). The payload envelope's own `schema_version` (DiffPayload format version) stays `1` and is unrelated.
@@ -98,7 +98,7 @@ Existing bindings/trees fetched during diff are reused — no refetch in applier
 
 Removed fields: no binding in the new version. Their `Field` rows stay (dataset-level).
 
-**`apply_new_datasets` is left untouched** (including `_find_or_create_schema_v1`). It keeps its current "safe to rerun after partial failure" contract — which is how the edge case "differ finds an orphan-only dataset with no baseline" is handled: the runner routes such datasets through `apply_new_datasets` (existing-dataset branch via `existing_dataset_ids`), which picks up the orphan v1 and completes the missing bindings. This is a distinct recovery path from the versioned apply and is deliberately preserved.
+**`apply_new_datasets` is left untouched** (including `_find_or_create_schema_v1`). Its existing idempotent rerun semantics for truly-new datasets remain in place. Orphan-only existing datasets (pathological state) are skipped with a warning, not auto-recovered in v1.
 
 ### Runner (`crawler/aide_crawler/runner.py`)
 
@@ -235,7 +235,7 @@ None. No backend changes.
 
 - `crawler/aide_crawler/differ.py` — replace `_find_schema_v1_id` with `_find_baseline_schema` + `_find_max_version_num`, add orphan-skip filter for baseline, thread `current_version_num` through diff result, build `VersionedDatasetPlan` list.
 - `crawler/aide_crawler/applier.py` — add `apply_versioned_datasets`; `apply_new_datasets` unchanged.
-- `crawler/aide_crawler/runner.py` — call versioned apply after new-apply; route orphan-only datasets through `apply_new_datasets` recovery path; extend `summary`.
+- `crawler/aide_crawler/runner.py` — call versioned apply after new-apply; log warning for orphan-only existing datasets; extend `summary`.
 - `crawler/aide_crawler/reporter.py` — text + JSON versioned section.
 - `crawler/tests/test_differ.py`, `test_applier.py`, `test_runner.py`, `test_reporter.py` — new cases per section above.
 
