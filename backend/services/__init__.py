@@ -6,6 +6,7 @@ from .dataset import DatasetService
 from .dataset_schema import DatasetSchemaService
 from .field import FieldService
 from .field_binding import FieldBindingService
+from .field_classification import FieldClassificationService
 from .system_flavor import SystemFlavorService
 from .system_kind import SystemKindService
 from .system import SystemService
@@ -24,4 +25,5 @@ __all__ = [
     "FieldService",
     "DatasetSchemaService",
     "FieldBindingService",
+    "FieldClassificationService",
 ]
