@@ -45,3 +45,19 @@ class FieldClassificationService(
     ) -> None:
         if not await uow.fields.get(obj_in.field_id):
             raise AppException(errors.FIELD_NOT_FOUND)
+
+    async def get_current(
+        self, uow: UnitOfWork, field_id: uuid.UUID
+    ) -> FieldClassificationRead:
+        async with uow:
+            row = await uow.field_classifications.get_current(field_id)
+            if row is None:
+                raise AppException(errors.FIELD_CLASSIFICATION_NOT_FOUND)
+            return FieldClassificationRead.model_validate(row)
+
+    async def list_current_by_dataset(
+        self, uow: UnitOfWork, dataset_id: uuid.UUID
+    ) -> list[FieldClassificationRead]:
+        async with uow:
+            rows = await uow.field_classifications.list_current_by_dataset(dataset_id)
+            return [FieldClassificationRead.model_validate(r) for r in rows]

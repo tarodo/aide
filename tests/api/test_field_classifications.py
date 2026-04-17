@@ -128,3 +128,46 @@ async def test_create_unknown_field_id_is_404(
     )
     assert r.status_code == 404
     assert r.json()["error_code"] == "FIELD_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_current_returns_latest(
+    async_client: AsyncClient,
+    seeded_field: Field,
+    superuser_token_headers: dict[str, str],
+):
+    await async_client.post(
+        "/api/v1/field-classifications/",
+        json={"field_id": str(seeded_field.id), "pii_tags": ["email"]},
+        headers=superuser_token_headers,
+    )
+    r2 = await async_client.post(
+        "/api/v1/field-classifications/",
+        json={
+            "field_id": str(seeded_field.id),
+            "pii_tags": ["email", "login"],
+        },
+        headers=superuser_token_headers,
+    )
+    second_id = r2.json()["id"]
+
+    r = await async_client.get(
+        f"/api/v1/field-classifications/current/{seeded_field.id}",
+        headers=superuser_token_headers,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["id"] == second_id
+
+
+@pytest.mark.asyncio
+async def test_current_404_when_unclassified(
+    async_client: AsyncClient,
+    seeded_field: Field,
+    superuser_token_headers: dict[str, str],
+):
+    r = await async_client.get(
+        f"/api/v1/field-classifications/current/{seeded_field.id}",
+        headers=superuser_token_headers,
+    )
+    assert r.status_code == 404
+    assert r.json()["error_code"] == "FIELD_CLASSIFICATION_NOT_FOUND"
