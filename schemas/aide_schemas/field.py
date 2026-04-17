@@ -15,7 +15,6 @@ class FieldBase(BaseModel):
     parent_id: uuid.UUID | None = None
     name: str
     path: str | None = None
-    pii_tags: list[str] | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -32,7 +31,6 @@ class FieldUpdate(VersionedUpdateMixin, NoteMixin):
     parent_id: uuid.UUID | None = None
     name: str | None = None
     path: str | None = None
-    pii_tags: list[str] | None = None
     extra: dict[str, Any] | None = None
 
 
@@ -51,6 +49,5 @@ class FieldTree(MetaDataMixin):
     parent_id: uuid.UUID | None
     name: str
     path: str | None
-    pii_tags: list[str] | None
     extra: dict[str, Any] | None
     children: list[FieldTree]

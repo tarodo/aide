@@ -125,7 +125,6 @@ async def nested_fields(
         dataset=test_dataset,
         name="email",
         parent_id=parent.id,
-        pii_tags=["email"],
     )
     transactional_session.add_all([child_name, child_email])
     await transactional_session.commit()
@@ -155,7 +154,6 @@ class TestFieldAPI:
         data = {
             "dataset_id": str(test_dataset.id),
             "name": "email",
-            "pii_tags": ["email_address"],
         }
         response = await async_client.post(
             "/api/v1/fields/", json=data, headers=superuser_token_headers
@@ -163,7 +161,6 @@ class TestFieldAPI:
         assert response.status_code == 201
         res_json = response.json()
         assert res_json["name"] == "email"
-        assert res_json["pii_tags"] == ["email_address"]
         assert res_json["parent_id"] is None
 
     async def test_create_field_duplicate(
