@@ -36,23 +36,26 @@ class FieldClassificationRepository(BaseRepository[FieldClassification]):
         self, dataset_id: uuid.UUID
     ) -> Sequence[FieldClassification]:
         """For each field in the dataset with ≥1 classification, return the latest row."""
-        # Subquery: latest created_at per field_id for fields in this dataset.
         latest_subq = (
             select(
                 self.model.field_id,
-                self.model.created_at.label("max_created_at"),
+                self.model.id.label("max_id"),
             )
             .join(Field, Field.id == self.model.field_id)
             .where(Field.dataset_id == dataset_id)
-            .order_by(self.model.field_id, self.model.created_at.desc())
+            .order_by(
+                self.model.field_id,
+                self.model.created_at.desc(),
+                self.model.id.desc(),
+            )
             .distinct(self.model.field_id)
             .subquery()
         )
 
-        stmt = select(self.model).join(
-            latest_subq,
-            (self.model.field_id == latest_subq.c.field_id)
-            & (self.model.created_at == latest_subq.c.max_created_at),
+        stmt = (
+            select(self.model)
+            .join(latest_subq, self.model.id == latest_subq.c.max_id)
+            .order_by(self.model.field_id)
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()

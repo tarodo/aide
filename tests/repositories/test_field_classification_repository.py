@@ -151,3 +151,36 @@ async def test_list_current_by_dataset_returns_one_per_classified_field(
     assert len(rows) == 1
     assert rows[0].id == c2.id
     assert rows[0].field_id == email.id
+
+
+@pytest.mark.asyncio
+async def test_list_current_by_dataset_breaks_tie_on_id(
+    transactional_session: AsyncSession,
+):
+    kind = SystemKind(code="KIND_FCR_TIE", name="Kind FCR Tie")
+    flavor = SystemFlavor(code="FL_FCR_TIE", name="Flavor FCR Tie", kind=kind)
+    system = System(code="SYS_FCR_TIE", name="System FCR Tie", flavor=flavor)
+    dataset = DatasetRdbms(
+        system=system,
+        object_name="customers_fcr_tie",
+        schema_name="public",
+        table_name="customers",
+    )
+    field = Field(dataset=dataset, name="email_tie")
+    transactional_session.add_all([kind, flavor, system, dataset, field])
+    await transactional_session.flush()
+
+    t = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Two rows with identical created_at. The tie-breaker on id.desc() should
+    # pick the row with the larger UUID deterministically.
+    a = FieldClassification(field_id=field.id, pii_tags=["email"], created_at=t)
+    b = FieldClassification(
+        field_id=field.id, pii_tags=["email", "login"], created_at=t
+    )
+    transactional_session.add_all([a, b])
+    await transactional_session.flush()
+
+    repo = FieldClassificationRepository(transactional_session)
+    rows = await repo.list_current_by_dataset(dataset.id)
+    assert len(rows) == 1
+    assert rows[0].id == max(a.id, b.id)
