@@ -6,6 +6,7 @@ from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
 from .dataset_schema import DatasetSchemaCreate, DatasetSchemaRead, DatasetSchemaUpdate
 from .field import FieldCreate, FieldRead, FieldUpdate
 from .field_binding import FieldBindingCreate, FieldBindingRead, FieldBindingUpdate
+from .field_classification import FieldClassificationCreate, FieldClassificationRead
 from .system_flavor import SystemFlavorCreate, SystemFlavorRead, SystemFlavorUpdate
 from .system_kind import SystemKindCreate, SystemKindRead, SystemKindUpdate
 from .system import SystemCreate, SystemRead, SystemUpdate
@@ -38,6 +39,8 @@ __all__ = [
     "FieldBindingCreate",
     "FieldBindingRead",
     "FieldBindingUpdate",
+    "FieldClassificationCreate",
+    "FieldClassificationRead",
     "SystemFlavorCreate",
     "SystemFlavorRead",
     "SystemFlavorUpdate",
