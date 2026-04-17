@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import ForeignKey, Index, Text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -25,7 +25,6 @@ class Field(Base, MetaDataMixin):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     path: Mapped[str | None] = mapped_column(Text, nullable=True)
-    pii_tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
     extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     dataset = relationship("Dataset")

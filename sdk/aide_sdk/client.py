@@ -105,6 +105,9 @@ class AideClient:
         from aide_sdk.resources.field_bindings import FieldBindingsResource
         from aide_sdk.resources.type_instances import TypeInstancesResource
         from aide_sdk.resources.crawl_runs import CrawlRunsResource
+        from aide_sdk.resources.field_classifications import (
+            FieldClassificationsResource,
+        )
 
         self.systems = SystemsResource(self._http)
         self.datasets = DatasetsResource(self._http)
@@ -115,3 +118,4 @@ class AideClient:
         self.field_bindings = FieldBindingsResource(self._http)
         self.type_instances = TypeInstancesResource(self._http)
         self.crawl_runs = CrawlRunsResource(self._http)
+        self.field_classifications = FieldClassificationsResource(self._http)

@@ -134,6 +134,16 @@ class FieldBindingFilter(BaseFilter):
 FIELD_BINDING_SORTABLE = {"position", "created_at", "updated_at"}
 
 
+# ── FieldClassification ──────────────────────────────────────────────────
+class FieldClassificationFilter(BaseFilter):
+    field_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
+
+
+FIELD_CLASSIFICATION_SORTABLE = {"created_at", "updated_at"}
+
+
 # ── TypeInstance ─────────────────────────────────────────────────────────
 class TypeInstanceFilter(BaseFilter):
     data_type_id: uuid.UUID | None = None

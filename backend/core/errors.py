@@ -58,6 +58,7 @@ ENTITY_NOT_DELETED = "ENTITY_NOT_DELETED"
 HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 VERSION_CONFLICT = "VERSION_CONFLICT"
 CRAWL_RUN_NOT_FOUND = "CRAWL_RUN_NOT_FOUND"
+FIELD_CLASSIFICATION_NOT_FOUND = "FIELD_CLASSIFICATION_NOT_FOUND"
 
 ErrorInfo = Tuple[int, str]
 
@@ -239,6 +240,10 @@ ERROR_MAP = {
     CRAWL_RUN_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The requested crawl run was not found.",
+    ),
+    FIELD_CLASSIFICATION_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested field classification was not found.",
     ),
 }
 

@@ -10,6 +10,10 @@ from .field_binding import (
     FieldBindingRead,
     FieldBindingUpdate,
 )
+from .field_classification import (
+    FieldClassificationCreate,
+    FieldClassificationRead,
+)
 from .system_flavor import (
     SystemFlavorCreate,
     SystemFlavorRead,
@@ -56,4 +60,6 @@ __all__ = [
     "FieldBindingCreate",
     "FieldBindingRead",
     "FieldBindingUpdate",
+    "FieldClassificationCreate",
+    "FieldClassificationRead",
 ]

@@ -2208,18 +2208,6 @@
           "createdAt": 1712534400000
         },
         {
-          "id": "f_fld_pii_tags",
-          "name": "pii_tags",
-          "type": {
-            "id": "array",
-            "name": "text[]"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1712534400000
-        },
-        {
           "id": "f_fld_extra",
           "name": "extra",
           "type": {
@@ -3061,6 +3049,141 @@
       "createdAt": 1712534400000,
       "order": 17,
       "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_field_classifications",
+      "name": "field_classifications",
+      "schema": "public",
+      "x": 3554,
+      "y": -2009,
+      "fields": [
+        {
+          "id": "f_fclf_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_field_id",
+          "name": "field_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_pii_tags",
+          "name": "pii_tags",
+          "type": {
+            "id": "array",
+            "name": "text[]"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_reason",
+          "name": "reason",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fclf_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [],
+      "color": "#8eb7ff",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 18,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
@@ -3367,6 +3490,20 @@
       "targetTableId": "t_crawl_runs",
       "sourceFieldId": "f_sys_id",
       "targetFieldId": "f_cr_system_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_fld_fclf",
+      "name": "field_to_field_classification",
+      "sourceSchema": "public",
+      "sourceTableId": "t_fields",
+      "targetSchema": "public",
+      "targetTableId": "t_field_classifications",
+      "sourceFieldId": "f_fld_id",
+      "targetFieldId": "f_fclf_field_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

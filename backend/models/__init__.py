@@ -14,6 +14,7 @@ from .dataset import (
 from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
 from .field_binding import FieldBinding as FieldBinding
+from .field_classification import FieldClassification as FieldClassification
 from .type_instance import TypeInstance as TypeInstance
 from .mixins import (
     SoftDeleteMetaDataMixin,
@@ -52,6 +53,7 @@ __all__ = [
     "Field",
     "DatasetSchema",
     "FieldBinding",
+    "FieldClassification",
     "TypeInstance",
     "CrawlRun",
     "CrawlStatus",

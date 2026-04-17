@@ -11,6 +11,9 @@ from backend.db.session import AsyncSessionLocal
 from backend.repositories.data_type import DataTypeRepository
 from backend.repositories.field import FieldRepository
 from backend.repositories.field_binding import FieldBindingRepository
+from backend.repositories.field_classification import (
+    FieldClassificationRepository,
+)
 from backend.repositories.refresh_token import RefreshTokenRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
@@ -38,6 +41,7 @@ class UnitOfWork:
         self.fields = FieldRepository(self.session)
         self.dataset_schemas = DatasetSchemaRepository(self.session)
         self.field_bindings = FieldBindingRepository(self.session)
+        self.field_classifications = FieldClassificationRepository(self.session)
         self.type_instances = TypeInstanceRepository(self.session)
         return self
 
