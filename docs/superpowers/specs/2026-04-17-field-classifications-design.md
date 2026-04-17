@@ -79,7 +79,7 @@ GET    /field-classifications/current/{field_id}
   200 → FieldClassificationRead   (latest row)
   404                              (field has no classification)
 
-GET    /datasets/{id}/field-classifications/current
+GET    /field-classifications/by-dataset/{dataset_id}/current
   200 → list[FieldClassificationRead]
   — one per field in the dataset that has ≥ 1 classification
 ```
@@ -90,7 +90,7 @@ GET    /datasets/{id}/field-classifications/current
 
 **`dataset_id` filter** on list requires a JOIN through `fields`. Repository implements.
 
-**Consumers that need "field + current classification":** make two calls — tree/list for fields, batch `/datasets/{id}/field-classifications/current` for classifications. No eager include in `FieldRead`/`FieldTree`.
+**Consumers that need "field + current classification":** make two calls — tree/list for fields, batch `/field-classifications/by-dataset/{dataset_id}/current` for classifications. No eager include in `FieldRead`/`FieldTree`.
 
 ## Backend changes
 
@@ -110,7 +110,7 @@ GET    /datasets/{id}/field-classifications/current
   - `list_by_field(field_id)` — history, `created_at DESC`.
   - `list_current_by_dataset(dataset_id)` — batch current for a dataset's fields.
 - `backend/services/field_classification.py` — service. Validates `field_id` exists. No `update`/`delete` semantics.
-- `backend/api/v1/field_classifications.py` — router. Uses `create_crud_router` with `create`/`get_one`/`list` only; custom handlers for `/current/{field_id}` and `/datasets/{id}/field-classifications/current`.
+- `backend/api/v1/field_classifications.py` — router. Uses `create_crud_router` with `create`/`get_one`/`list` only; custom handlers for `/current/{field_id}` and `/field-classifications/by-dataset/{dataset_id}/current`.
 - `schemas/aide_schemas/field_classification.py` — `FieldClassificationCreate`, `FieldClassificationRead`, `FieldClassificationFilter`.
 - `schemas/aide_schemas/__init__.py` — export new schemas.
 - `backend/schemas/field_classification.py` — re-export.
@@ -192,7 +192,7 @@ Post-MVP PII detector is out of scope for this spec. It will write to `/field-cl
 - GET list with `field_id=X&sort=-created_at` → history in expected order.
 - GET list with `dataset_id=X` → only classifications from that dataset's fields.
 - GET `/current/{field_id}` → latest row / 404 when unclassified.
-- GET `/datasets/{id}/field-classifications/current` → batch, one per classified field.
+- GET `/field-classifications/by-dataset/{dataset_id}/current` → batch, one per classified field.
 - PUT / PATCH / DELETE → 405.
 
 **`tests/api/test_fields.py`**
