@@ -2,7 +2,7 @@
   "id": "0",
   "name": "AIDE V3",
   "createdAt": "2025-11-14T17:14:17.452Z",
-  "updatedAt": "2026-04-14T00:00:00.000Z",
+  "updatedAt": "2026-04-17T00:00:00.000Z",
   "databaseType": "postgresql",
   "tables": [
     {
@@ -272,7 +272,7 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": true,
+          "nullable": false,
           "createdAt": 1712534400000
         },
         {
@@ -419,6 +419,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_sk_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sk_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_sk_row_version",
           "name": "row_version",
           "type": {
@@ -434,7 +458,7 @@
       "indexes": [
         {
           "id": "ix_sk_code",
-          "name": "ix_system_kinds_code",
+          "name": "uq_system_kinds_code_active",
           "unique": true,
           "fieldIds": [
             "f_sk_code"
@@ -589,6 +613,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_sf_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sf_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_sf_row_version",
           "name": "row_version",
           "type": {
@@ -604,7 +652,7 @@
       "indexes": [
         {
           "id": "ix_sf_code",
-          "name": "ix_system_flavors_code",
+          "name": "uq_system_flavors_code_active",
           "unique": true,
           "fieldIds": [
             "f_sf_code"
@@ -734,6 +782,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_cr_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_cr_row_version",
           "name": "row_version",
           "type": {
@@ -749,7 +821,7 @@
       "indexes": [
         {
           "id": "ix_cr_provider_path",
-          "name": "idx_credential_ref_provider_path",
+          "name": "uq_credential_refs_provider_path_active",
           "unique": true,
           "fieldIds": [
             "f_cr_provider",
@@ -928,6 +1000,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_sys_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_sys_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_sys_row_version",
           "name": "row_version",
           "type": {
@@ -943,7 +1039,7 @@
       "indexes": [
         {
           "id": "ix_sys_code",
-          "name": "ix_systems_code",
+          "name": "uq_systems_code_active",
           "unique": true,
           "fieldIds": [
             "f_sys_code"
@@ -1087,6 +1183,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_dt_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dt_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_dt_row_version",
           "name": "row_version",
           "type": {
@@ -1102,7 +1222,7 @@
       "indexes": [
         {
           "id": "ix_dt_flavor_code",
-          "name": "idx_data_type_system_flavor_id_code",
+          "name": "uq_data_types_sfid_code_active",
           "unique": true,
           "fieldIds": [
             "f_dt_system_flavor_id",
@@ -1431,6 +1551,30 @@
           "createdAt": 1712534400000
         },
         {
+          "id": "f_ds_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_ds_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
           "id": "f_ds_row_version",
           "name": "row_version",
           "type": {
@@ -1446,7 +1590,7 @@
       "indexes": [
         {
           "id": "ix_ds_system_object",
-          "name": "idx_dataset_system_id_object_name",
+          "name": "uq_datasets_system_id_object_name_active",
           "unique": true,
           "fieldIds": [
             "f_ds_system_id",
@@ -2804,6 +2948,18 @@
         {
           "id": "f_cr_summary",
           "name": "summary",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_cr_diff_payload",
+          "name": "diff_payload",
           "type": {
             "id": "jsonb",
             "name": "jsonb"
