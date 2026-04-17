@@ -91,3 +91,63 @@ async def test_list_by_field_returns_history_desc(
 
     rows = await repo.list_by_field(field.id)
     assert [r.id for r in rows] == [second.id, first.id]
+
+
+@pytest.mark.asyncio
+async def test_list_current_by_dataset_returns_one_per_classified_field(
+    transactional_session: AsyncSession,
+):
+    # Two fields in the same dataset; one has multiple classifications, one has none.
+    kind = SystemKind(code="KIND_FCR_D", name="Kind FCR D")
+    flavor = SystemFlavor(code="FL_FCR_D", name="Flavor FCR D", kind=kind)
+    system = System(code="SYS_FCR_D", name="System FCR D", flavor=flavor)
+    dataset = DatasetRdbms(
+        system=system,
+        object_name="customers_fcr_d",
+        schema_name="public",
+        table_name="customers",
+    )
+    email = Field(dataset=dataset, name="email_d")
+    phone = Field(dataset=dataset, name="phone_d")
+    transactional_session.add_all([kind, flavor, system, dataset, email, phone])
+    await transactional_session.flush()
+
+    base = datetime.now(timezone.utc).replace(tzinfo=None)
+    c1 = FieldClassification(field_id=email.id, pii_tags=["email"], created_at=base)
+    transactional_session.add(c1)
+    await transactional_session.flush()
+    c2 = FieldClassification(
+        field_id=email.id,
+        pii_tags=["email", "login"],
+        created_at=base + timedelta(milliseconds=100),
+    )
+    transactional_session.add(c2)
+    await transactional_session.flush()
+
+    # Second dataset — make sure the filter excludes its rows.
+    kind2 = SystemKind(code="KIND_FCR_D2", name="Kind FCR D2")
+    flavor2 = SystemFlavor(code="FL_FCR_D2", name="Flavor FCR D2", kind=kind2)
+    system2 = System(code="SYS_FCR_D2", name="System FCR D2", flavor=flavor2)
+    dataset2 = DatasetRdbms(
+        system=system2,
+        object_name="customers_fcr_d2",
+        schema_name="public",
+        table_name="customers",
+    )
+    other_field = Field(dataset=dataset2, name="email_d2")
+    transactional_session.add_all([kind2, flavor2, system2, dataset2, other_field])
+    await transactional_session.flush()
+    transactional_session.add(
+        FieldClassification(
+            field_id=other_field.id,
+            pii_tags=["email"],
+            created_at=base + timedelta(milliseconds=200),
+        )
+    )
+    await transactional_session.flush()
+
+    repo = FieldClassificationRepository(transactional_session)
+    rows = await repo.list_current_by_dataset(dataset.id)
+    assert len(rows) == 1
+    assert rows[0].id == c2.id
+    assert rows[0].field_id == email.id
