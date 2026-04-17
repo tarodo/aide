@@ -254,3 +254,53 @@ async def test_delete_returns_405(
         headers=superuser_token_headers,
     )
     assert r2.status_code == 405
+
+
+@pytest.mark.asyncio
+async def test_get_one_returns_row(
+    async_client: AsyncClient,
+    seeded_field: Field,
+    superuser_token_headers: dict[str, str],
+):
+    r = await async_client.post(
+        "/api/v1/field-classifications/",
+        json={"field_id": str(seeded_field.id), "pii_tags": ["email"]},
+        headers=superuser_token_headers,
+    )
+    obj_id = r.json()["id"]
+
+    r2 = await async_client.get(
+        f"/api/v1/field-classifications/{obj_id}",
+        headers=superuser_token_headers,
+    )
+    assert r2.status_code == 200
+    assert r2.json()["id"] == obj_id
+
+
+@pytest.mark.asyncio
+async def test_list_filters_by_field_id_sorted_desc(
+    async_client: AsyncClient,
+    seeded_field: Field,
+    superuser_token_headers: dict[str, str],
+):
+    await async_client.post(
+        "/api/v1/field-classifications/",
+        json={"field_id": str(seeded_field.id), "pii_tags": ["email"]},
+        headers=superuser_token_headers,
+    )
+    r2 = await async_client.post(
+        "/api/v1/field-classifications/",
+        json={"field_id": str(seeded_field.id), "pii_tags": ["email", "login"]},
+        headers=superuser_token_headers,
+    )
+    latest_id = r2.json()["id"]
+
+    r = await async_client.get(
+        "/api/v1/field-classifications/",
+        params={"field_id": str(seeded_field.id), "sort": "-created_at"},
+        headers=superuser_token_headers,
+    )
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert len(items) == 2
+    assert items[0]["id"] == latest_id
