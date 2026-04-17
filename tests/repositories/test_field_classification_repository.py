@@ -68,3 +68,26 @@ async def test_get_current_returns_none_when_no_rows(
 
     current = await repo.get_current(field.id)
     assert current is None
+
+
+@pytest.mark.asyncio
+async def test_list_by_field_returns_history_desc(
+    transactional_session: AsyncSession,
+):
+    field = await _make_field(transactional_session, code_suffix="C")
+    repo = FieldClassificationRepository(transactional_session)
+
+    base = datetime.now(timezone.utc).replace(tzinfo=None)
+    first = FieldClassification(field_id=field.id, pii_tags=["email"], created_at=base)
+    transactional_session.add(first)
+    await transactional_session.flush()
+    second = FieldClassification(
+        field_id=field.id,
+        pii_tags=["email", "phone"],
+        created_at=base + timedelta(milliseconds=100),
+    )
+    transactional_session.add(second)
+    await transactional_session.flush()
+
+    rows = await repo.list_by_field(field.id)
+    assert [r.id for r in rows] == [second.id, first.id]

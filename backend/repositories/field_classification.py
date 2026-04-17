@@ -1,4 +1,5 @@
 import uuid
+from typing import Sequence
 
 from sqlalchemy import select
 
@@ -19,3 +20,13 @@ class FieldClassificationRepository(BaseRepository[FieldClassification]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def list_by_field(self, field_id: uuid.UUID) -> Sequence[FieldClassification]:
+        """Return all classifications for a field, newest first."""
+        stmt = (
+            select(self.model)
+            .where(self.model.field_id == field_id)
+            .order_by(self.model.created_at.desc(), self.model.id.desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
