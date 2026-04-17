@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, Text, desc
+from sqlalchemy import DateTime, ForeignKey, Index, Text, desc, text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -10,6 +11,13 @@ from backend.models.mixins import MetaDataMixin
 
 class FieldClassification(Base, MetaDataMixin):
     __tablename__ = "field_classifications"
+
+    # Override created_at to use clock_timestamp() so each row in the same
+    # transaction gets a distinct wall-clock timestamp. This is essential for
+    # correct ordering of append-only classification history.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=text("clock_timestamp()"), nullable=False
+    )
 
     field_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
