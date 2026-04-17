@@ -71,7 +71,7 @@ GET    /field-classifications/{id}
   404
 
 GET    /field-classifications
-  query: field_id?, dataset_id?, created_at__gte?, created_at__lte?, sort, page, size
+  query: field_id?, created_at__gte?, created_at__lte?, sort, page, size
   200 → Page[FieldClassificationRead]
   — history pattern: ?field_id=X&sort=-created_at
 
@@ -88,7 +88,7 @@ GET    /field-classifications/by-dataset/{dataset_id}/current
 
 **`pii_tags` in the request body is required** (non-null). `[]` is valid and means "reviewed, no PII". Absence of a row represents "not yet classified".
 
-**`dataset_id` filter** on list requires a JOIN through `fields`. Repository implements.
+**Cross-dataset filtering** is not supported on the generic list endpoint; use `/field-classifications/by-dataset/{dataset_id}/current` for the batch-current pattern.
 
 **Consumers that need "field + current classification":** make two calls — tree/list for fields, batch `/field-classifications/by-dataset/{dataset_id}/current` for classifications. No eager include in `FieldRead`/`FieldTree`.
 
@@ -190,7 +190,6 @@ Post-MVP PII detector is out of scope for this spec. It will write to `/field-cl
 - POST missing `pii_tags` → 422.
 - GET `/{id}` → 200 / 404.
 - GET list with `field_id=X&sort=-created_at` → history in expected order.
-- GET list with `dataset_id=X` → only classifications from that dataset's fields.
 - GET `/current/{field_id}` → latest row / 404 when unclassified.
 - GET `/field-classifications/by-dataset/{dataset_id}/current` → batch, one per classified field.
 - PUT / PATCH / DELETE → 405.
