@@ -1,4 +1,4 @@
-import asyncio
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,12 +41,15 @@ async def test_get_current_returns_latest_row(transactional_session: AsyncSessio
     field = await _make_field(transactional_session, code_suffix="A")
     repo = FieldClassificationRepository(transactional_session)
 
-    first = FieldClassification(field_id=field.id, pii_tags=["email"])
+    base = datetime.now(timezone.utc).replace(tzinfo=None)
+    first = FieldClassification(field_id=field.id, pii_tags=["email"], created_at=base)
     transactional_session.add(first)
     await transactional_session.flush()
-    # A small sleep ensures created_at ordering distinct on fast systems.
-    await asyncio.sleep(0.01)
-    second = FieldClassification(field_id=field.id, pii_tags=["email", "phone"])
+    second = FieldClassification(
+        field_id=field.id,
+        pii_tags=["email", "phone"],
+        created_at=base + timedelta(milliseconds=100),
+    )
     transactional_session.add(second)
     await transactional_session.flush()
 

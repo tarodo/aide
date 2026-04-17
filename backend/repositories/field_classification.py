@@ -14,7 +14,7 @@ class FieldClassificationRepository(BaseRepository[FieldClassification]):
         stmt = (
             select(self.model)
             .where(self.model.field_id == field_id)
-            .order_by(self.model.created_at.desc())
+            .order_by(self.model.created_at.desc(), self.model.id.desc())
             .limit(1)
         )
         result = await self.session.execute(stmt)
