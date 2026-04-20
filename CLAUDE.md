@@ -79,6 +79,10 @@ Root `pyproject.toml` is the backend package (no separate `backend/pyproject.tom
 
 When adding or modifying SQLAlchemy models, update `docs/AIDE_data_model.json` (ChartDB format) to keep the ER diagram in sync. Add/update tables, fields, and relationships matching the model changes.
 
+### Architecture Decision Records (ADRs)
+
+Architectural decisions live in `docs/adr/`. Filename convention: `adr-NNN-kebab-title.md` (three-digit, zero-padded number; lowercase kebab-case title). See `docs/adr/README.md` for the full template, status values, and the index of existing ADRs. Write one when picking between reasonable alternatives or when the *why* is non-obvious from the code; update the index table in the same commit.
+
 ### Formatting
 
 Run `make format` after code changes. This runs `black` + `ruff check --fix`. Fix any remaining ruff errors manually.

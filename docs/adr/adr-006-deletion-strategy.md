@@ -1,4 +1,4 @@
-# ADR-06: Deletion Strategy — Soft Delete vs Cascade Delete
+# ADR-006: Deletion Strategy — Soft Delete vs Cascade Delete
 
 **Status:** Proposed
 **Date:** 2026-04-08
@@ -241,17 +241,31 @@ This keeps the query filter overhead manageable (6 tables vs 11) while protectin
 
 ---
 
-## 5. Action Items (if approved)
+## 5. Implementation Notes
 
-1. [ ] Add `SoftDeleteMixin` to `backend/models/mixins.py`
-2. [ ] Update `MetaDataMixin` or apply `SoftDeleteMixin` selectively to core entities
-3. [ ] Create Alembic migration: add `deleted_at`, `deleted_by` columns to core tables
-4. [ ] Create Alembic migration: change FK constraints to `ON DELETE CASCADE` for leaf tables
-5. [ ] Convert unique constraints on core tables to partial indexes (`WHERE deleted_at IS NULL`)
-6. [ ] Override `BaseRepository.delete()` with soft-delete logic for core entities
-7. [ ] Add default `WHERE deleted_at IS NULL` filter to all repository read methods
-8. [ ] Add `restore()` and `purge()` methods to repository and service layers
-9. [ ] Add `POST /{entity}/restore/{obj_id}` endpoints (superuser-only)
-10. [ ] Add `GET /{entity}/preview-delete/{obj_id}` endpoint showing cascade impact
-11. [ ] Update tests for both soft-delete and cascade behaviors
-12. [ ] Document which entities use which strategy in project documentation
+### Timestamp column convention — naive UTC
+
+All timestamp columns from the soft-delete mixin (`deleted_at`) and the existing `TimestampMixin` (`created_at`, `updated_at`) are declared as **`TIMESTAMP WITHOUT TIME ZONE`** in PostgreSQL. Values are stored as UTC by convention — the timezone is implicit, not enforced by the column type.
+
+**Rules:**
+
+- SQLAlchemy column type: `DateTime` (not `DateTime(timezone=True)`).
+- The database driver (`asyncpg`) **rejects timezone-aware `datetime` values** when writing to a naive column. Passing an aware datetime raises a driver error at flush time.
+- Server-side defaults (`created_at`, `updated_at`) use `func.now()` at the DB level — no Python datetime construction needed.
+- When setting these columns **manually from Python code** (e.g., soft-deleting in a service, or forcing `deleted_at` in a test fixture to exercise the soft-delete branch), strip the timezone first:
+
+  ```python
+  from datetime import datetime, timezone
+
+  obj.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+  ```
+
+- Reading back from the DB yields a naive `datetime` — treat it as UTC at the application boundary (attach `tzinfo=timezone.utc` before formatting for API response if the DTO requires an aware value).
+
+**Rationale for naive-UTC over `TIMESTAMPTZ`:**
+
+- Consistency with the existing `TimestampMixin` already used across all models — switching a subset of columns to `TIMESTAMPTZ` would fragment the schema.
+- Workload is single-region UTC; timezone arithmetic in PG is unnecessary overhead.
+- Explicit app-level convention (always UTC) is easier to audit than implicit driver-level conversions.
+
+**Trade-off accepted:** developers must remember to use naive datetimes when writing from Python. This quirk is canonically documented in `CLAUDE.md` under "Timestamp columns (soft-delete mixin)".
