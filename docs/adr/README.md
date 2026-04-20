@@ -120,6 +120,7 @@ fine and do not need to be backfilled.
 
 | #   | Title | Status |
 |-----|-------|--------|
+| 001 | [Layered Architecture — Router → Service → UoW → Repository → Model](adr-001-layered-architecture.md) | Accepted |
 | 006 | [Deletion Strategy — Soft Delete vs Cascade Delete](adr-006-deletion-strategy.md) | Proposed |
 
 Keep this table sorted by ADR number and update it in the same commit that
