@@ -128,6 +128,7 @@ fine and do not need to be backfilled.
 | 006 | [Deletion Strategy — Soft Delete vs Cascade Delete](adr-006-deletion-strategy.md) | Proposed |
 | 007 | [Testing Strategy — Per-Layer Fixtures and Isolation](adr-007-testing-strategy.md) | Accepted |
 | 008 | [Polymorphic Dataset — Joined Table Inheritance](adr-008-polymorphic-dataset.md) | Accepted |
+| 009 | [Optimistic Locking via `row_version`](adr-009-optimistic-locking.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.
