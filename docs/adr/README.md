@@ -126,6 +126,7 @@ fine and do not need to be backfilled.
 | 004 | [Monorepo Layout and Schema Re-export Pattern](adr-004-monorepo-layout.md) | Accepted |
 | 005 | [Error Handling — Code Registry + `AppException` Handler](adr-005-error-handling.md) | Accepted |
 | 006 | [Deletion Strategy — Soft Delete vs Cascade Delete](adr-006-deletion-strategy.md) | Proposed |
+| 007 | [Testing Strategy — Per-Layer Fixtures and Isolation](adr-007-testing-strategy.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.
