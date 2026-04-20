@@ -131,6 +131,7 @@ fine and do not need to be backfilled.
 | 009 | [Optimistic Locking via `row_version`](adr-009-optimistic-locking.md) | Accepted |
 | 010 | [Enum Fields as `VARCHAR`, not PostgreSQL `ENUM`](adr-010-enum-as-varchar.md) | Accepted |
 | 011 | [YAML-Driven Reference Data Seeding](adr-011-yaml-reference-data-seeding.md) | Accepted |
+| 012 | [JWT Authentication with Refresh Token Rotation](adr-012-jwt-auth-refresh-rotation.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.
