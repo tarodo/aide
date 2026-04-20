@@ -123,6 +123,7 @@ fine and do not need to be backfilled.
 | 001 | [Layered Architecture — Router → Service → UoW → Repository → Model](adr-001-layered-architecture.md) | Accepted |
 | 002 | [Generic Base Classes — `BaseRepository[M]` and `GenericService[M, C, U, R]`](adr-002-generic-base-classes.md) | Accepted |
 | 003 | [Unit of Work Pattern and Session Lifecycle](adr-003-unit-of-work.md) | Accepted |
+| 004 | [Monorepo Layout and Schema Re-export Pattern](adr-004-monorepo-layout.md) | Accepted |
 | 006 | [Deletion Strategy — Soft Delete vs Cascade Delete](adr-006-deletion-strategy.md) | Proposed |
 
 Keep this table sorted by ADR number and update it in the same commit that
