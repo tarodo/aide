@@ -134,6 +134,7 @@ fine and do not need to be backfilled.
 | 012 | [JWT Authentication with Refresh Token Rotation](adr-012-jwt-auth-refresh-rotation.md) | Accepted |
 | 013 | [Credential Indirection via `CredentialRef`](adr-013-credential-indirection.md) | Accepted |
 | 014 | [Filter and Sort Contract for List Endpoints](adr-014-filter-sort-contract.md) | Accepted |
+| 015 | [Observability — `structlog` + Request-ID Middleware + Slow-Query Log](adr-015-observability.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.
