@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -101,3 +103,40 @@ async def test_dataset_link_pair_unique_active(
     )
     with pytest.raises(IntegrityError):
         await transactional_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_dataset_link_pair_unique_ignores_soft_deleted(
+    transactional_session: AsyncSession,
+):
+    """Partial unique index allows re-linking after soft-delete."""
+    seeded_system = await _make_system(transactional_session, code_suffix="SOFT")
+    a = DatasetRdbms(
+        system_id=seeded_system.id,
+        object_name="a_soft",
+        kind="rdbms",
+        schema_name="s",
+        table_name="a_soft",
+    )
+    b = DatasetRdbms(
+        system_id=seeded_system.id,
+        object_name="b_soft",
+        kind="rdbms",
+        schema_name="s",
+        table_name="b_soft",
+    )
+    transactional_session.add_all([a, b])
+    await transactional_session.flush()
+
+    first = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    transactional_session.add(first)
+    await transactional_session.flush()
+
+    first.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    transactional_session.add(first)
+    await transactional_session.flush()
+
+    second = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    transactional_session.add(second)
+    await transactional_session.flush()
+    assert second.id != first.id
