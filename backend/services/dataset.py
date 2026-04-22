@@ -1,11 +1,15 @@
 import math
 import uuid
+from pathlib import Path
 from typing import Any, cast
 
 from backend.core import errors
 from backend.core.exceptions import AppException
+from backend.core.tech_type_resolver import TechTypeResolver
 from backend.db.uow import UnitOfWork
+from backend.schemas.field import FieldRead
 from backend.schemas.pagination import Page
+from backend.schemas.tech_field_template import TechFieldOverride
 from backend.models.dataset import (
     Dataset,
     DatasetHive,
@@ -30,6 +34,15 @@ MODEL_MAP = {
     "sftp": DatasetSftp,
     "hive": DatasetHive,
 }
+
+_RESOLVER_YAML = (
+    Path(__file__).resolve().parents[2]
+    / "backend"
+    / "scripts"
+    / "data"
+    / "tech_type_resolver.yaml"
+)
+tech_type_resolver = TechTypeResolver.from_yaml(_RESOLVER_YAML)
 
 
 class DatasetService(
@@ -222,3 +235,83 @@ class DatasetService(
 
             restored_obj = await repo.restore(db_obj=db_obj)
             return validate_dataset_read(restored_obj)
+
+    async def apply_tech_template(
+        self,
+        uow: UnitOfWork,
+        dataset_id: uuid.UUID,
+        template_id: uuid.UUID,
+        overrides: list[TechFieldOverride] | None = None,
+        applier_id: uuid.UUID | None = None,
+    ) -> list[FieldRead]:
+        """Apply a tech-field template to a dataset.
+
+        Idempotent: existing field names on the dataset are skipped.
+        """
+        from backend.models.field import Field
+
+        async with uow:
+            repo = cast(DatasetRepository, self._get_repository(uow.session))
+            dataset = await repo.get(dataset_id)
+            if dataset is None:
+                raise AppException(errors.DATASET_NOT_FOUND)
+
+            template = await uow.tech_field_templates.get(template_id)
+            if template is None:
+                raise AppException(errors.TECH_FIELD_TEMPLATE_NOT_FOUND)
+
+            if dataset.layer != template.layer:
+                raise AppException(errors.TECH_FIELD_TEMPLATE_LAYER_MISMATCH)
+
+            system = await uow.systems.get(dataset.system_id)
+            if system is None:
+                raise AppException(errors.SYSTEM_NOT_FOUND)
+            flavor = await uow.system_flavors.get(system.flavor_id)
+            if flavor is None:
+                raise AppException(errors.SYSTEM_FLAVOR_NOT_FOUND)
+
+            tpl_fields = await uow.tech_field_template_fields.list_by_template(
+                template_id
+            )
+            override_map: dict[str, TechFieldOverride] = {
+                o.name: o for o in (overrides or [])
+            }
+            existing_roots = await uow.fields.get_roots(dataset_id)
+            existing_names = {f.name for f in existing_roots}
+
+            new_fields: list[Field] = []
+            for tf in tpl_fields:
+                if tf.name in existing_names:
+                    continue
+                override = override_map.get(tf.name)
+                type_code = (
+                    override.type_code
+                    if override and override.type_code
+                    else tf.type_code
+                )
+                data_type_code = tech_type_resolver.resolve(flavor.code, type_code)
+                if data_type_code is None:
+                    raise AppException(errors.TECH_TYPE_CODE_NOT_RESOLVABLE)
+                data_type = await uow.data_types.get_by_system_flavor_and_code(
+                    flavor.id, data_type_code
+                )
+                if data_type is None:
+                    raise AppException(errors.TECH_TYPE_CODE_NOT_RESOLVABLE)
+                field = Field(
+                    dataset_id=dataset_id,
+                    name=tf.name,
+                    is_tech=True,
+                    extra={
+                        "data_type_id": str(data_type.id),
+                        "tech_type_code": type_code,
+                    },
+                )
+                if applier_id:
+                    field.created_by = applier_id
+                    field.updated_by = applier_id
+                new_fields.append(field)
+
+            if new_fields:
+                await uow.fields.create_many(objs=new_fields)
+
+            return [FieldRead.model_validate(f) for f in new_fields]
