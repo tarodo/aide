@@ -133,3 +133,39 @@ async def test_field_link_cascade_on_dataset_link_delete(
     await transactional_session.flush()
     remaining = (await transactional_session.execute(select(FieldLink))).scalars().all()
     assert len(remaining) == 0
+
+
+@pytest.mark.asyncio
+async def test_field_link_cascade_on_source_field_delete(
+    transactional_session: AsyncSession,
+):
+    seeded = await _make_system(transactional_session, code_suffix="CASC_SRC")
+    link, sf, tf = await _scaffold(transactional_session, seeded)
+    fl = FieldLink(
+        dataset_link_id=link.id, source_field_id=sf.id, target_field_id=tf.id
+    )
+    transactional_session.add(fl)
+    await transactional_session.flush()
+
+    await transactional_session.delete(sf)
+    await transactional_session.flush()
+    remaining = (await transactional_session.execute(select(FieldLink))).scalars().all()
+    assert len(remaining) == 0
+
+
+@pytest.mark.asyncio
+async def test_field_link_cascade_on_target_field_delete(
+    transactional_session: AsyncSession,
+):
+    seeded = await _make_system(transactional_session, code_suffix="CASC_TGT")
+    link, sf, tf = await _scaffold(transactional_session, seeded)
+    fl = FieldLink(
+        dataset_link_id=link.id, source_field_id=sf.id, target_field_id=tf.id
+    )
+    transactional_session.add(fl)
+    await transactional_session.flush()
+
+    await transactional_session.delete(tf)
+    await transactional_session.flush()
+    remaining = (await transactional_session.execute(select(FieldLink))).scalars().all()
+    assert len(remaining) == 0
