@@ -3578,6 +3578,328 @@
       "createdAt": 1712534400000,
       "order": 20,
       "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_tech_field_templates",
+      "name": "tech_field_templates",
+      "schema": "public",
+      "x": 3000,
+      "y": -1700,
+      "fields": [
+        {
+          "id": "f_tft_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_code",
+          "name": "code",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "characterMaximumLength": "100",
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_name",
+          "name": "name",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "characterMaximumLength": "255",
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_layer",
+          "name": "layer",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "characterMaximumLength": "32",
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tft_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_tft_code",
+          "name": "uq_tech_field_templates_code",
+          "unique": true,
+          "fieldIds": [
+            "f_tft_code"
+          ],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#c8a2ff",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 21,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_tech_field_template_fields",
+      "name": "tech_field_template_fields",
+      "schema": "public",
+      "x": 3400,
+      "y": -1700,
+      "fields": [
+        {
+          "id": "f_tftf_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_template_id",
+          "name": "template_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to tech_field_templates.id ON DELETE CASCADE"
+        },
+        {
+          "id": "f_tftf_name",
+          "name": "name",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "characterMaximumLength": "255",
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_type_code",
+          "name": "type_code",
+          "type": {
+            "id": "varchar",
+            "name": "varchar"
+          },
+          "characterMaximumLength": "64",
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "Abstract type code (TIMESTAMP, STRING, ...) resolved per flavor at apply-time"
+        },
+        {
+          "id": "f_tftf_order",
+          "name": "order",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "0",
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_tftf_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_tftf_template_name",
+          "name": "uq_tft_field_name",
+          "unique": true,
+          "fieldIds": [
+            "f_tftf_template_id",
+            "f_tftf_name"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_tftf_template_id",
+          "name": "ix_tech_field_template_fields_template_id",
+          "unique": false,
+          "fieldIds": [
+            "f_tftf_template_id"
+          ],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#ffc1a2",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 22,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
@@ -3968,6 +4290,20 @@
       "targetTableId": "t_field_links",
       "sourceFieldId": "f_fld_id",
       "targetFieldId": "f_fl_target_field_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_tft_tftf",
+      "name": "tech_field_template_to_field",
+      "sourceSchema": "public",
+      "sourceTableId": "t_tech_field_templates",
+      "targetSchema": "public",
+      "targetTableId": "t_tech_field_template_fields",
+      "sourceFieldId": "f_tft_id",
+      "targetFieldId": "f_tftf_template_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,
