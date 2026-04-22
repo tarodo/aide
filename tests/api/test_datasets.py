@@ -422,3 +422,75 @@ class TestDatasetAPI:
             )
             assert resp.status_code == status.HTTP_404_NOT_FOUND, path
             assert resp.json()["error_code"] == errors.DATASET_NOT_FOUND
+
+    async def test_apply_tech_template_layer_mismatch(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        tpl = (
+            await async_client.post(
+                "/api/v1/tech-field-templates/",
+                json={
+                    "code": "apply_mm_v1",
+                    "name": "Apply MM",
+                    "layer": "core",
+                },
+                headers=superuser_token_headers,
+            )
+        ).json()
+        ds_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "apply_mm_tgt", "raw"
+        )
+        resp = await async_client.post(
+            f"/api/v1/datasets/{ds_id}/apply-tech-template",
+            json={"template_id": tpl["id"]},
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.json()["error_code"] == "TECH_FIELD_TEMPLATE_LAYER_MISMATCH"
+
+    async def test_apply_tech_template_unresolvable_flavor(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        """When the dataset's flavor has no resolver mapping, the apply returns 400.
+
+        This exercises the TECH_TYPE_CODE_NOT_RESOLVABLE path at the HTTP layer.
+        The test_system fixture's flavor code (e.g. FL_DS_API) is NOT in the
+        resolver YAML (which only has postgres14), so resolution fails cleanly.
+        """
+        tpl = (
+            await async_client.post(
+                "/api/v1/tech-field-templates/",
+                json={
+                    "code": "apply_happy_v1",
+                    "name": "Apply Happy",
+                    "layer": "core",
+                },
+                headers=superuser_token_headers,
+            )
+        ).json()
+        await async_client.post(
+            f"/api/v1/tech-field-templates/{tpl['id']}/fields",
+            json={
+                "template_id": tpl["id"],
+                "name": "valid_from",
+                "type_code": "TIMESTAMP",
+                "order": 0,
+            },
+            headers=superuser_token_headers,
+        )
+        ds_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "apply_tgt", "core"
+        )
+        resp = await async_client.post(
+            f"/api/v1/datasets/{ds_id}/apply-tech-template",
+            json={"template_id": tpl["id"]},
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.json()["error_code"] == "TECH_TYPE_CODE_NOT_RESOLVABLE"

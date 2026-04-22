@@ -17,6 +17,9 @@ from backend.core.errors import (
     FORBIDDEN,
     INVALID_DATASET_KIND,
     SYSTEM_NOT_FOUND,
+    TECH_FIELD_TEMPLATE_LAYER_MISMATCH,
+    TECH_FIELD_TEMPLATE_NOT_FOUND,
+    TECH_TYPE_CODE_NOT_RESOLVABLE,
     UNAUTHORIZED,
     VERSION_CONFLICT,
     build_error_responses,
@@ -29,6 +32,7 @@ from backend.schemas.dataset_link import DatasetLinkRead
 from backend.schemas.field import FieldRead
 from backend.schemas.filters import DATASET_SORTABLE, DatasetFilter
 from backend.schemas.pagination import Page
+from backend.schemas.tech_field_template import ApplyTechTemplateRequest
 from backend.services.dataset import DatasetService
 
 router = APIRouter()
@@ -226,3 +230,36 @@ async def get_unmapped_fields(
             raise AppException(DATASET_NOT_FOUND)
         items = await uow.field_links.unmapped_non_tech_fields(obj_id)
         return [FieldRead.model_validate(i) for i in items]
+
+
+@router.post(
+    "/{obj_id}/apply-tech-template",
+    response_model=list[FieldRead],
+    status_code=status.HTTP_201_CREATED,
+    summary="Apply a tech-field template to a dataset",
+    dependencies=[Depends(get_current_superuser)],
+    responses={
+        **build_error_responses(
+            DATASET_NOT_FOUND,
+            TECH_FIELD_TEMPLATE_NOT_FOUND,
+            TECH_FIELD_TEMPLATE_LAYER_MISMATCH,
+            TECH_TYPE_CODE_NOT_RESOLVABLE,
+            UNAUTHORIZED,
+            FORBIDDEN,
+        ),
+    },
+)
+async def apply_tech_template(
+    obj_id: uuid.UUID,
+    req: ApplyTechTemplateRequest,
+    service: DatasetService = Depends(DatasetService),
+    uow: UnitOfWork = Depends(UnitOfWork),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    return await service.apply_tech_template(
+        uow=uow,
+        dataset_id=obj_id,
+        template_id=req.template_id,
+        overrides=req.overrides,
+        applier_id=current_user.id,
+    )
