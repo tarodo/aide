@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,45 @@ from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
 from backend.models import System, SystemFlavor, SystemKind, User
+
+
+async def _create_dataset(
+    async_client: AsyncClient,
+    headers: dict,
+    system_id,
+    name: str,
+    layer: str,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/datasets/",
+        json={
+            "system_id": str(system_id),
+            "object_name": name,
+            "kind": "rdbms",
+            "schema_name": "s",
+            "table_name": name,
+            "layer": layer,
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
+async def _create_field(
+    async_client: AsyncClient,
+    headers: dict,
+    dataset_id: str,
+    name: str,
+    is_tech: bool = False,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/fields/",
+        json={"dataset_id": dataset_id, "name": name, "is_tech": is_tech},
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
 
 
 @pytest_asyncio.fixture
@@ -289,3 +329,82 @@ class TestDatasetAPI:
             f"/api/v1/datasets/{dataset_id}", headers=superuser_token_headers
         )
         assert get_response.status_code == 404
+
+    async def test_upstream_downstream_links(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        a = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_a", "source"
+        )
+        b = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_b", "raw"
+        )
+        c = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_c", "core"
+        )
+        await async_client.post(
+            "/api/v1/dataset-links/",
+            json={"source_dataset_id": a, "target_dataset_id": b},
+            headers=superuser_token_headers,
+        )
+        await async_client.post(
+            "/api/v1/dataset-links/",
+            json={"source_dataset_id": b, "target_dataset_id": c},
+            headers=superuser_token_headers,
+        )
+
+        up = await async_client.get(
+            f"/api/v1/datasets/{b}/upstream-links", headers=superuser_token_headers
+        )
+        down = await async_client.get(
+            f"/api/v1/datasets/{b}/downstream-links", headers=superuser_token_headers
+        )
+        assert up.status_code == 200 and len(up.json()) == 1
+        assert down.status_code == 200 and len(down.json()) == 1
+
+    async def test_unmapped_fields(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        src = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "um_s", "source"
+        )
+        tgt = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "um_t", "raw"
+        )
+        # Target dataset with two non-tech fields and one tech field
+        f1 = await _create_field(async_client, superuser_token_headers, tgt, "a")
+        await _create_field(async_client, superuser_token_headers, tgt, "b")
+        await _create_field(
+            async_client, superuser_token_headers, tgt, "etl_ts", is_tech=True
+        )
+        sf = await _create_field(async_client, superuser_token_headers, src, "a")
+        link_id = (
+            await async_client.post(
+                "/api/v1/dataset-links/",
+                json={"source_dataset_id": src, "target_dataset_id": tgt},
+                headers=superuser_token_headers,
+            )
+        ).json()["id"]
+        await async_client.post(
+            f"/api/v1/dataset-links/{link_id}/field-links/",
+            json={
+                "dataset_link_id": link_id,
+                "source_field_id": sf,
+                "target_field_id": f1,
+            },
+            headers=superuser_token_headers,
+        )
+
+        resp = await async_client.get(
+            f"/api/v1/datasets/{tgt}/unmapped-fields",
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 200
+        names = {f["name"] for f in resp.json()}
+        assert names == {"b"}
