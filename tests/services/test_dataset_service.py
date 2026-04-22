@@ -35,10 +35,16 @@ class _MockSystems:
         self.get: AsyncMock = AsyncMock()
 
 
+class _MockDatasetLinks:
+    def __init__(self) -> None:
+        self.has_active_links_for_dataset: AsyncMock = AsyncMock(return_value=False)
+
+
 class _MockUnitOfWork:
     def __init__(self) -> None:
         self.session = MagicMock()
         self.systems = _MockSystems()
+        self.dataset_links = _MockDatasetLinks()
 
     async def __aenter__(self) -> "_MockUnitOfWork":
         return self
@@ -343,6 +349,27 @@ class TestDatasetService:
             with pytest.raises(AppException) as exc_info:
                 await dataset_service.delete(uow=mock_uow, obj_id=uuid.uuid4())
         assert exc_info.value.error_code == errors.DATASET_NOT_FOUND
+
+    async def test_delete_blocked_when_has_active_dataset_links(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        mock_uow.dataset_links.has_active_links_for_dataset = AsyncMock(
+            return_value=True
+        )
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.delete(uow=mock_uow, obj_id=db_dataset_rdbms.id)
+        assert exc_info.value.error_code == errors.DATASET_HAS_ACTIVE_LINKS
+        mock_repo.delete.assert_not_awaited()
+        mock_uow.dataset_links.has_active_links_for_dataset.assert_awaited_once_with(
+            db_dataset_rdbms.id
+        )
 
     async def test_restore_success(
         self,

@@ -177,6 +177,10 @@ class DatasetService(
             updated_obj = await repo.update(db_obj=db_obj)
             return validate_dataset_read(updated_obj)
 
+    async def _pre_delete(self, uow: UnitOfWork, db_obj: Dataset) -> None:
+        if await uow.dataset_links.has_active_links_for_dataset(db_obj.id):
+            raise AppException(errors.DATASET_HAS_ACTIVE_LINKS)
+
     async def delete(
         self,
         uow: UnitOfWork,
@@ -189,6 +193,8 @@ class DatasetService(
             db_obj = await repo.get(obj_id)
             if not db_obj:
                 raise AppException(self.not_found_error_code)
+
+            await self._pre_delete(uow, db_obj)
 
             if deleter_id and hasattr(db_obj, "deleted_by"):
                 setattr(db_obj, "deleted_by", deleter_id)
