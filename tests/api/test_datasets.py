@@ -408,3 +408,17 @@ class TestDatasetAPI:
         assert resp.status_code == 200
         names = {f["name"] for f in resp.json()}
         assert names == {"b"}
+
+    async def test_lineage_endpoints_404_on_missing_dataset(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+    ):
+        missing = "00000000-0000-0000-0000-000000000000"
+        for path in ("upstream-links", "downstream-links", "unmapped-fields"):
+            resp = await async_client.get(
+                f"/api/v1/datasets/{missing}/{path}",
+                headers=superuser_token_headers,
+            )
+            assert resp.status_code == status.HTTP_404_NOT_FOUND, path
+            assert resp.json()["error_code"] == errors.DATASET_NOT_FOUND
