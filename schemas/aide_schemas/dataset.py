@@ -37,6 +37,7 @@ class DatasetBase(BaseModel):
     system_id: uuid.UUID
     object_name: str
     layer: DatasetLayer | None = None
+    pattern_code: DatasetPattern | None = None
     is_active: bool = True
     extra: dict[str, Any] | None = None
 
@@ -195,6 +196,7 @@ class DatasetUpdateBase(VersionedUpdateMixin, NoteMixin):
 
     object_name: str | None = None
     layer: DatasetLayer | None = None
+    pattern_code: DatasetPattern | None = None
     is_active: bool | None = None
     extra: dict[str, Any] | None = None
 
