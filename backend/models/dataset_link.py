@@ -26,9 +26,11 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
 
     source_dataset = relationship("Dataset", foreign_keys=[source_dataset_id])
     target_dataset = relationship("Dataset", foreign_keys=[target_dataset_id])
-    # NOTE: `field_links` relationship added in Task 8 alongside FieldLink class.
-    # SQLAlchemy resolves relationships at mapper-configuration time (first flush),
-    # so declaring it here before FieldLink exists breaks all writes.
+    field_links = relationship(
+        "FieldLink",
+        back_populates="dataset_link",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         Index(
