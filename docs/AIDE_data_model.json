@@ -1491,6 +1491,19 @@
           "comments": "Polymorphic discriminator: rdbms / kafka / storage / sftp / hive"
         },
         {
+          "id": "f_ds_pattern_code",
+          "name": "pattern_code",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(32)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "DatasetPattern: scd1 / scd2 / snapshot / append_only / cdc_payload"
+        },
+        {
           "id": "f_ds_created_at",
           "name": "created_at",
           "type": {
@@ -2218,6 +2231,20 @@
           "unique": false,
           "nullable": true,
           "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fld_is_tech",
+          "name": "is_tech",
+          "type": {
+            "id": "boolean",
+            "name": "boolean"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "false",
+          "createdAt": 1712534400000,
+          "comments": "Technical field added by pipeline (vs mapped from a source column)"
         },
         {
           "id": "f_fld_created_at",
@@ -3184,6 +3211,373 @@
       "createdAt": 1712534400000,
       "order": 18,
       "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_dataset_links",
+      "name": "dataset_links",
+      "schema": "public",
+      "x": 2200,
+      "y": -1700,
+      "fields": [
+        {
+          "id": "f_dl_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_source_dataset_id",
+          "name": "source_dataset_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to datasets.id (upstream)"
+        },
+        {
+          "id": "f_dl_target_dataset_id",
+          "name": "target_dataset_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to datasets.id (downstream)"
+        },
+        {
+          "id": "f_dl_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_dl_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_dl_pair_active",
+          "name": "uq_dataset_link_pair_active",
+          "unique": true,
+          "fieldIds": [
+            "f_dl_source_dataset_id",
+            "f_dl_target_dataset_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_dl_source",
+          "name": "ix_dataset_links_source_dataset_id",
+          "unique": false,
+          "fieldIds": [
+            "f_dl_source_dataset_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_dl_target",
+          "name": "ix_dataset_links_target_dataset_id",
+          "unique": false,
+          "fieldIds": [
+            "f_dl_target_dataset_id"
+          ],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#ff9f74",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 19,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_field_links",
+      "name": "field_links",
+      "schema": "public",
+      "x": 2600,
+      "y": -1700,
+      "fields": [
+        {
+          "id": "f_fl_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_dataset_link_id",
+          "name": "dataset_link_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to dataset_links.id ON DELETE CASCADE"
+        },
+        {
+          "id": "f_fl_source_field_id",
+          "name": "source_field_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to fields.id ON DELETE CASCADE"
+        },
+        {
+          "id": "f_fl_target_field_id",
+          "name": "target_field_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to fields.id ON DELETE CASCADE"
+        },
+        {
+          "id": "f_fl_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_fl_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_fl_triple",
+          "name": "uq_field_link_triple",
+          "unique": true,
+          "fieldIds": [
+            "f_fl_dataset_link_id",
+            "f_fl_source_field_id",
+            "f_fl_target_field_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fl_target_in_link",
+          "name": "uq_field_link_target_in_link",
+          "unique": true,
+          "fieldIds": [
+            "f_fl_dataset_link_id",
+            "f_fl_target_field_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fl_dataset_link_id",
+          "name": "ix_field_links_dataset_link_id",
+          "unique": false,
+          "fieldIds": [
+            "f_fl_dataset_link_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fl_source_field_id",
+          "name": "ix_field_links_source_field_id",
+          "unique": false,
+          "fieldIds": [
+            "f_fl_source_field_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_fl_target_field_id",
+          "name": "ix_field_links_target_field_id",
+          "unique": false,
+          "fieldIds": [
+            "f_fl_target_field_id"
+          ],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#8eb7ff",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 20,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
@@ -3504,6 +3898,76 @@
       "targetTableId": "t_field_classifications",
       "sourceFieldId": "f_fld_id",
       "targetFieldId": "f_fclf_field_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_ds_dl_source",
+      "name": "dataset_to_dataset_link_source",
+      "sourceSchema": "public",
+      "sourceTableId": "t_datasets",
+      "targetSchema": "public",
+      "targetTableId": "t_dataset_links",
+      "sourceFieldId": "f_ds_id",
+      "targetFieldId": "f_dl_source_dataset_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_ds_dl_target",
+      "name": "dataset_to_dataset_link_target",
+      "sourceSchema": "public",
+      "sourceTableId": "t_datasets",
+      "targetSchema": "public",
+      "targetTableId": "t_dataset_links",
+      "sourceFieldId": "f_ds_id",
+      "targetFieldId": "f_dl_target_dataset_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_dl_fl",
+      "name": "dataset_link_to_field_link",
+      "sourceSchema": "public",
+      "sourceTableId": "t_dataset_links",
+      "targetSchema": "public",
+      "targetTableId": "t_field_links",
+      "sourceFieldId": "f_dl_id",
+      "targetFieldId": "f_fl_dataset_link_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_fld_fl_source",
+      "name": "field_to_field_link_source",
+      "sourceSchema": "public",
+      "sourceTableId": "t_fields",
+      "targetSchema": "public",
+      "targetTableId": "t_field_links",
+      "sourceFieldId": "f_fld_id",
+      "targetFieldId": "f_fl_source_field_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_fld_fl_target",
+      "name": "field_to_field_link_target",
+      "sourceSchema": "public",
+      "sourceTableId": "t_fields",
+      "targetSchema": "public",
+      "targetTableId": "t_field_links",
+      "sourceFieldId": "f_fld_id",
+      "targetFieldId": "f_fl_target_field_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,
