@@ -14,6 +14,7 @@ from backend.api.v1 import crawl_runs as v1_crawl_runs
 from backend.api.v1 import credential_refs as v1_credential_refs
 from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import datasets as v1_datasets
+from backend.api.v1 import dataset_links as v1_dataset_links
 from backend.api.v1 import dataset_schemas as v1_dataset_schemas
 from backend.api.v1 import field_bindings as v1_field_bindings
 from backend.api.v1 import field_classifications as v1_field_classifications
@@ -204,6 +205,12 @@ app.include_router(
     v1_datasets.router,
     prefix=f"{api_v1_prefix}/datasets",
     tags=["Datasets"],
+)
+
+app.include_router(
+    v1_dataset_links.router,
+    prefix=f"{api_v1_prefix}/dataset-links",
+    tags=["Dataset Links"],
 )
 
 app.include_router(

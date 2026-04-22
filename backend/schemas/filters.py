@@ -112,6 +112,17 @@ class CredentialRefFilter(BaseFilter):
 CREDENTIAL_REF_SORTABLE = {"provider", "created_at", "updated_at"}
 
 
+# ── DatasetLink ──────────────────────────────────────────────────────────
+class DatasetLinkFilter(BaseFilter):
+    source_dataset_id: uuid.UUID | None = None
+    target_dataset_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
+
+
+DATASET_LINK_SORTABLE = {"created_at", "updated_at"}
+
+
 # ── DatasetSchema ────────────────────────────────────────────────────────
 class DatasetSchemaFilter(BaseFilter):
     dataset_id: uuid.UUID | None = None
