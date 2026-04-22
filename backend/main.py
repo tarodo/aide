@@ -19,6 +19,7 @@ from backend.api.v1 import dataset_schemas as v1_dataset_schemas
 from backend.api.v1 import field_bindings as v1_field_bindings
 from backend.api.v1 import field_classifications as v1_field_classifications
 from backend.api.v1 import field_links as v1_field_links
+from backend.api.v1 import tech_field_templates as v1_tech_field_templates
 from backend.api.v1 import type_instances as v1_type_instances
 from backend.api.v1 import fields as v1_fields
 from backend.api.v1 import login as v1_login
@@ -218,6 +219,12 @@ app.include_router(
     v1_field_links.router,
     prefix=f"{api_v1_prefix}",
     tags=["Field Links"],
+)
+
+app.include_router(
+    v1_tech_field_templates.router,
+    prefix=f"{api_v1_prefix}/tech-field-templates",
+    tags=["Tech Field Templates"],
 )
 
 app.include_router(

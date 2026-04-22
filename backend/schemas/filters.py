@@ -199,3 +199,12 @@ class CrawlRunFilter(BaseFilter):
 
 
 CRAWL_RUN_SORTABLE = {"status", "started_at", "finished_at", "created_at"}
+
+
+# ── TechFieldTemplate ────────────────────────────────────────────────────
+class TechFieldTemplateFilter(BaseFilter):
+    code: str | None = None
+    layer: str | None = None
+
+
+TECH_FIELD_TEMPLATE_SORTABLE = {"code", "name", "layer", "created_at"}

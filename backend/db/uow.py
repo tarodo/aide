@@ -20,6 +20,10 @@ from backend.repositories.refresh_token import RefreshTokenRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
 from backend.repositories.system_kind import SystemKindRepository
+from backend.repositories.tech_field_template import TechFieldTemplateRepository
+from backend.repositories.tech_field_template_field import (
+    TechFieldTemplateFieldRepository,
+)
 from backend.repositories.type_instance import TypeInstanceRepository
 from backend.repositories.user import UserRepository
 
@@ -47,6 +51,8 @@ class UnitOfWork:
         self.field_classifications = FieldClassificationRepository(self.session)
         self.field_links = FieldLinkRepository(self.session)
         self.type_instances = TypeInstanceRepository(self.session)
+        self.tech_field_templates = TechFieldTemplateRepository(self.session)
+        self.tech_field_template_fields = TechFieldTemplateFieldRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
