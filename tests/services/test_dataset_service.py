@@ -242,7 +242,7 @@ class TestDatasetService:
     async def test_update_not_found(
         self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
     ):
-        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="DWH", row_version=1)
+        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="core", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = None
         with patch.object(dataset_service, "_get_repository", return_value=mock_repo):

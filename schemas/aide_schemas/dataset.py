@@ -194,7 +194,7 @@ class DatasetUpdateBase(VersionedUpdateMixin, NoteMixin):
     """Base schema for dataset updates, containing common optional fields."""
 
     object_name: str | None = None
-    layer: str | None = None
+    layer: DatasetLayer | None = None
     is_active: bool | None = None
     extra: dict[str, Any] | None = None
 
