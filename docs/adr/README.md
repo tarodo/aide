@@ -135,6 +135,8 @@ fine and do not need to be backfilled.
 | 013 | [Credential Indirection via `CredentialRef`](adr-013-credential-indirection.md) | Accepted |
 | 014 | [Filter and Sort Contract for List Endpoints](adr-014-filter-sort-contract.md) | Accepted |
 | 015 | [Observability — `structlog` + Request-ID Middleware + Slow-Query Log](adr-015-observability.md) | Accepted |
+| 016 | [Dataset Lineage — Two-Level Link Model](adr-016-dataset-lineage.md) | Accepted |
+| 017 | [Tech-Field Templates — Detached Presets with Abstract Type Codes](adr-017-tech-field-templates.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.

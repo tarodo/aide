@@ -3,7 +3,9 @@ from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.models import System, SystemFlavor, SystemKind
 from backend.models.dataset import DatasetRdbms
 from backend.repositories.dataset import DatasetRepository
 
@@ -103,3 +105,33 @@ class TestDatasetRepository:
         # Check for polymorphic loading via LEFT OUTER JOIN on child tables
         assert "LEFT OUTER JOIN" in executed_stmt
         assert "dataset_rdbms" in executed_stmt
+
+
+async def _make_system(session: AsyncSession, *, code_suffix: str) -> System:
+    kind = SystemKind(code=f"KIND_DST_{code_suffix}", name=f"Kind DST {code_suffix}")
+    flavor = SystemFlavor(
+        code=f"FL_DST_{code_suffix}", name=f"Flavor DST {code_suffix}", kind=kind
+    )
+    system = System(
+        code=f"SYS_DST_{code_suffix}", name=f"System DST {code_suffix}", flavor=flavor
+    )
+    session.add_all([kind, flavor, system])
+    await session.flush()
+    return system
+
+
+@pytest.mark.asyncio
+async def test_dataset_pattern_code_roundtrip(transactional_session: AsyncSession):
+    seeded_system = await _make_system(transactional_session, code_suffix="PC_RT")
+    ds = DatasetRdbms(
+        system_id=seeded_system.id,
+        object_name="pc_rt",
+        kind="rdbms",
+        schema_name="s",
+        table_name="pc_rt",
+        pattern_code="scd2",
+    )
+    transactional_session.add(ds)
+    await transactional_session.flush()
+    await transactional_session.refresh(ds)
+    assert ds.pattern_code == "scd2"

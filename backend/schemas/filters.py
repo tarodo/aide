@@ -112,6 +112,17 @@ class CredentialRefFilter(BaseFilter):
 CREDENTIAL_REF_SORTABLE = {"provider", "created_at", "updated_at"}
 
 
+# ── DatasetLink ──────────────────────────────────────────────────────────
+class DatasetLinkFilter(BaseFilter):
+    source_dataset_id: uuid.UUID | None = None
+    target_dataset_id: uuid.UUID | None = None
+    created_at__gte: datetime | None = None
+    created_at__lte: datetime | None = None
+
+
+DATASET_LINK_SORTABLE = {"created_at", "updated_at"}
+
+
 # ── DatasetSchema ────────────────────────────────────────────────────────
 class DatasetSchemaFilter(BaseFilter):
     dataset_id: uuid.UUID | None = None
@@ -188,3 +199,12 @@ class CrawlRunFilter(BaseFilter):
 
 
 CRAWL_RUN_SORTABLE = {"status", "started_at", "finished_at", "created_at"}
+
+
+# ── TechFieldTemplate ────────────────────────────────────────────────────
+class TechFieldTemplateFilter(BaseFilter):
+    code: str | None = None
+    layer: str | None = None
+
+
+TECH_FIELD_TEMPLATE_SORTABLE = {"code", "name", "layer", "created_at"}

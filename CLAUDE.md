@@ -101,6 +101,8 @@ Narrow scope: `PYTEST_ARGS="-v tests/path/test_file.py" make test-docker` (passe
 
 Test layer patterns: **API/repo tests** use the `transactional_session` fixture from `tests/conftest.py` (real DB, rolls back per-test). **Service tests** use mocked UoW — see `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`.
 
+Test helper duplication: `_make_system(session, code_suffix)` and `_create_dataset(...)` / `_create_field(...)` are currently inlined in multiple test files. No shared `seeded_system` fixture. When adding a 3rd copy of one of these helpers, consider promoting to `tests/conftest.py` or `tests/_helpers.py`.
+
 After changing deps (`uv sync`) or adding a new local workspace package, rebuild the test image: `docker compose build test`. Otherwise `make test-docker` fails with `ModuleNotFoundError`.
 
 SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
@@ -131,3 +133,9 @@ Data types are pre-loaded per flavor from YAML files in `backend/scripts/data/`.
 - `BaseResource.list` shadows the `list` builtin inside the SDK class scope — use `typing.List[X]` (not `list[X]`) for type annotations on methods of `sdk/aide_sdk/resources/base.py`.
 - Pre-existing mypy errors in `backend/scripts/_seed_core.py` (yaml stubs) and `sdk/aide_sdk/resources/datasets.py` (type assignment) are unrelated to most work — ignore when evaluating your diff.
 - SQLAlchemy `flush()` on PG populates server-generated columns (id, timestamps, row_version) via RETURNING — no explicit `refresh()` needed for `add_all` + `flush` batch inserts.
+- SQLAlchemy mapper config triggers on first flush, not lazily — forward-ref relationships (`relationship("UnbornClass", ...)`) fail with `InvalidRequestError` at write time. Both sides of a back-populating relationship must exist in the same commit.
+- `make alembic-gen` binds port 5432. If user's `aide-db-1` runs on 5432, stop it first: `docker stop aide-db-1`; restart after with `docker start aide-db-1`.
+- `get_filter_sort_dependency(filter_model, sortable, default)` asserts at route-registration: `filter_model=None` breaks. Always provide a Pydantic filter class. `sortable` must be `set[str]` (not tuple) to match the signature.
+- Pydantic `*Base` field added before the matching SA column breaks polymorphic create via `DatasetService.create` (`model_class(**obj_in.model_dump())` → `TypeError` on unknown kwarg). Land schema field and column in the same commit.
+- Async tests touching lazy relationships (`row.children`, `row.fields`) raise `MissingGreenlet`. Use `selectinload(Parent.children)` in the test query when the relationship isn't `lazy="selectin"` in the model.
+- New modules with `import yaml` need `# type: ignore[import-untyped]` — PyYAML has no stubs. Matches existing pattern in `backend/scripts/_seed_core.py`.

@@ -1,0 +1,22 @@
+# Abstract type_code → concrete data-type code per system flavor.
+# Add entries as new flavors/type_codes are introduced.
+# Duplicates (same flavor+type_code) fail loading.
+mappings:
+  - flavor: postgres14
+    type_code: TIMESTAMP
+    data_type_code: timestamp
+  - flavor: postgres14
+    type_code: STRING
+    data_type_code: text
+  - flavor: postgres14
+    type_code: BIGINT
+    data_type_code: bigint
+  - flavor: postgres14
+    type_code: INTEGER
+    data_type_code: integer
+  - flavor: postgres14
+    type_code: BOOLEAN
+    data_type_code: boolean
+  - flavor: postgres14
+    type_code: UUID
+    data_type_code: uuid

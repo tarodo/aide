@@ -35,10 +35,16 @@ class _MockSystems:
         self.get: AsyncMock = AsyncMock()
 
 
+class _MockDatasetLinks:
+    def __init__(self) -> None:
+        self.has_active_links_for_dataset: AsyncMock = AsyncMock(return_value=False)
+
+
 class _MockUnitOfWork:
     def __init__(self) -> None:
         self.session = MagicMock()
         self.systems = _MockSystems()
+        self.dataset_links = _MockDatasetLinks()
 
     async def __aenter__(self) -> "_MockUnitOfWork":
         return self
@@ -242,7 +248,7 @@ class TestDatasetService:
     async def test_update_not_found(
         self, dataset_service: DatasetService, mock_uow: _MockUnitOfWork
     ):
-        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="DWH", row_version=1)
+        update_schema = DatasetRdbmsUpdate(kind="rdbms", layer="core", row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = None
         with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
@@ -344,6 +350,27 @@ class TestDatasetService:
                 await dataset_service.delete(uow=mock_uow, obj_id=uuid.uuid4())
         assert exc_info.value.error_code == errors.DATASET_NOT_FOUND
 
+    async def test_delete_blocked_when_has_active_dataset_links(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms: DatasetRdbms,
+    ):
+        mock_uow.dataset_links.has_active_links_for_dataset = AsyncMock(
+            return_value=True
+        )
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc_info:
+                await dataset_service.delete(uow=mock_uow, obj_id=db_dataset_rdbms.id)
+        assert exc_info.value.error_code == errors.DATASET_HAS_ACTIVE_LINKS
+        mock_repo.delete.assert_not_awaited()
+        mock_uow.dataset_links.has_active_links_for_dataset.assert_awaited_once_with(
+            db_dataset_rdbms.id
+        )
+
     async def test_restore_success(
         self,
         dataset_service: DatasetService,
@@ -377,3 +404,169 @@ class TestDatasetService:
             with pytest.raises(AppException) as exc_info:
                 await dataset_service.restore(uow=mock_uow, obj_id=db_dataset_rdbms.id)
         assert exc_info.value.error_code == errors.ENTITY_NOT_DELETED
+
+    async def test_apply_tech_template_happy(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms,
+        db_system,
+    ):
+        from backend.models.data_type import DataType
+        from backend.models.system_flavor import SystemFlavor
+        from backend.models.tech_field_template import (
+            TechFieldTemplate,
+            TechFieldTemplateField,
+        )
+
+        db_dataset_rdbms.layer = "core"
+        template = TechFieldTemplate(
+            id=uuid.uuid4(), code="scd2", name="SCD2", layer="core"
+        )
+        tpl_field = TechFieldTemplateField(
+            id=uuid.uuid4(),
+            template_id=template.id,
+            name="valid_from",
+            type_code="TIMESTAMP",
+            order=0,
+        )
+        flavor = SystemFlavor(
+            id=uuid.uuid4(), code="postgres14", name="PG14", kind_id=uuid.uuid4()
+        )
+        db_system.flavor_id = flavor.id
+        data_type = DataType(
+            id=uuid.uuid4(),
+            system_flavor_id=flavor.id,
+            code="timestamp",
+            params_schema={},
+        )
+
+        mock_uow.tech_field_templates = MagicMock()
+        mock_uow.tech_field_templates.get = AsyncMock(return_value=template)
+        mock_uow.tech_field_template_fields = MagicMock()
+        mock_uow.tech_field_template_fields.list_by_template = AsyncMock(
+            return_value=[tpl_field]
+        )
+        mock_uow.system_flavors = MagicMock()
+        mock_uow.system_flavors.get = AsyncMock(return_value=flavor)
+        mock_uow.data_types = MagicMock()
+        mock_uow.data_types.get_by_system_flavor_and_code = AsyncMock(
+            return_value=data_type
+        )
+        mock_uow.systems.get = AsyncMock(return_value=db_system)
+        mock_uow.fields = MagicMock()
+        mock_uow.fields.get_roots = AsyncMock(return_value=[])
+
+        def _hydrate(objs):
+            now = datetime.now(UTC)
+            for o in objs:
+                if getattr(o, "id", None) is None:
+                    o.id = uuid.uuid4()
+                if getattr(o, "created_at", None) is None:
+                    o.created_at = now
+                if getattr(o, "updated_at", None) is None:
+                    o.updated_at = now
+                if getattr(o, "row_version", None) is None:
+                    o.row_version = 1
+            return objs
+
+        mock_uow.fields.create_many = AsyncMock(side_effect=_hydrate)
+
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+        fake_resolver = MagicMock()
+        fake_resolver.resolve.return_value = "timestamp"
+        with (
+            patch.object(dataset_service, "_get_repository", return_value=mock_repo),
+            patch("backend.services.dataset.tech_type_resolver", new=fake_resolver),
+        ):
+            result = await dataset_service.apply_tech_template(
+                uow=mock_uow,
+                dataset_id=db_dataset_rdbms.id,
+                template_id=template.id,
+            )
+        assert len(result) == 1
+        assert result[0].name == "valid_from"
+        assert result[0].is_tech is True
+
+    async def test_apply_tech_template_layer_mismatch(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms,
+    ):
+        from backend.models.tech_field_template import TechFieldTemplate
+
+        db_dataset_rdbms.layer = "raw"
+        template = TechFieldTemplate(
+            id=uuid.uuid4(), code="scd2", name="SCD2", layer="core"
+        )
+        mock_uow.tech_field_templates = MagicMock()
+        mock_uow.tech_field_templates.get = AsyncMock(return_value=template)
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+
+        with patch.object(dataset_service, "_get_repository", return_value=mock_repo):
+            with pytest.raises(AppException) as exc:
+                await dataset_service.apply_tech_template(
+                    uow=mock_uow,
+                    dataset_id=db_dataset_rdbms.id,
+                    template_id=template.id,
+                )
+        assert exc.value.error_code == errors.TECH_FIELD_TEMPLATE_LAYER_MISMATCH
+
+    async def test_apply_tech_template_unresolvable_type(
+        self,
+        dataset_service: DatasetService,
+        mock_uow: _MockUnitOfWork,
+        db_dataset_rdbms,
+        db_system,
+    ):
+        from backend.models.system_flavor import SystemFlavor
+        from backend.models.tech_field_template import (
+            TechFieldTemplate,
+            TechFieldTemplateField,
+        )
+
+        db_dataset_rdbms.layer = "core"
+        template = TechFieldTemplate(
+            id=uuid.uuid4(), code="scd2", name="SCD2", layer="core"
+        )
+        tpl_field = TechFieldTemplateField(
+            id=uuid.uuid4(),
+            template_id=template.id,
+            name="foo",
+            type_code="UNKNOWN",
+            order=0,
+        )
+        flavor = SystemFlavor(
+            id=uuid.uuid4(), code="postgres14", name="PG14", kind_id=uuid.uuid4()
+        )
+
+        mock_uow.tech_field_templates = MagicMock()
+        mock_uow.tech_field_templates.get = AsyncMock(return_value=template)
+        mock_uow.tech_field_template_fields = MagicMock()
+        mock_uow.tech_field_template_fields.list_by_template = AsyncMock(
+            return_value=[tpl_field]
+        )
+        mock_uow.system_flavors = MagicMock()
+        mock_uow.system_flavors.get = AsyncMock(return_value=flavor)
+        mock_uow.systems.get = AsyncMock(return_value=db_system)
+        mock_uow.fields = MagicMock()
+        mock_uow.fields.get_roots = AsyncMock(return_value=[])
+
+        mock_repo = _MockRepository()
+        mock_repo.get.return_value = db_dataset_rdbms
+        fake_resolver = MagicMock()
+        fake_resolver.resolve.return_value = None
+        with (
+            patch.object(dataset_service, "_get_repository", return_value=mock_repo),
+            patch("backend.services.dataset.tech_type_resolver", new=fake_resolver),
+        ):
+            with pytest.raises(AppException) as exc:
+                await dataset_service.apply_tech_template(
+                    uow=mock_uow,
+                    dataset_id=db_dataset_rdbms.id,
+                    template_id=template.id,
+                )
+        assert exc.value.error_code == errors.TECH_TYPE_CODE_NOT_RESOLVABLE

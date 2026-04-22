@@ -1,0 +1,34 @@
+# Starter tech-field template catalogue.
+# Re-running the seed is idempotent: existing (code) entries are matched and
+# fields are added/updated in place.
+templates:
+  - code: scd2_core_v1
+    name: SCD2 on CORE
+    layer: core
+    fields:
+      - name: valid_from
+        type_code: TIMESTAMP
+        order: 0
+      - name: valid_to
+        type_code: TIMESTAMP
+        order: 1
+      - name: is_current
+        type_code: BOOLEAN
+        order: 2
+      - name: etl_hash
+        type_code: STRING
+        order: 3
+
+  - code: cdc_payload_kafka_v1
+    name: CDC payload on KAFKA
+    layer: kafka
+    fields:
+      - name: cdc_op
+        type_code: STRING
+        order: 0
+      - name: cdc_ts_ms
+        type_code: BIGINT
+        order: 1
+      - name: cdc_lsn
+        type_code: STRING
+        order: 2

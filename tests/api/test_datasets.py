@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,45 @@ from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
 from backend.models import System, SystemFlavor, SystemKind, User
+
+
+async def _create_dataset(
+    async_client: AsyncClient,
+    headers: dict,
+    system_id,
+    name: str,
+    layer: str,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/datasets/",
+        json={
+            "system_id": str(system_id),
+            "object_name": name,
+            "kind": "rdbms",
+            "schema_name": "s",
+            "table_name": name,
+            "layer": layer,
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
+async def _create_field(
+    async_client: AsyncClient,
+    headers: dict,
+    dataset_id: str,
+    name: str,
+    is_tech: bool = False,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/fields/",
+        json={"dataset_id": dataset_id, "name": name, "is_tech": is_tech},
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
 
 
 @pytest_asyncio.fixture
@@ -63,7 +103,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "customers_table",
-            "layer": "RAW",
+            "layer": "raw",
             "schema_name": "public",
             "table_name": "customers",
         }
@@ -87,7 +127,7 @@ class TestDatasetAPI:
             "kind": "kafka",
             "system_id": str(test_system.id),
             "object_name": "orders_topic",
-            "layer": "SOURCE",
+            "layer": "source",
             "topic": "e-commerce.orders",
             "format": "AVRO",
             "partitions": 12,
@@ -113,7 +153,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "products_table",
-            "layer": "RAW",
+            "layer": "raw",
             "schema_name": "public",
             "table_name": "products",
         }
@@ -164,7 +204,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "inventory_table",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "inventory",
             "table_name": "stock",
         }
@@ -176,7 +216,7 @@ class TestDatasetAPI:
         # Update it
         update_data = {
             "kind": "rdbms",
-            "layer": "DWH",
+            "layer": "core",
             "table_name": "dim_stock",
             "row_version": 1,
         }
@@ -187,7 +227,7 @@ class TestDatasetAPI:
         )
         assert update_response.status_code == 200
         res_json = update_response.json()
-        assert res_json["layer"] == "DWH"
+        assert res_json["layer"] == "core"
         assert res_json["table_name"] == "dim_stock"
         assert res_json["schema_name"] == "inventory"  # Unchanged
 
@@ -202,7 +242,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "inventory_table_for_kind_test",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "inventory",
             "table_name": "stock",
         }
@@ -232,7 +272,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "conflict_test_table",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "test",
             "table_name": "conflict",
         }
@@ -244,7 +284,7 @@ class TestDatasetAPI:
         # First update succeeds
         response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
-            json={"kind": "rdbms", "layer": "DWH", "row_version": 1},
+            json={"kind": "rdbms", "layer": "core", "row_version": 1},
             headers=superuser_token_headers,
         )
         assert response.status_code == 200
@@ -253,7 +293,7 @@ class TestDatasetAPI:
         # Second update with stale row_version
         response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
-            json={"kind": "rdbms", "layer": "CDM", "row_version": 1},
+            json={"kind": "rdbms", "layer": "kafka", "row_version": 1},
             headers=superuser_token_headers,
         )
         assert response.status_code == 409
@@ -289,3 +329,168 @@ class TestDatasetAPI:
             f"/api/v1/datasets/{dataset_id}", headers=superuser_token_headers
         )
         assert get_response.status_code == 404
+
+    async def test_upstream_downstream_links(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        a = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_a", "source"
+        )
+        b = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_b", "raw"
+        )
+        c = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "ud_c", "core"
+        )
+        await async_client.post(
+            "/api/v1/dataset-links/",
+            json={"source_dataset_id": a, "target_dataset_id": b},
+            headers=superuser_token_headers,
+        )
+        await async_client.post(
+            "/api/v1/dataset-links/",
+            json={"source_dataset_id": b, "target_dataset_id": c},
+            headers=superuser_token_headers,
+        )
+
+        up = await async_client.get(
+            f"/api/v1/datasets/{b}/upstream-links", headers=superuser_token_headers
+        )
+        down = await async_client.get(
+            f"/api/v1/datasets/{b}/downstream-links", headers=superuser_token_headers
+        )
+        assert up.status_code == 200 and len(up.json()) == 1
+        assert down.status_code == 200 and len(down.json()) == 1
+
+    async def test_unmapped_fields(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        src = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "um_s", "source"
+        )
+        tgt = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "um_t", "raw"
+        )
+        # Target dataset with two non-tech fields and one tech field
+        f1 = await _create_field(async_client, superuser_token_headers, tgt, "a")
+        await _create_field(async_client, superuser_token_headers, tgt, "b")
+        await _create_field(
+            async_client, superuser_token_headers, tgt, "etl_ts", is_tech=True
+        )
+        sf = await _create_field(async_client, superuser_token_headers, src, "a")
+        link_id = (
+            await async_client.post(
+                "/api/v1/dataset-links/",
+                json={"source_dataset_id": src, "target_dataset_id": tgt},
+                headers=superuser_token_headers,
+            )
+        ).json()["id"]
+        await async_client.post(
+            f"/api/v1/dataset-links/{link_id}/field-links/",
+            json={
+                "dataset_link_id": link_id,
+                "source_field_id": sf,
+                "target_field_id": f1,
+            },
+            headers=superuser_token_headers,
+        )
+
+        resp = await async_client.get(
+            f"/api/v1/datasets/{tgt}/unmapped-fields",
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 200
+        names = {f["name"] for f in resp.json()}
+        assert names == {"b"}
+
+    async def test_lineage_endpoints_404_on_missing_dataset(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+    ):
+        missing = "00000000-0000-0000-0000-000000000000"
+        for path in ("upstream-links", "downstream-links", "unmapped-fields"):
+            resp = await async_client.get(
+                f"/api/v1/datasets/{missing}/{path}",
+                headers=superuser_token_headers,
+            )
+            assert resp.status_code == status.HTTP_404_NOT_FOUND, path
+            assert resp.json()["error_code"] == errors.DATASET_NOT_FOUND
+
+    async def test_apply_tech_template_layer_mismatch(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        tpl = (
+            await async_client.post(
+                "/api/v1/tech-field-templates/",
+                json={
+                    "code": "apply_mm_v1",
+                    "name": "Apply MM",
+                    "layer": "core",
+                },
+                headers=superuser_token_headers,
+            )
+        ).json()
+        ds_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "apply_mm_tgt", "raw"
+        )
+        resp = await async_client.post(
+            f"/api/v1/datasets/{ds_id}/apply-tech-template",
+            json={"template_id": tpl["id"]},
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.json()["error_code"] == "TECH_FIELD_TEMPLATE_LAYER_MISMATCH"
+
+    async def test_apply_tech_template_unresolvable_flavor(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        """When the dataset's flavor has no resolver mapping, the apply returns 400.
+
+        This exercises the TECH_TYPE_CODE_NOT_RESOLVABLE path at the HTTP layer.
+        The test_system fixture's flavor code (e.g. FL_DS_API) is NOT in the
+        resolver YAML (which only has postgres14), so resolution fails cleanly.
+        """
+        tpl = (
+            await async_client.post(
+                "/api/v1/tech-field-templates/",
+                json={
+                    "code": "apply_happy_v1",
+                    "name": "Apply Happy",
+                    "layer": "core",
+                },
+                headers=superuser_token_headers,
+            )
+        ).json()
+        await async_client.post(
+            f"/api/v1/tech-field-templates/{tpl['id']}/fields",
+            json={
+                "template_id": tpl["id"],
+                "name": "valid_from",
+                "type_code": "TIMESTAMP",
+                "order": 0,
+            },
+            headers=superuser_token_headers,
+        )
+        ds_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "apply_tgt", "core"
+        )
+        resp = await async_client.post(
+            f"/api/v1/datasets/{ds_id}/apply-tech-template",
+            json={"template_id": tpl["id"]},
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.json()["error_code"] == "TECH_TYPE_CODE_NOT_RESOLVABLE"

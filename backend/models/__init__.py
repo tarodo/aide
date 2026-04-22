@@ -11,10 +11,16 @@ from .dataset import (
     DatasetSftp,
     DatasetStorage,
 )
+from .dataset_link import DatasetLink as DatasetLink
 from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
 from .field_binding import FieldBinding as FieldBinding
 from .field_classification import FieldClassification as FieldClassification
+from .field_link import FieldLink as FieldLink
+from .tech_field_template import (
+    TechFieldTemplate as TechFieldTemplate,
+    TechFieldTemplateField as TechFieldTemplateField,
+)
 from .type_instance import TypeInstance as TypeInstance
 from .mixins import (
     SoftDeleteMetaDataMixin,
@@ -48,12 +54,16 @@ __all__ = [
     "DatasetStorage",
     "DatasetSftp",
     "DatasetHive",
+    "DatasetLink",
     "CastRule",
     "CastSafety",
     "Field",
     "DatasetSchema",
     "FieldBinding",
     "FieldClassification",
+    "FieldLink",
+    "TechFieldTemplate",
+    "TechFieldTemplateField",
     "TypeInstance",
     "CrawlRun",
     "CrawlStatus",

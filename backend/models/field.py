@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import ForeignKey, Index, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +26,9 @@ class Field(Base, MetaDataMixin):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     path: Mapped[str | None] = mapped_column(Text, nullable=True)
     extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    is_tech: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
 
     dataset = relationship("Dataset")
     parent = relationship("Field", remote_side="Field.id", back_populates="children")

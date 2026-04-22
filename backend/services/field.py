@@ -102,6 +102,11 @@ class FieldService(GenericService[Field, FieldCreate, FieldUpdate, FieldRead]):
             await self._validate_parent(uow, new_parent_id, new_dataset_id)
             await self._check_circular_reference(uow, db_obj.id, new_parent_id)
 
+        new_is_tech = update_data.get("is_tech", db_obj.is_tech)
+        if new_is_tech is False and db_obj.is_tech is True:
+            if await uow.field_links.count_by_target_field(db_obj.id) == 0:
+                raise AppException(errors.FIELD_NON_TECH_REQUIRES_SOURCE)
+
         if (
             new_dataset_id != current_dataset_id
             or new_name != current_name

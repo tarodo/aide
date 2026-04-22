@@ -16,6 +16,7 @@ class FieldBase(BaseModel):
     name: str
     path: str | None = None
     extra: dict[str, Any] | None = None
+    is_tech: bool = False
 
 
 class FieldCreate(FieldBase, NoteMixin):
@@ -32,6 +33,7 @@ class FieldUpdate(VersionedUpdateMixin, NoteMixin):
     name: str | None = None
     path: str | None = None
     extra: dict[str, Any] | None = None
+    is_tech: bool | None = None
 
 
 class FieldRead(FieldBase, MetaDataMixin):
@@ -50,4 +52,5 @@ class FieldTree(MetaDataMixin):
     name: str
     path: str | None
     extra: dict[str, Any] | None
+    is_tech: bool
     children: list[FieldTree]

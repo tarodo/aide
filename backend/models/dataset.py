@@ -29,6 +29,7 @@ class Dataset(Base, SoftDeleteMetaDataMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     kind: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    pattern_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     system = relationship("System")
 

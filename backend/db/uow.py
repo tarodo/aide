@@ -7,6 +7,7 @@ from backend.repositories.crawl_run import CrawlRunRepository
 from backend.repositories.dataset_schema import DatasetSchemaRepository
 from backend.repositories.credential_ref import CredentialRefRepository
 from backend.repositories.dataset import DatasetRepository
+from backend.repositories.dataset_link import DatasetLinkRepository
 from backend.db.session import AsyncSessionLocal
 from backend.repositories.data_type import DataTypeRepository
 from backend.repositories.field import FieldRepository
@@ -14,10 +15,15 @@ from backend.repositories.field_binding import FieldBindingRepository
 from backend.repositories.field_classification import (
     FieldClassificationRepository,
 )
+from backend.repositories.field_link import FieldLinkRepository
 from backend.repositories.refresh_token import RefreshTokenRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
 from backend.repositories.system_kind import SystemKindRepository
+from backend.repositories.tech_field_template import TechFieldTemplateRepository
+from backend.repositories.tech_field_template_field import (
+    TechFieldTemplateFieldRepository,
+)
 from backend.repositories.type_instance import TypeInstanceRepository
 from backend.repositories.user import UserRepository
 
@@ -36,13 +42,17 @@ class UnitOfWork:
         self.credential_refs = CredentialRefRepository(self.session)
         self.systems = SystemRepository(self.session)
         self.datasets = DatasetRepository(self.session)
+        self.dataset_links = DatasetLinkRepository(self.session)
         self.cast_rules = CastRuleRepository(self.session)
         self.crawl_runs = CrawlRunRepository(self.session)
         self.fields = FieldRepository(self.session)
         self.dataset_schemas = DatasetSchemaRepository(self.session)
         self.field_bindings = FieldBindingRepository(self.session)
         self.field_classifications = FieldClassificationRepository(self.session)
+        self.field_links = FieldLinkRepository(self.session)
         self.type_instances = TypeInstanceRepository(self.session)
+        self.tech_field_templates = TechFieldTemplateRepository(self.session)
+        self.tech_field_template_fields = TechFieldTemplateFieldRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
