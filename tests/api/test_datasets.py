@@ -63,7 +63,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "customers_table",
-            "layer": "RAW",
+            "layer": "raw",
             "schema_name": "public",
             "table_name": "customers",
         }
@@ -87,7 +87,7 @@ class TestDatasetAPI:
             "kind": "kafka",
             "system_id": str(test_system.id),
             "object_name": "orders_topic",
-            "layer": "SOURCE",
+            "layer": "source",
             "topic": "e-commerce.orders",
             "format": "AVRO",
             "partitions": 12,
@@ -113,7 +113,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "products_table",
-            "layer": "RAW",
+            "layer": "raw",
             "schema_name": "public",
             "table_name": "products",
         }
@@ -164,7 +164,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "inventory_table",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "inventory",
             "table_name": "stock",
         }
@@ -176,7 +176,7 @@ class TestDatasetAPI:
         # Update it
         update_data = {
             "kind": "rdbms",
-            "layer": "DWH",
+            "layer": "core",
             "table_name": "dim_stock",
             "row_version": 1,
         }
@@ -187,7 +187,7 @@ class TestDatasetAPI:
         )
         assert update_response.status_code == 200
         res_json = update_response.json()
-        assert res_json["layer"] == "DWH"
+        assert res_json["layer"] == "core"
         assert res_json["table_name"] == "dim_stock"
         assert res_json["schema_name"] == "inventory"  # Unchanged
 
@@ -202,7 +202,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "inventory_table_for_kind_test",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "inventory",
             "table_name": "stock",
         }
@@ -232,7 +232,7 @@ class TestDatasetAPI:
             "kind": "rdbms",
             "system_id": str(test_system.id),
             "object_name": "conflict_test_table",
-            "layer": "ODS",
+            "layer": "raw",
             "schema_name": "test",
             "table_name": "conflict",
         }
@@ -244,7 +244,7 @@ class TestDatasetAPI:
         # First update succeeds
         response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
-            json={"kind": "rdbms", "layer": "DWH", "row_version": 1},
+            json={"kind": "rdbms", "layer": "core", "row_version": 1},
             headers=superuser_token_headers,
         )
         assert response.status_code == 200
@@ -253,7 +253,7 @@ class TestDatasetAPI:
         # Second update with stale row_version
         response = await async_client.patch(
             f"/api/v1/datasets/{dataset_id}",
-            json={"kind": "rdbms", "layer": "CDM", "row_version": 1},
+            json={"kind": "rdbms", "layer": "kafka", "row_version": 1},
             headers=superuser_token_headers,
         )
         assert response.status_code == 409

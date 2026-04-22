@@ -100,10 +100,11 @@ class DatasetBase(BaseModel):
     system_id: uuid.UUID
     object_name: str
     layer: DatasetLayer | None = None
-    pattern_code: DatasetPattern | None = None
     is_active: bool = True
     extra: dict[str, Any] | None = None
 ```
+
+**Note:** `pattern_code` is NOT added to `DatasetBase` in this task. It is added in Task 3 together with the `pattern_code` model column and the Alembic migration. Adding the schema field before the column exists would break `DatasetService.create` (the service passes `**obj_in.model_dump()` to the SQLAlchemy model constructor; an unknown kwarg raises `TypeError`).
 
 - [ ] **Step 2: Add error codes to `backend/core/errors.py`**
 
@@ -306,10 +307,11 @@ git commit -m "feat(field): add is_tech column"
 
 ---
 
-## Task 3: Dataset.pattern_code column + migration
+## Task 3: Dataset.pattern_code column + migration + schema
 
 **Files:**
 - Modify: `backend/models/dataset.py`
+- Modify: `schemas/aide_schemas/dataset.py`
 - Create: `backend/alembic/versions/XXXX_add_pattern_code_to_datasets.py`
 - Test: `tests/repositories/test_dataset_repository.py`
 
@@ -349,6 +351,22 @@ In the `Dataset` class body, after `kind`:
 pattern_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
 ```
 
+- [ ] **Step 3b: Add `pattern_code` to Pydantic schemas in `schemas/aide_schemas/dataset.py`**
+
+Update `DatasetBase` to include the new field (deferred from Task 1 — see Task 1 note):
+
+```python
+class DatasetBase(BaseModel):
+    system_id: uuid.UUID
+    object_name: str
+    layer: DatasetLayer | None = None
+    pattern_code: DatasetPattern | None = None
+    is_active: bool = True
+    extra: dict[str, Any] | None = None
+```
+
+This makes `pattern_code` available on every `DatasetXCreate`/`DatasetXRead` via inheritance.
+
 - [ ] **Step 4: Generate migration**
 
 ```bash
@@ -381,7 +399,8 @@ Expected: PASS.
 
 ```bash
 make format
-git add backend/models/dataset.py backend/alembic/versions/ tests/repositories/test_dataset_repository.py
+git add backend/models/dataset.py schemas/aide_schemas/dataset.py \
+    backend/alembic/versions/ tests/repositories/test_dataset_repository.py
 git commit -m "feat(dataset): add pattern_code column"
 ```
 

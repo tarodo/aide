@@ -1,3 +1,4 @@
+import enum
 import uuid
 from typing import Any, Annotated, Literal, Union
 
@@ -6,11 +7,36 @@ from pydantic import BaseModel, ConfigDict, Field
 from aide_schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
 
+class DatasetLayer(str, enum.Enum):
+    SOURCE = "source"
+    CDC = "cdc"
+    KAFKA = "kafka"
+    RAW = "raw"
+    CORE = "core"
+
+
+LAYER_ORDER: dict[DatasetLayer, int] = {
+    DatasetLayer.SOURCE: 0,
+    DatasetLayer.CDC: 1,
+    DatasetLayer.KAFKA: 2,
+    DatasetLayer.RAW: 3,
+    DatasetLayer.CORE: 4,
+}
+
+
+class DatasetPattern(str, enum.Enum):
+    SCD1 = "scd1"
+    SCD2 = "scd2"
+    SNAPSHOT = "snapshot"
+    APPEND_ONLY = "append_only"
+    CDC_PAYLOAD = "cdc_payload"
+
+
 # --- Base Schemas ---
 class DatasetBase(BaseModel):
     system_id: uuid.UUID
     object_name: str
-    layer: str | None = None
+    layer: DatasetLayer | None = None
     is_active: bool = True
     extra: dict[str, Any] | None = None
 

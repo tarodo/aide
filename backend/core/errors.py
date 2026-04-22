@@ -33,10 +33,22 @@ DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
 DATASET_ALREADY_EXISTS = "DATASET_ALREADY_EXISTS"
 INVALID_DATASET_KIND = "INVALID_DATASET_KIND"
 DATASET_KIND_MISMATCH = "DATASET_KIND_MISMATCH"
+DATASET_LINK_NOT_FOUND = "DATASET_LINK_NOT_FOUND"
+DATASET_LINK_ALREADY_EXISTS = "DATASET_LINK_ALREADY_EXISTS"
+DATASET_LINK_SELF_REFERENCE = "DATASET_LINK_SELF_REFERENCE"
+DATASET_LINK_LAYER_ORDER = "DATASET_LINK_LAYER_ORDER"
+DATASET_LINK_LAYER_MISSING = "DATASET_LINK_LAYER_MISSING"
+DATASET_HAS_ACTIVE_LINKS = "DATASET_HAS_ACTIVE_LINKS"
 CAST_RULE_NOT_FOUND = "CAST_RULE_NOT_FOUND"
 CAST_RULE_ALREADY_EXISTS = "CAST_RULE_ALREADY_EXISTS"
 FIELD_NOT_FOUND = "FIELD_NOT_FOUND"
 FIELD_ALREADY_EXISTS = "FIELD_ALREADY_EXISTS"
+FIELD_LINK_NOT_FOUND = "FIELD_LINK_NOT_FOUND"
+FIELD_LINK_ALREADY_EXISTS = "FIELD_LINK_ALREADY_EXISTS"
+FIELD_LINK_SOURCE_DATASET_MISMATCH = "FIELD_LINK_SOURCE_DATASET_MISMATCH"
+FIELD_LINK_TARGET_DATASET_MISMATCH = "FIELD_LINK_TARGET_DATASET_MISMATCH"
+FIELD_LINK_TARGET_OCCUPIED = "FIELD_LINK_TARGET_OCCUPIED"
+FIELD_NON_TECH_REQUIRES_SOURCE = "FIELD_NON_TECH_REQUIRES_SOURCE"
 DATASET_SCHEMA_NOT_FOUND = "DATASET_SCHEMA_NOT_FOUND"
 DATASET_SCHEMA_ALREADY_EXISTS = "DATASET_SCHEMA_ALREADY_EXISTS"
 FIELD_BINDING_NOT_FOUND = "FIELD_BINDING_NOT_FOUND"
@@ -141,6 +153,30 @@ ERROR_MAP = {
         status.HTTP_400_BAD_REQUEST,
         "Changing the kind of a dataset is not allowed.",
     ),
+    DATASET_LINK_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested dataset link was not found.",
+    ),
+    DATASET_LINK_ALREADY_EXISTS: (
+        status.HTTP_409_CONFLICT,
+        "An active dataset link between this source and target already exists.",
+    ),
+    DATASET_LINK_SELF_REFERENCE: (
+        status.HTTP_400_BAD_REQUEST,
+        "A dataset cannot link to itself.",
+    ),
+    DATASET_LINK_LAYER_ORDER: (
+        status.HTTP_400_BAD_REQUEST,
+        "Target dataset layer must come after source layer.",
+    ),
+    DATASET_LINK_LAYER_MISSING: (
+        status.HTTP_400_BAD_REQUEST,
+        "Both source and target datasets must have a layer set.",
+    ),
+    DATASET_HAS_ACTIVE_LINKS: (
+        status.HTTP_409_CONFLICT,
+        "Dataset has active lineage links; unlink first.",
+    ),
     CAST_RULE_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The requested cast rule was not found.",
@@ -156,6 +192,30 @@ ERROR_MAP = {
     FIELD_ALREADY_EXISTS: (
         status.HTTP_400_BAD_REQUEST,
         "A field with this name already exists for the given dataset.",
+    ),
+    FIELD_LINK_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested field link was not found.",
+    ),
+    FIELD_LINK_ALREADY_EXISTS: (
+        status.HTTP_409_CONFLICT,
+        "A field link with this source and target already exists in this dataset link.",
+    ),
+    FIELD_LINK_SOURCE_DATASET_MISMATCH: (
+        status.HTTP_400_BAD_REQUEST,
+        "Source field does not belong to the source dataset.",
+    ),
+    FIELD_LINK_TARGET_DATASET_MISMATCH: (
+        status.HTTP_400_BAD_REQUEST,
+        "Target field does not belong to the target dataset.",
+    ),
+    FIELD_LINK_TARGET_OCCUPIED: (
+        status.HTTP_409_CONFLICT,
+        "Target field already has a source mapping in this dataset link.",
+    ),
+    FIELD_NON_TECH_REQUIRES_SOURCE: (
+        status.HTTP_409_CONFLICT,
+        "Non-technical field must have at least one inbound field link.",
     ),
     DATASET_SCHEMA_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
