@@ -71,6 +71,12 @@ HAS_DEPENDENT_ENTITIES = "HAS_DEPENDENT_ENTITIES"
 VERSION_CONFLICT = "VERSION_CONFLICT"
 CRAWL_RUN_NOT_FOUND = "CRAWL_RUN_NOT_FOUND"
 FIELD_CLASSIFICATION_NOT_FOUND = "FIELD_CLASSIFICATION_NOT_FOUND"
+TECH_FIELD_TEMPLATE_NOT_FOUND = "TECH_FIELD_TEMPLATE_NOT_FOUND"
+TECH_FIELD_TEMPLATE_ALREADY_EXISTS = "TECH_FIELD_TEMPLATE_ALREADY_EXISTS"
+TECH_FIELD_TEMPLATE_LAYER_MISMATCH = "TECH_FIELD_TEMPLATE_LAYER_MISMATCH"
+TECH_FIELD_TEMPLATE_FIELD_NOT_FOUND = "TECH_FIELD_TEMPLATE_FIELD_NOT_FOUND"
+TECH_FIELD_TEMPLATE_FIELD_ALREADY_EXISTS = "TECH_FIELD_TEMPLATE_FIELD_ALREADY_EXISTS"
+TECH_TYPE_CODE_NOT_RESOLVABLE = "TECH_TYPE_CODE_NOT_RESOLVABLE"
 
 ErrorInfo = Tuple[int, str]
 
@@ -304,6 +310,30 @@ ERROR_MAP = {
     FIELD_CLASSIFICATION_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The requested field classification was not found.",
+    ),
+    TECH_FIELD_TEMPLATE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested tech-field template was not found.",
+    ),
+    TECH_FIELD_TEMPLATE_ALREADY_EXISTS: (
+        status.HTTP_409_CONFLICT,
+        "A tech-field template with this code already exists.",
+    ),
+    TECH_FIELD_TEMPLATE_LAYER_MISMATCH: (
+        status.HTTP_400_BAD_REQUEST,
+        "Template layer does not match dataset layer.",
+    ),
+    TECH_FIELD_TEMPLATE_FIELD_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested template field was not found.",
+    ),
+    TECH_FIELD_TEMPLATE_FIELD_ALREADY_EXISTS: (
+        status.HTTP_409_CONFLICT,
+        "A template field with this name already exists in this template.",
+    ),
+    TECH_TYPE_CODE_NOT_RESOLVABLE: (
+        status.HTTP_400_BAD_REQUEST,
+        "Cannot resolve abstract type_code to a concrete data type for this dataset flavor.",
     ),
 }
 
