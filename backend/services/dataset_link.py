@@ -49,8 +49,8 @@ class DatasetLinkService(
         try:
             src_order = LAYER_ORDER[DatasetLayer(source.layer)]
             tgt_order = LAYER_ORDER[DatasetLayer(target.layer)]
-        except (ValueError, KeyError):
-            raise AppException(errors.DATASET_LINK_LAYER_MISSING)
+        except (ValueError, KeyError) as exc:
+            raise AppException(errors.DATASET_LINK_LAYER_MISSING) from exc
 
         if tgt_order <= src_order:
             raise AppException(errors.DATASET_LINK_LAYER_ORDER)
