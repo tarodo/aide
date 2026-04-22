@@ -247,7 +247,21 @@ class DatasetService(
         """Apply a tech-field template to a dataset.
 
         Idempotent: existing field names on the dataset are skipped.
+
+        Each new Field is created with ``is_tech=True`` and ``extra`` holding the
+        resolved concrete data type as a pair of hints for downstream
+        ``FieldBinding`` creation (Phase 3 work): ``extra["data_type_id"]`` is the
+        stringified UUID of the resolved ``DataType`` row for the dataset's
+        flavor; ``extra["tech_type_code"]`` is the abstract type_code applied
+        (after any override). Consumers must cast ``data_type_id`` back to UUID.
+
+        Validations bypass ``FieldService._pre_create`` on purpose: apply is a
+        coarse-grained bulk operation, uniqueness is already enforced by the
+        ``is_tech`` skip + the root-name unique index, and per-field dataset
+        existence checks are redundant here.
         """
+        # Local import avoids a circular dependency: ``backend.models.field``
+        # → ``backend.models.__init__`` → ``Dataset`` mappers.
         from backend.models.field import Field
 
         async with uow:
