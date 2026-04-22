@@ -71,3 +71,26 @@ class FieldLinkService(
 
             deleted = await repo.delete(db_obj=db_obj)
             return self.read_schema.model_validate(deleted)
+
+    async def bulk_create(
+        self,
+        uow: UnitOfWork,
+        items: list[FieldLinkCreate],
+        creator_id: uuid.UUID | None = None,
+    ) -> list[FieldLinkRead]:
+        """Create many field_links in one transaction (all-or-nothing)."""
+        if not items:
+            return []
+        async with uow:
+            for it in items:
+                await self._pre_create(uow, it, creator_id)
+            repo = cast(FieldLinkRepository, self._get_repository(uow.session))
+            db_objs: list[FieldLink] = []
+            for it in items:
+                obj = FieldLink(**it.model_dump())
+                if creator_id:
+                    obj.created_by = creator_id
+                    obj.updated_by = creator_id
+                db_objs.append(obj)
+            created = await repo.create_many(objs=db_objs)
+            return [self.read_schema.model_validate(o) for o in created]

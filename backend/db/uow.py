@@ -15,6 +15,7 @@ from backend.repositories.field_binding import FieldBindingRepository
 from backend.repositories.field_classification import (
     FieldClassificationRepository,
 )
+from backend.repositories.field_link import FieldLinkRepository
 from backend.repositories.refresh_token import RefreshTokenRepository
 from backend.repositories.system import SystemRepository
 from backend.repositories.system_flavor import SystemFlavorRepository
@@ -44,6 +45,7 @@ class UnitOfWork:
         self.dataset_schemas = DatasetSchemaRepository(self.session)
         self.field_bindings = FieldBindingRepository(self.session)
         self.field_classifications = FieldClassificationRepository(self.session)
+        self.field_links = FieldLinkRepository(self.session)
         self.type_instances = TypeInstanceRepository(self.session)
         return self
 
