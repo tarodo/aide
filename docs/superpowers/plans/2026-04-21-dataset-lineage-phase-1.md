@@ -513,11 +513,10 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
 
     source_dataset = relationship("Dataset", foreign_keys=[source_dataset_id])
     target_dataset = relationship("Dataset", foreign_keys=[target_dataset_id])
-    field_links = relationship(
-        "FieldLink",
-        back_populates="dataset_link",
-        cascade="all, delete-orphan",
-    )
+    # NOTE: `field_links = relationship("FieldLink", ...)` is added in Task 8,
+    # when the FieldLink class exists. Declaring it here would break first flush
+    # (SQLAlchemy resolves relationships during mapper configuration, not lazily
+    # at query time).
 
     __table_args__ = (
         Index(
@@ -1602,6 +1601,20 @@ class FieldLink(Base, MetaDataMixin):
 
 Add `from .field_link import FieldLink as FieldLink` and append `"FieldLink"` to `__all__`.
 
+- [ ] **Step 4b: Add back-populating relationship to `DatasetLink`**
+
+In `backend/models/dataset_link.py`, inside the `DatasetLink` class body, just below `target_dataset = relationship(...)`, insert:
+
+```python
+    field_links = relationship(
+        "FieldLink",
+        back_populates="dataset_link",
+        cascade="all, delete-orphan",
+    )
+```
+
+This was deliberately deferred from Task 4 — SQLAlchemy triggers mapper configuration on first flush, so declaring this relationship before `FieldLink` exists causes `InvalidRequestError`. Both sides of the relationship must land in this commit.
+
 - [ ] **Step 5: Generate migration**
 
 ```bash
@@ -1661,8 +1674,9 @@ Expected: PASS (5 tests).
 
 ```bash
 make format
-git add backend/models/field_link.py backend/models/__init__.py \
-    backend/alembic/versions/ tests/models/test_field_link.py
+git add backend/models/field_link.py backend/models/dataset_link.py \
+    backend/models/__init__.py backend/alembic/versions/ \
+    tests/models/test_field_link.py
 git commit -m "feat(lineage): add field_link model"
 ```
 

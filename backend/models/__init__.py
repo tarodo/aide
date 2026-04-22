@@ -11,6 +11,7 @@ from .dataset import (
     DatasetSftp,
     DatasetStorage,
 )
+from .dataset_link import DatasetLink as DatasetLink
 from .dataset_schema import DatasetSchema as DatasetSchema
 from .field import Field as Field
 from .field_binding import FieldBinding as FieldBinding
@@ -48,6 +49,7 @@ __all__ = [
     "DatasetStorage",
     "DatasetSftp",
     "DatasetHive",
+    "DatasetLink",
     "CastRule",
     "CastSafety",
     "Field",
