@@ -5,7 +5,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 @dataclass(frozen=True)
