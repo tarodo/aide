@@ -51,6 +51,25 @@ async def _create_field(
     return resp.json()["id"]
 
 
+async def _create_dataset_schema(
+    async_client: AsyncClient,
+    headers: dict,
+    dataset_id: str,
+    version_num: int = 1,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/dataset-schemas/",
+        json={
+            "dataset_id": dataset_id,
+            "version_num": version_num,
+            "schema": {},
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
 @pytest_asyncio.fixture
 async def superuser(transactional_session: AsyncSession) -> User:
     user = User(
@@ -345,14 +364,33 @@ class TestDatasetAPI:
         c = await _create_dataset(
             async_client, superuser_token_headers, test_system.id, "ud_c", "core"
         )
+        a_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, a
+        )
+        b_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, b
+        )
+        c_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, c
+        )
         await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": a, "target_dataset_id": b},
+            json={
+                "source_dataset_id": a,
+                "target_dataset_id": b,
+                "source_schema_id": a_schema,
+                "target_schema_id": b_schema,
+            },
             headers=superuser_token_headers,
         )
         await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": b, "target_dataset_id": c},
+            json={
+                "source_dataset_id": b,
+                "target_dataset_id": c,
+                "source_schema_id": b_schema,
+                "target_schema_id": c_schema,
+            },
             headers=superuser_token_headers,
         )
 
@@ -384,10 +422,21 @@ class TestDatasetAPI:
             async_client, superuser_token_headers, tgt, "etl_ts", origin="tech"
         )
         sf = await _create_field(async_client, superuser_token_headers, src, "a")
+        src_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, src
+        )
+        tgt_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, tgt
+        )
         link_id = (
             await async_client.post(
                 "/api/v1/dataset-links/",
-                json={"source_dataset_id": src, "target_dataset_id": tgt},
+                json={
+                    "source_dataset_id": src,
+                    "target_dataset_id": tgt,
+                    "source_schema_id": src_schema,
+                    "target_schema_id": tgt_schema,
+                },
                 headers=superuser_token_headers,
             )
         ).json()["id"]

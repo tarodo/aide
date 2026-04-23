@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models import System, SystemFlavor, SystemKind
 from backend.models.dataset import DatasetRdbms
 from backend.models.dataset_link import DatasetLink
+from backend.models.dataset_schema import DatasetSchema
 from backend.models.field import Field
 from backend.models.field_link import FieldLink
 from backend.repositories.field_link import FieldLinkRepository
@@ -39,7 +40,16 @@ async def _scaffold(session: AsyncSession, sys: System):
     )
     session.add_all([src, tgt])
     await session.flush()
-    link = DatasetLink(source_dataset_id=src.id, target_dataset_id=tgt.id)
+    src_schema = DatasetSchema(dataset_id=src.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=tgt.id, version_num=1, schema={})
+    session.add_all([src_schema, tgt_schema])
+    await session.flush()
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     session.add(link)
     await session.flush()
     return src, tgt, link

@@ -84,6 +84,25 @@ async def _create_field(
     return resp.json()["id"]
 
 
+async def _create_dataset_schema(
+    async_client: AsyncClient,
+    headers: dict,
+    dataset_id: str,
+    version_num: int = 1,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/dataset-schemas/",
+        json={
+            "dataset_id": dataset_id,
+            "version_num": version_num,
+            "schema": {},
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
 @pytest.mark.asyncio
 class TestFieldLinkAPI:
     @pytest.fixture
@@ -107,9 +126,20 @@ class TestFieldLinkAPI:
         )
         sf = await _create_field(async_client, superuser_token_headers, src, "c")
         tf = await _create_field(async_client, superuser_token_headers, tgt, "c")
+        src_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, src
+        )
+        tgt_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, tgt
+        )
         link_resp = await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": src, "target_dataset_id": tgt},
+            json={
+                "source_dataset_id": src,
+                "target_dataset_id": tgt,
+                "source_schema_id": src_schema,
+                "target_schema_id": tgt_schema,
+            },
             headers=superuser_token_headers,
         )
         assert link_resp.status_code == status.HTTP_201_CREATED, link_resp.text
@@ -145,9 +175,20 @@ class TestFieldLinkAPI:
         tf_wrong = await _create_field(
             async_client, superuser_token_headers, other, "c"
         )
+        src_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, src
+        )
+        tgt_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, tgt
+        )
         link_resp = await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": src, "target_dataset_id": tgt},
+            json={
+                "source_dataset_id": src,
+                "target_dataset_id": tgt,
+                "source_schema_id": src_schema,
+                "target_schema_id": tgt_schema,
+            },
             headers=superuser_token_headers,
         )
         assert link_resp.status_code == status.HTTP_201_CREATED, link_resp.text
@@ -181,9 +222,20 @@ class TestFieldLinkAPI:
         sf2 = await _create_field(async_client, superuser_token_headers, src, "b")
         tf1 = await _create_field(async_client, superuser_token_headers, tgt, "a")
         tf2 = await _create_field(async_client, superuser_token_headers, tgt, "b")
+        src_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, src
+        )
+        tgt_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, tgt
+        )
         link_resp = await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": src, "target_dataset_id": tgt},
+            json={
+                "source_dataset_id": src,
+                "target_dataset_id": tgt,
+                "source_schema_id": src_schema,
+                "target_schema_id": tgt_schema,
+            },
             headers=superuser_token_headers,
         )
         assert link_resp.status_code == status.HTTP_201_CREATED, link_resp.text
