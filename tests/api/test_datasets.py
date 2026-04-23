@@ -1,3 +1,4 @@
+import uuid
 from typing import AsyncGenerator
 
 import pytest
@@ -9,7 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
-from backend.models import System, SystemFlavor, SystemKind, User
+from backend.models import (
+    DataType,
+    FieldBinding,
+    System,
+    SystemFlavor,
+    SystemKind,
+    TypeInstance,
+    User,
+)
 
 
 async def _create_dataset(
@@ -70,6 +79,25 @@ async def _create_dataset_schema(
     return resp.json()["id"]
 
 
+async def _seed_binding(
+    session: AsyncSession,
+    field_id: str,
+    schema_id: str,
+    type_instance_id,
+    position: int,
+) -> None:
+    """Insert a FieldBinding row directly for lineage-pinned-schema setup."""
+    binding = FieldBinding(
+        field_id=uuid.UUID(field_id),
+        dataset_schema_id=uuid.UUID(schema_id),
+        position=position,
+        is_nullable=True,
+        type_instance_id=type_instance_id,
+    )
+    session.add(binding)
+    await session.commit()
+
+
 @pytest_asyncio.fixture
 async def superuser(transactional_session: AsyncSession) -> User:
     user = User(
@@ -101,6 +129,30 @@ async def test_system(transactional_session: AsyncSession) -> System:
     transactional_session.add_all([kind, flavor, system])
     await transactional_session.commit()
     return system
+
+
+@pytest_asyncio.fixture
+async def type_instance(
+    transactional_session: AsyncSession, test_system: System
+) -> TypeInstance:
+    """A shared TypeInstance for seeding FieldBinding rows."""
+    data_type = DataType(
+        system_flavor_id=test_system.flavor_id,
+        code=f"T_DS_{uuid.uuid4().hex[:6].upper()}",
+        params_schema={},
+    )
+    transactional_session.add(data_type)
+    await transactional_session.flush()
+    ti = TypeInstance(
+        data_type_id=data_type.id,
+        type_params={},
+        parent_id=None,
+        slot=None,
+    )
+    transactional_session.add(ti)
+    await transactional_session.commit()
+    await transactional_session.refresh(ti)
+    return ti
 
 
 @pytest.mark.asyncio
@@ -408,6 +460,8 @@ class TestDatasetAPI:
         async_client: AsyncClient,
         superuser_token_headers: dict,
         test_system: System,
+        transactional_session: AsyncSession,
+        type_instance: TypeInstance,
     ):
         src = await _create_dataset(
             async_client, superuser_token_headers, test_system.id, "um_s", "source"
@@ -428,6 +482,8 @@ class TestDatasetAPI:
         tgt_schema = await _create_dataset_schema(
             async_client, superuser_token_headers, tgt
         )
+        await _seed_binding(transactional_session, sf, src_schema, type_instance.id, 1)
+        await _seed_binding(transactional_session, f1, tgt_schema, type_instance.id, 1)
         link_id = (
             await async_client.post(
                 "/api/v1/dataset-links/",
