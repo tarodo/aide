@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models import System, SystemFlavor, SystemKind
 from backend.models.dataset import DatasetRdbms
 from backend.models.dataset_link import DatasetLink
+from backend.models.dataset_schema import DatasetSchema
 from backend.repositories.dataset_link import DatasetLinkRepository
 
 
@@ -124,3 +125,68 @@ async def test_list_by_source_and_target(transactional_session: AsyncSession):
     upstream_of_c = await repo.list_by_target(c.id)
     assert len(downstream_of_a) == 2
     assert len(upstream_of_c) == 2
+
+
+async def _seed_linked_pair(
+    session: AsyncSession, name: str, src_version: int, tgt_version: int
+):
+    kind = SystemKind(code=f"DL_K_{name}", name=f"DL K {name}")
+    flavor = SystemFlavor(code=f"DL_F_{name}", name=f"DL F {name}", kind=kind)
+    system = System(code=f"DL_S_{name}", name=f"DL S {name}", flavor=flavor)
+    src = DatasetRdbms(
+        system=system,
+        object_name=f"{name}_src",
+        kind="rdbms",
+        schema_name="s",
+        table_name="src",
+    )
+    tgt = DatasetRdbms(
+        system=system,
+        object_name=f"{name}_tgt",
+        kind="rdbms",
+        schema_name="s",
+        table_name="tgt",
+    )
+    session.add_all([kind, flavor, system, src, tgt])
+    await session.flush()
+
+    src_schemas = [
+        DatasetSchema(dataset=src, version_num=v, schema={})
+        for v in range(1, src_version + 1)
+    ]
+    tgt_schemas = [
+        DatasetSchema(dataset=tgt, version_num=v, schema={})
+        for v in range(1, tgt_version + 1)
+    ]
+    session.add_all(src_schemas + tgt_schemas)
+    await session.flush()
+
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schemas[0].id,  # pinned v1 (old)
+        target_schema_id=tgt_schemas[0].id,
+    )
+    session.add(link)
+    await session.flush()
+    return link, src, tgt, src_schemas, tgt_schemas
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_reports_drift(
+    transactional_session: AsyncSession,
+):
+    link, src, tgt, src_schemas, tgt_schemas = await _seed_linked_pair(
+        transactional_session, "drift", src_version=3, tgt_version=1
+    )
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    target_rows = [r for r in rows if r["dataset_link_id"] == link.id]
+    assert len(target_rows) == 1
+    row = target_rows[0]
+    assert row["source_pinned_version"] == 1
+    assert row["source_latest_version"] == 3
+    assert row["target_pinned_version"] == 1
+    assert row["target_latest_version"] == 1
+    assert row["source_has_drift"] is True
+    assert row["target_has_drift"] is False
