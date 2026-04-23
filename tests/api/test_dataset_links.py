@@ -321,3 +321,49 @@ class TestDatasetLinkPinAPI:
         )
         assert resp.status_code == 422
         assert resp.json()["error_code"] == errors.SCHEMA_DATASET_MISMATCH
+
+    async def test_compat_endpoint_returns_report(
+        self, async_client, superuser_token_headers, test_system
+    ):
+        src_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "cpt_src", "source"
+        )
+        tgt_id = await _create_dataset(
+            async_client, superuser_token_headers, test_system.id, "cpt_tgt", "raw"
+        )
+        ss_id = await _create_schema(async_client, superuser_token_headers, src_id)
+        ts_id = await _create_schema(async_client, superuser_token_headers, tgt_id)
+        resp = await async_client.post(
+            "/api/v1/dataset-links/",
+            json={
+                "source_dataset_id": src_id,
+                "target_dataset_id": tgt_id,
+                "source_schema_id": ss_id,
+                "target_schema_id": ts_id,
+            },
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 201
+        link_id = resp.json()["id"]
+
+        resp = await async_client.get(
+            f"/api/v1/dataset-links/{link_id}/compat",
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["dataset_link_id"] == link_id
+        assert body["summary"]["total"] == 0
+        assert body["status"] == "ok"
+
+    async def test_list_compat_endpoint(
+        self, async_client, superuser_token_headers, test_system
+    ):
+        resp = await async_client.get(
+            "/api/v1/dataset-links/compat",
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert "items" in body
+        assert "total" in body
