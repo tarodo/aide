@@ -487,7 +487,7 @@ class TestDatasetService:
             )
         assert len(result) == 1
         assert result[0].name == "valid_from"
-        assert result[0].is_tech is True
+        assert result[0].origin == "tech"
 
     async def test_apply_tech_template_layer_mismatch(
         self,

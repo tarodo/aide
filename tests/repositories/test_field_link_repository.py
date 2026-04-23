@@ -111,7 +111,7 @@ async def test_unmapped_non_tech_fields(transactional_session: AsyncSession):
     sf = Field(dataset_id=src.id, name="c4")
     mapped_tf = Field(dataset_id=tgt.id, name="c4")
     unmapped_tf = Field(dataset_id=tgt.id, name="c5")
-    tech_tf = Field(dataset_id=tgt.id, name="etl_ts", is_tech=True)
+    tech_tf = Field(dataset_id=tgt.id, name="etl_ts", origin="tech")
     transactional_session.add_all([sf, mapped_tf, unmapped_tf, tech_tf])
     await transactional_session.flush()
     fl = FieldLink(

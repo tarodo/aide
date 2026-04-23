@@ -40,11 +40,11 @@ async def _create_field(
     headers: dict,
     dataset_id: str,
     name: str,
-    is_tech: bool = False,
+    origin: str = "mapped",
 ) -> str:
     resp = await async_client.post(
         "/api/v1/fields/",
-        json={"dataset_id": dataset_id, "name": name, "is_tech": is_tech},
+        json={"dataset_id": dataset_id, "name": name, "origin": origin},
         headers=headers,
     )
     assert resp.status_code == status.HTTP_201_CREATED, resp.text
@@ -381,7 +381,7 @@ class TestDatasetAPI:
         f1 = await _create_field(async_client, superuser_token_headers, tgt, "a")
         await _create_field(async_client, superuser_token_headers, tgt, "b")
         await _create_field(
-            async_client, superuser_token_headers, tgt, "etl_ts", is_tech=True
+            async_client, superuser_token_headers, tgt, "etl_ts", origin="tech"
         )
         sf = await _create_field(async_client, superuser_token_headers, src, "a")
         link_id = (

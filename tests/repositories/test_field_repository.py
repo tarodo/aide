@@ -90,7 +90,7 @@ async def _make_system(session: AsyncSession, *, code_suffix: str) -> System:
 
 
 @pytest.mark.asyncio
-async def test_field_is_tech_default_false(transactional_session: AsyncSession):
+async def test_field_origin_default_mapped(transactional_session: AsyncSession):
     system = await _make_system(transactional_session, code_suffix="DEF")
     dataset = DatasetRdbms(
         system_id=system.id,
@@ -105,11 +105,11 @@ async def test_field_is_tech_default_false(transactional_session: AsyncSession):
     transactional_session.add(field)
     await transactional_session.flush()
     await transactional_session.refresh(field)
-    assert field.is_tech is False
+    assert field.origin == "mapped"
 
 
 @pytest.mark.asyncio
-async def test_field_is_tech_persists_true(transactional_session: AsyncSession):
+async def test_field_origin_tech_persists(transactional_session: AsyncSession):
     system = await _make_system(transactional_session, code_suffix="TRU")
     dataset = DatasetRdbms(
         system_id=system.id,
@@ -120,8 +120,8 @@ async def test_field_is_tech_persists_true(transactional_session: AsyncSession):
     )
     transactional_session.add(dataset)
     await transactional_session.flush()
-    field = Field(dataset_id=dataset.id, name="etl_ts", is_tech=True)
+    field = Field(dataset_id=dataset.id, name="etl_ts", origin="tech")
     transactional_session.add(field)
     await transactional_session.flush()
     await transactional_session.refresh(field)
-    assert field.is_tech is True
+    assert field.origin == "tech"
