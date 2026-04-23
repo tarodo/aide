@@ -3,6 +3,7 @@ from aide_schemas.lineage_compat import (
     CompatSummary as CompatSummary,
     DatasetLinkCompatReport as DatasetLinkCompatReport,
     DatasetLinkCompatSummary as DatasetLinkCompatSummary,
+    DatasetRef as DatasetRef,
     FieldCompatFieldRef as FieldCompatFieldRef,
     FieldCompatIssue as FieldCompatIssue,
     FieldCompatRow as FieldCompatRow,

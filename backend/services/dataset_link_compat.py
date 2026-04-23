@@ -16,6 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from aide_schemas.cast_rule import CastSafety
 from aide_schemas.lineage_compat import FieldCompatIssue
+from aide_schemas.pagination import Page
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.db.uow import UnitOfWork
@@ -28,6 +29,8 @@ from backend.schemas.lineage_compat import (
     CompatSeverity,
     CompatSummary,
     DatasetLinkCompatReport,
+    DatasetLinkCompatSummary,
+    DatasetRef,
     FieldCompatFieldRef,
     FieldCompatRow,
     PinDrift,
@@ -169,138 +172,225 @@ class DatasetLinkCompatService:
         self, uow: UnitOfWork, dataset_link_id: uuid.UUID
     ) -> DatasetLinkCompatReport:
         async with uow:
-            link = await uow.session.get(DatasetLinkModel, dataset_link_id)
-            if link is None or link.deleted_at is not None:
-                raise AppException(errors.DATASET_LINK_NOT_FOUND)
+            return await self._compat_report_impl(uow, dataset_link_id)
 
-            src_latest = await uow.dataset_schemas.latest_for_dataset(
-                link.source_dataset_id
-            )
-            tgt_latest = await uow.dataset_schemas.latest_for_dataset(
-                link.target_dataset_id
-            )
-            src_pinned = await uow.dataset_schemas.get(link.source_schema_id)
-            tgt_pinned = await uow.dataset_schemas.get(link.target_schema_id)
-            # Pinned schemas are NOT NULL FKs on DatasetLink — must exist.
-            assert src_pinned is not None
-            assert tgt_pinned is not None
+    async def _compat_report_impl(
+        self, uow: UnitOfWork, dataset_link_id: uuid.UUID
+    ) -> DatasetLinkCompatReport:
+        """Core compat_report logic. Caller must have already entered the UoW
+        context (i.e. `async with uow:`). Used by `compat_report` and
+        `list_compat` so bulk iterations do not nest UoW enters.
+        """
+        link = await uow.session.get(DatasetLinkModel, dataset_link_id)
+        if link is None or link.deleted_at is not None:
+            raise AppException(errors.DATASET_LINK_NOT_FOUND)
 
-            pin_drift = PinDrift(
-                source=PinDriftSide(
-                    pinned_version=src_pinned.version_num,
-                    latest_version=(
-                        src_latest.version_num if src_latest else src_pinned.version_num
-                    ),
-                    has_drift=(
-                        src_latest is not None
-                        and src_latest.version_num != src_pinned.version_num
-                    ),
+        src_latest = await uow.dataset_schemas.latest_for_dataset(
+            link.source_dataset_id
+        )
+        tgt_latest = await uow.dataset_schemas.latest_for_dataset(
+            link.target_dataset_id
+        )
+        src_pinned = await uow.dataset_schemas.get(link.source_schema_id)
+        tgt_pinned = await uow.dataset_schemas.get(link.target_schema_id)
+        # Pinned schemas are NOT NULL FKs on DatasetLink — must exist.
+        assert src_pinned is not None
+        assert tgt_pinned is not None
+
+        pin_drift = PinDrift(
+            source=PinDriftSide(
+                pinned_version=src_pinned.version_num,
+                latest_version=(
+                    src_latest.version_num if src_latest else src_pinned.version_num
                 ),
-                target=PinDriftSide(
-                    pinned_version=tgt_pinned.version_num,
-                    latest_version=(
-                        tgt_latest.version_num if tgt_latest else tgt_pinned.version_num
-                    ),
-                    has_drift=(
-                        tgt_latest is not None
-                        and tgt_latest.version_num != tgt_pinned.version_num
-                    ),
+                has_drift=(
+                    src_latest is not None
+                    and src_latest.version_num != src_pinned.version_num
+                ),
+            ),
+            target=PinDriftSide(
+                pinned_version=tgt_pinned.version_num,
+                latest_version=(
+                    tgt_latest.version_num if tgt_latest else tgt_pinned.version_num
+                ),
+                has_drift=(
+                    tgt_latest is not None
+                    and tgt_latest.version_num != tgt_pinned.version_num
+                ),
+            ),
+        )
+
+        stmt = select(FieldLinkModel).where(
+            FieldLinkModel.dataset_link_id == dataset_link_id
+        )
+        result = await uow.session.execute(stmt)
+        field_links = list(result.scalars())
+
+        field_compat: list[FieldCompatRow] = []
+        ok_count = warn_count = error_count = 0
+
+        for fl in field_links:
+            src_field = await uow.fields.get(fl.source_field_id)
+            tgt_field = await uow.fields.get(fl.target_field_id)
+            if src_field is None or tgt_field is None:
+                continue
+
+            src_binding = await _load_field_binding_eager(
+                uow, fl.source_field_id, link.source_schema_id
+            )
+            tgt_binding = await _load_field_binding_eager(
+                uow, fl.target_field_id, link.target_schema_id
+            )
+
+            cast_rule = None
+            if (
+                src_binding is not None
+                and tgt_binding is not None
+                and src_binding.type_instance_id != tgt_binding.type_instance_id
+            ):
+                cr_stmt = select(CastRule).where(
+                    CastRule.source_data_type_id
+                    == src_binding.type_instance.data_type_id,
+                    CastRule.target_data_type_id
+                    == tgt_binding.type_instance.data_type_id,
+                )
+                cr_result = await uow.session.execute(cr_stmt)
+                cast_rule = cr_result.scalars().first()
+
+            inputs = CompatInputs(
+                target_field_origin=tgt_field.origin,
+                source_binding=_binding_to_dict(src_binding),
+                target_binding=_binding_to_dict(tgt_binding),
+                cast_rule=(
+                    {"id": cast_rule.id, "safety": cast_rule.safety}
+                    if cast_rule is not None
+                    else None
                 ),
             )
+            issues = compute_field_compat_issues(inputs)
+            severity = _severity_of_issues(issues)
 
-            stmt = select(FieldLinkModel).where(
-                FieldLinkModel.dataset_link_id == dataset_link_id
-            )
-            result = await uow.session.execute(stmt)
-            field_links = list(result.scalars())
-
-            field_compat: list[FieldCompatRow] = []
-            ok_count = warn_count = error_count = 0
-
-            for fl in field_links:
-                src_field = await uow.fields.get(fl.source_field_id)
-                tgt_field = await uow.fields.get(fl.target_field_id)
-                if src_field is None or tgt_field is None:
-                    continue
-
-                src_binding = await _load_field_binding_eager(
-                    uow, fl.source_field_id, link.source_schema_id
-                )
-                tgt_binding = await _load_field_binding_eager(
-                    uow, fl.target_field_id, link.target_schema_id
-                )
-
-                cast_rule = None
-                if (
-                    src_binding is not None
-                    and tgt_binding is not None
-                    and src_binding.type_instance_id != tgt_binding.type_instance_id
-                ):
-                    cr_stmt = select(CastRule).where(
-                        CastRule.source_data_type_id
-                        == src_binding.type_instance.data_type_id,
-                        CastRule.target_data_type_id
-                        == tgt_binding.type_instance.data_type_id,
-                    )
-                    cr_result = await uow.session.execute(cr_stmt)
-                    cast_rule = cr_result.scalars().first()
-
-                inputs = CompatInputs(
-                    target_field_origin=tgt_field.origin,
-                    source_binding=_binding_to_dict(src_binding),
-                    target_binding=_binding_to_dict(tgt_binding),
-                    cast_rule=(
-                        {"id": cast_rule.id, "safety": cast_rule.safety}
-                        if cast_rule is not None
-                        else None
-                    ),
-                )
-                issues = compute_field_compat_issues(inputs)
-                severity = _severity_of_issues(issues)
-
-                if severity == CompatSeverity.OK:
-                    ok_count += 1
-                elif severity == CompatSeverity.WARN:
-                    warn_count += 1
-                else:
-                    error_count += 1
-
-                field_compat.append(
-                    FieldCompatRow(
-                        field_link_id=fl.id,
-                        source_field=FieldCompatFieldRef(
-                            id=src_field.id, name=src_field.name
-                        ),
-                        target_field=FieldCompatFieldRef(
-                            id=tgt_field.id, name=tgt_field.name
-                        ),
-                        source_type=_render_type(src_binding),
-                        target_type=_render_type(tgt_binding),
-                        issues=issues,
-                        severity=severity,
-                        cast_rule_id=cast_rule.id if cast_rule is not None else None,
-                    )
-                )
-
-            summary = CompatSummary(
-                ok=ok_count,
-                warn=warn_count,
-                error=error_count,
-                total=ok_count + warn_count + error_count,
-            )
-
-            has_drift = pin_drift.source.has_drift or pin_drift.target.has_drift
-            if error_count > 0:
-                status = CompatSeverity.ERROR
-            elif warn_count > 0 or has_drift:
-                status = CompatSeverity.WARN
+            if severity == CompatSeverity.OK:
+                ok_count += 1
+            elif severity == CompatSeverity.WARN:
+                warn_count += 1
             else:
-                status = CompatSeverity.OK
+                error_count += 1
 
-            return DatasetLinkCompatReport(
-                dataset_link_id=dataset_link_id,
-                pin_drift=pin_drift,
-                field_compat=field_compat,
-                summary=summary,
-                status=status,
+            field_compat.append(
+                FieldCompatRow(
+                    field_link_id=fl.id,
+                    source_field=FieldCompatFieldRef(
+                        id=src_field.id, name=src_field.name
+                    ),
+                    target_field=FieldCompatFieldRef(
+                        id=tgt_field.id, name=tgt_field.name
+                    ),
+                    source_type=_render_type(src_binding),
+                    target_type=_render_type(tgt_binding),
+                    issues=issues,
+                    severity=severity,
+                    cast_rule_id=cast_rule.id if cast_rule is not None else None,
+                )
+            )
+
+        summary = CompatSummary(
+            ok=ok_count,
+            warn=warn_count,
+            error=error_count,
+            total=ok_count + warn_count + error_count,
+        )
+
+        has_drift = pin_drift.source.has_drift or pin_drift.target.has_drift
+        if error_count > 0:
+            status = CompatSeverity.ERROR
+        elif warn_count > 0 or has_drift:
+            status = CompatSeverity.WARN
+        else:
+            status = CompatSeverity.OK
+
+        return DatasetLinkCompatReport(
+            dataset_link_id=dataset_link_id,
+            pin_drift=pin_drift,
+            field_compat=field_compat,
+            summary=summary,
+            status=status,
+        )
+
+    async def list_compat(
+        self,
+        uow: UnitOfWork,
+        *,
+        status: list[str] | None = None,
+        has_drift: bool | None = None,
+        dataset_id: uuid.UUID | None = None,
+        system_id: uuid.UUID | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Page[DatasetLinkCompatSummary]:
+        async with uow:
+            rows = await uow.dataset_links.list_with_compat_summary()
+            # Optional prefilters (cheap, no-join):
+            if dataset_id is not None:
+                rows = [
+                    r
+                    for r in rows
+                    if r["source_dataset_id"] == dataset_id
+                    or r["target_dataset_id"] == dataset_id
+                ]
+            if has_drift is True:
+                rows = [
+                    r for r in rows if r["source_has_drift"] or r["target_has_drift"]
+                ]
+            elif has_drift is False:
+                rows = [
+                    r
+                    for r in rows
+                    if not (r["source_has_drift"] or r["target_has_drift"])
+                ]
+            if system_id is not None:
+                rows = [
+                    r
+                    for r in rows
+                    if r["source_system_id"] == system_id
+                    or r["target_system_id"] == system_id
+                ]
+
+            # Compute per-link summary via _compat_report_impl (no nested UoW).
+            # O(n) — OK for page sizes <= 50.
+            computed: list[DatasetLinkCompatSummary] = []
+            for row in rows:
+                report = await self._compat_report_impl(uow, row["dataset_link_id"])
+                summary = DatasetLinkCompatSummary(
+                    dataset_link_id=row["dataset_link_id"],
+                    source_dataset=DatasetRef(
+                        id=row["source_dataset_id"],
+                        object_name=row["source_object_name"],
+                    ),
+                    target_dataset=DatasetRef(
+                        id=row["target_dataset_id"],
+                        object_name=row["target_object_name"],
+                    ),
+                    status=report.status,
+                    summary=report.summary,
+                    pin_drift={
+                        "source": row["source_has_drift"],
+                        "target": row["target_has_drift"],
+                    },
+                )
+                if status and summary.status.value not in status:
+                    continue
+                computed.append(summary)
+
+            # Pagination after filtering
+            total = len(computed)
+            start = (page - 1) * page_size
+            end = start + page_size
+            pages = (total + page_size - 1) // page_size if page_size > 0 else 0
+            return Page[DatasetLinkCompatSummary](
+                items=computed[start:end],
+                total=total,
+                page=page,
+                size=page_size,
+                pages=pages,
             )

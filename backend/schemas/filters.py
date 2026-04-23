@@ -123,6 +123,20 @@ class DatasetLinkFilter(BaseFilter):
 DATASET_LINK_SORTABLE = {"created_at", "updated_at"}
 
 
+# ── DatasetLinkCompat ────────────────────────────────────────────────────
+class DatasetLinkCompatFilter(BaseFilter):
+    """Filters for GET /dataset-links/compat bulk listing."""
+
+    status: str | None = None
+    status__in: str | None = None
+    has_drift: bool | None = None
+    dataset_id: uuid.UUID | None = None
+    system_id: uuid.UUID | None = None
+
+
+DATASET_LINK_COMPAT_SORTABLE = {"status", "updated_at"}
+
+
 # ── DatasetSchema ────────────────────────────────────────────────────────
 class DatasetSchemaFilter(BaseFilter):
     dataset_id: uuid.UUID | None = None
