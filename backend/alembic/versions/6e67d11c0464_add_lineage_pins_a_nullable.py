@@ -7,12 +7,12 @@ Revision ID: 6e67d11c0464
 Revises: ca701d072ed6
 Create Date: 2026-04-23
 """
+
 from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-
 
 revision = "6e67d11c0464"
 down_revision = "ca701d072ed6"
