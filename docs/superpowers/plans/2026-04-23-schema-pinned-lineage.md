@@ -346,7 +346,10 @@ class DatasetLinkCreate(DatasetLinkBase, NoteMixin):
 
 
 class DatasetLinkUpdate(VersionedUpdateMixin, NoteMixin):
-    """Dataset IDs are immutable — omitted here. Pydantic rejects them as extras."""
+    """DatasetLink update payload. Dataset IDs are immutable and absent here;
+    `extra='forbid'` rejects them with 422 if clients send them anyway."""
+
+    model_config = ConfigDict(extra="forbid")
 
     source_schema_id: uuid.UUID | None = None
     target_schema_id: uuid.UUID | None = None

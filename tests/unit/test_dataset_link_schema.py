@@ -3,7 +3,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from aide_schemas.dataset_link import DatasetLinkCreate
+from aide_schemas.dataset_link import DatasetLinkCreate, DatasetLinkUpdate
 
 
 def test_dataset_link_create_requires_schema_ids():
@@ -24,3 +24,15 @@ def test_dataset_link_create_accepts_schema_ids():
         target_schema_id=uuid.uuid4(),
     )
     assert link.source_schema_id != link.target_schema_id
+
+
+def test_dataset_link_update_rejects_dataset_ids():
+    with pytest.raises(ValidationError) as exc_info:
+        DatasetLinkUpdate(
+            row_version=1,
+            source_dataset_id=uuid.uuid4(),
+            target_dataset_id=uuid.uuid4(),
+        )
+    forbidden = {err["loc"][0] for err in exc_info.value.errors()}
+    assert "source_dataset_id" in forbidden
+    assert "target_dataset_id" in forbidden
