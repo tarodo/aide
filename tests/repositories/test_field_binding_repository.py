@@ -14,7 +14,7 @@ from backend.repositories.field_binding import FieldBindingRepository
 
 
 @pytest.mark.asyncio
-async def test_get_by_field_and_schema_returns_row(
+async def test_get_by_field_and_schema_returns_correct_row(
     transactional_session: AsyncSession,
 ):
     kind = SystemKind(code="FB_GBF_K", name="FB GBF Kind")
@@ -29,25 +29,36 @@ async def test_get_by_field_and_schema_returns_row(
     )
     dt = DataType(code="integer", system_flavor=flavor, params_schema={})
     ti = TypeInstance(data_type=dt, type_params={})
-    f = Field(dataset=ds, name="col", origin="mapped")
+    f1 = Field(dataset=ds, name="col1", origin="mapped")
+    f2 = Field(dataset=ds, name="col2", origin="mapped")
     schema = DatasetSchema(dataset=ds, version_num=1, schema={})
-    transactional_session.add_all([kind, flavor, system, ds, dt, ti, f, schema])
+    transactional_session.add_all([kind, flavor, system, ds, dt, ti, f1, f2, schema])
     await transactional_session.flush()
 
-    binding = FieldBinding(
-        field_id=f.id,
+    binding1 = FieldBinding(
+        field_id=f1.id,
         dataset_schema_id=schema.id,
         position=0,
         is_nullable=True,
         type_instance_id=ti.id,
     )
-    transactional_session.add(binding)
+    binding2 = FieldBinding(
+        field_id=f2.id,
+        dataset_schema_id=schema.id,
+        position=1,
+        is_nullable=True,
+        type_instance_id=ti.id,
+    )
+    transactional_session.add_all([binding1, binding2])
     await transactional_session.flush()
 
     repo = FieldBindingRepository(transactional_session)
-    found = await repo.get_by_field_and_schema(f.id, schema.id)
+    found = await repo.get_by_field_and_schema(f1.id, schema.id)
     assert found is not None
-    assert found.id == binding.id
+    assert found.id == binding1.id
+    other = await repo.get_by_field_and_schema(f2.id, schema.id)
+    assert other is not None
+    assert other.id == binding2.id
 
 
 @pytest.mark.asyncio

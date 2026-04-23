@@ -16,7 +16,7 @@ from backend.services.field_binding import FieldBindingService
 
 class _MockRepository:
     def __init__(self) -> None:
-        self.get_by_dataset_schema_and_field_id: AsyncMock = AsyncMock()
+        self.get_by_field_and_schema: AsyncMock = AsyncMock()
         self.get_by_dataset_schema_and_position: AsyncMock = AsyncMock()
         self.get: AsyncMock = AsyncMock()
         self.create: AsyncMock = AsyncMock()
@@ -118,7 +118,7 @@ class TestFieldBindingService:
         db_field_binding: FieldBinding,
     ):
         mock_repo = _MockRepository()
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = db_field_binding
+        mock_repo.get_by_field_and_schema.return_value = db_field_binding
 
         with patch.object(
             field_binding_service, "_get_repository", return_value=mock_repo
@@ -137,7 +137,7 @@ class TestFieldBindingService:
         db_field_binding: FieldBinding,
     ):
         mock_repo = _MockRepository()
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = None
+        mock_repo.get_by_field_and_schema.return_value = None
         mock_repo.get_by_dataset_schema_and_position.return_value = db_field_binding
 
         with patch.object(
@@ -169,7 +169,7 @@ class TestFieldBindingService:
         error_code: str,
     ):
         mock_repo = _MockRepository()
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = None
+        mock_repo.get_by_field_and_schema.return_value = None
         mock_repo.get_by_dataset_schema_and_position.return_value = None
 
         mock_uow.fields.get.return_value = (
@@ -200,7 +200,7 @@ class TestFieldBindingService:
         update_schema = FieldBindingUpdate(field_id=uuid.uuid4(), row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_field_binding
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = FieldBinding(
+        mock_repo.get_by_field_and_schema.return_value = FieldBinding(
             id=uuid.uuid4(), row_version=1
         )
 
@@ -222,7 +222,7 @@ class TestFieldBindingService:
         update_schema = FieldBindingUpdate(position=99, row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_field_binding
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = None
+        mock_repo.get_by_field_and_schema.return_value = None
         mock_repo.get_by_dataset_schema_and_position.return_value = FieldBinding(
             id=uuid.uuid4(), row_version=1
         )
@@ -245,7 +245,7 @@ class TestFieldBindingService:
         update_schema = FieldBindingUpdate(type_instance_id=uuid.uuid4(), row_version=1)
         mock_repo = _MockRepository()
         mock_repo.get.return_value = db_field_binding
-        mock_repo.get_by_dataset_schema_and_field_id.return_value = None
+        mock_repo.get_by_field_and_schema.return_value = None
         mock_repo.get_by_dataset_schema_and_position.return_value = None
         mock_uow.fields.get.return_value = Field(
             id=db_field_binding.field_id, row_version=1
