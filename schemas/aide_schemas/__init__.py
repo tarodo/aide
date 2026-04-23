@@ -4,7 +4,17 @@ from .crawl_run import CrawlRunCreate, CrawlRunRead, CrawlRunUpdate
 from .data_type import DataTypeCreate, DataTypeRead, DataTypeUpdate
 from .dataset import AnyDatasetCreate, AnyDatasetRead, AnyDatasetUpdate
 from .dataset_schema import DatasetSchemaCreate, DatasetSchemaRead, DatasetSchemaUpdate
-from .field import FieldCreate, FieldRead, FieldUpdate
+from .field import FieldCreate, FieldOrigin, FieldRead, FieldUpdate
+from .lineage_compat import (
+    CompatSeverity,
+    CompatSummary,
+    DatasetLinkCompatReport,
+    DatasetLinkCompatSummary,
+    FieldCompatIssue,
+    FieldCompatRow,
+    PinDrift,
+    PinDriftSide,
+)
 from .field_binding import FieldBindingCreate, FieldBindingRead, FieldBindingUpdate
 from .field_classification import FieldClassificationCreate, FieldClassificationRead
 from .system_flavor import SystemFlavorCreate, SystemFlavorRead, SystemFlavorUpdate
@@ -34,8 +44,17 @@ __all__ = [
     "DatasetSchemaRead",
     "DatasetSchemaUpdate",
     "FieldCreate",
+    "FieldOrigin",
     "FieldRead",
     "FieldUpdate",
+    "CompatSeverity",
+    "CompatSummary",
+    "DatasetLinkCompatReport",
+    "DatasetLinkCompatSummary",
+    "FieldCompatIssue",
+    "FieldCompatRow",
+    "PinDrift",
+    "PinDriftSide",
     "FieldBindingCreate",
     "FieldBindingRead",
     "FieldBindingUpdate",
