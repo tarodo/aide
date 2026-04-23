@@ -11,11 +11,11 @@ Revision ID: c577725f6a93
 Revises: 6e67d11c0464
 Create Date: 2026-04-23
 """
+
 from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
-
 
 revision = "c577725f6a93"
 down_revision = "6e67d11c0464"

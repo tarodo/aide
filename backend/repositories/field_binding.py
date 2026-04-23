@@ -30,3 +30,14 @@ class FieldBindingRepository(BaseRepository[FieldBinding]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def get_by_field_and_schema(
+        self, field_id: uuid.UUID, dataset_schema_id: uuid.UUID
+    ) -> FieldBinding | None:
+        """Return the FieldBinding for (field, schema), or None."""
+        stmt = select(FieldBinding).where(
+            FieldBinding.field_id == field_id,
+            FieldBinding.dataset_schema_id == dataset_schema_id,
+        )
+        result = await self._execute(stmt, method="get_by_field_and_schema")
+        return result.scalars().first()

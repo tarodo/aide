@@ -12,8 +12,11 @@ async def _make_dataset(session: AsyncSession, name: str) -> DatasetRdbms:
     flavor = SystemFlavor(code=f"F_{name}", name=f"F {name}", kind=kind)
     system = System(code=f"S_{name}", name=f"S {name}", flavor=flavor)
     ds = DatasetRdbms(
-        system=system, object_name=name, kind="rdbms",
-        schema_name="s", table_name=name,
+        system=system,
+        object_name=name,
+        kind="rdbms",
+        schema_name="s",
+        table_name=name,
     )
     session.add_all([kind, flavor, system, ds])
     await session.flush()
