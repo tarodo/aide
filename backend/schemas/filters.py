@@ -76,6 +76,8 @@ class FieldFilter(BaseFilter):
     parent_id: uuid.UUID | None = None
     name: str | None = None
     name__like: str | None = None
+    origin: str | None = None
+    origin__in: str | None = None
 
 
 FIELD_SORTABLE = {"name", "created_at", "updated_at"}

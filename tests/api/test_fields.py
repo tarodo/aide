@@ -3,6 +3,7 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
+from fastapi import status
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,12 +11,15 @@ from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
 from backend.models import (
+    DataType,
     Dataset,
     DatasetRdbms,
     Field,
+    FieldBinding,
     System,
     SystemFlavor,
     SystemKind,
+    TypeInstance,
     User,
 )
 
@@ -536,3 +540,151 @@ class TestFieldAPI:
             f"/api/v1/fields/{child_email.id}", headers=superuser_token_headers
         )
         assert response.status_code == 200
+
+    async def test_patch_origin_to_deprecated_blocked_when_field_link_exists(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+        transactional_session: AsyncSession,
+    ):
+        """PATCH /fields/{id} with origin transition blocked by active FieldLink."""
+        # Create a shared TypeInstance for bindings
+        data_type = DataType(
+            system_flavor_id=test_system.flavor_id,
+            code=f"T_FORIG_{uuid.uuid4().hex[:6].upper()}",
+            params_schema={},
+        )
+        transactional_session.add(data_type)
+        await transactional_session.flush()
+        ti = TypeInstance(
+            data_type_id=data_type.id,
+            type_params={},
+            parent_id=None,
+            slot=None,
+        )
+        transactional_session.add(ti)
+        await transactional_session.commit()
+        await transactional_session.refresh(ti)
+
+        # Seed src + tgt datasets (layer order: source -> raw)
+        src_resp = await async_client.post(
+            "/api/v1/datasets/",
+            json={
+                "system_id": str(test_system.id),
+                "object_name": "forig_src",
+                "kind": "rdbms",
+                "schema_name": "s",
+                "table_name": "forig_src",
+                "layer": "source",
+            },
+            headers=superuser_token_headers,
+        )
+        assert src_resp.status_code == status.HTTP_201_CREATED, src_resp.text
+        src_id = src_resp.json()["id"]
+
+        tgt_resp = await async_client.post(
+            "/api/v1/datasets/",
+            json={
+                "system_id": str(test_system.id),
+                "object_name": "forig_tgt",
+                "kind": "rdbms",
+                "schema_name": "s",
+                "table_name": "forig_tgt",
+                "layer": "raw",
+            },
+            headers=superuser_token_headers,
+        )
+        assert tgt_resp.status_code == status.HTTP_201_CREATED, tgt_resp.text
+        tgt_id = tgt_resp.json()["id"]
+
+        # Create fields (default origin=mapped)
+        sf_resp = await async_client.post(
+            "/api/v1/fields/",
+            json={"dataset_id": src_id, "name": "c", "origin": "mapped"},
+            headers=superuser_token_headers,
+        )
+        assert sf_resp.status_code == status.HTTP_201_CREATED, sf_resp.text
+        sf_id = sf_resp.json()["id"]
+
+        tf_resp = await async_client.post(
+            "/api/v1/fields/",
+            json={"dataset_id": tgt_id, "name": "c", "origin": "mapped"},
+            headers=superuser_token_headers,
+        )
+        assert tf_resp.status_code == status.HTTP_201_CREATED, tf_resp.text
+        tf_id = tf_resp.json()["id"]
+
+        # Create schemas for both datasets
+        src_schema_resp = await async_client.post(
+            "/api/v1/dataset-schemas/",
+            json={"dataset_id": src_id, "version_num": 1, "schema": {}},
+            headers=superuser_token_headers,
+        )
+        assert src_schema_resp.status_code == status.HTTP_201_CREATED
+        src_schema_id = src_schema_resp.json()["id"]
+
+        tgt_schema_resp = await async_client.post(
+            "/api/v1/dataset-schemas/",
+            json={"dataset_id": tgt_id, "version_num": 1, "schema": {}},
+            headers=superuser_token_headers,
+        )
+        assert tgt_schema_resp.status_code == status.HTTP_201_CREATED
+        tgt_schema_id = tgt_schema_resp.json()["id"]
+
+        # Seed bindings directly for both fields
+        transactional_session.add(
+            FieldBinding(
+                field_id=uuid.UUID(sf_id),
+                dataset_schema_id=uuid.UUID(src_schema_id),
+                position=1,
+                is_nullable=True,
+                type_instance_id=ti.id,
+            )
+        )
+        transactional_session.add(
+            FieldBinding(
+                field_id=uuid.UUID(tf_id),
+                dataset_schema_id=uuid.UUID(tgt_schema_id),
+                position=1,
+                is_nullable=True,
+                type_instance_id=ti.id,
+            )
+        )
+        await transactional_session.commit()
+
+        # Create the DatasetLink with pinned schemas
+        link_resp = await async_client.post(
+            "/api/v1/dataset-links/",
+            json={
+                "source_dataset_id": src_id,
+                "target_dataset_id": tgt_id,
+                "source_schema_id": src_schema_id,
+                "target_schema_id": tgt_schema_id,
+            },
+            headers=superuser_token_headers,
+        )
+        assert link_resp.status_code == status.HTTP_201_CREATED, link_resp.text
+        link_id = link_resp.json()["id"]
+
+        # Create FieldLink pointing src -> tgt
+        fl_resp = await async_client.post(
+            f"/api/v1/dataset-links/{link_id}/field-links/",
+            json={
+                "dataset_link_id": link_id,
+                "source_field_id": sf_id,
+                "target_field_id": tf_id,
+            },
+            headers=superuser_token_headers,
+        )
+        assert fl_resp.status_code == status.HTTP_201_CREATED, fl_resp.text
+
+        # Now attempt to flip target field origin from mapped -> deprecated.
+        # There is an active inbound FieldLink, so this must be blocked.
+        patch_resp = await async_client.put(
+            f"/api/v1/fields/{tf_id}",
+            json={"origin": "deprecated", "row_version": 1},
+            headers=superuser_token_headers,
+        )
+        assert patch_resp.status_code == status.HTTP_409_CONFLICT, patch_resp.text
+        assert patch_resp.json()["error_code"] == errors.FIELD_ORIGIN_CONFLICT

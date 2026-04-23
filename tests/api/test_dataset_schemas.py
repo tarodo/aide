@@ -212,3 +212,77 @@ class TestDatasetSchemaAPI:
             headers=superuser_token_headers,
         )
         assert response.status_code == 404
+
+    async def test_delete_schema_pinned_by_link_returns_409(
+        self,
+        async_client: AsyncClient,
+        superuser_token_headers: dict,
+        test_system: System,
+    ):
+        """DELETE /dataset-schemas/{id} must return 409 when schema is pinned."""
+        src_resp = await async_client.post(
+            "/api/v1/datasets/",
+            json={
+                "system_id": str(test_system.id),
+                "object_name": "ds_pin_src",
+                "kind": "rdbms",
+                "schema_name": "s",
+                "table_name": "ds_pin_src",
+                "layer": "source",
+            },
+            headers=superuser_token_headers,
+        )
+        assert src_resp.status_code == 201, src_resp.text
+        src_id = src_resp.json()["id"]
+
+        tgt_resp = await async_client.post(
+            "/api/v1/datasets/",
+            json={
+                "system_id": str(test_system.id),
+                "object_name": "ds_pin_tgt",
+                "kind": "rdbms",
+                "schema_name": "s",
+                "table_name": "ds_pin_tgt",
+                "layer": "raw",
+            },
+            headers=superuser_token_headers,
+        )
+        assert tgt_resp.status_code == 201, tgt_resp.text
+        tgt_id = tgt_resp.json()["id"]
+
+        src_schema_resp = await async_client.post(
+            "/api/v1/dataset-schemas/",
+            json={"dataset_id": src_id, "version_num": 1, "schema": {}},
+            headers=superuser_token_headers,
+        )
+        assert src_schema_resp.status_code == 201, src_schema_resp.text
+        src_schema_id = src_schema_resp.json()["id"]
+
+        tgt_schema_resp = await async_client.post(
+            "/api/v1/dataset-schemas/",
+            json={"dataset_id": tgt_id, "version_num": 1, "schema": {}},
+            headers=superuser_token_headers,
+        )
+        assert tgt_schema_resp.status_code == 201, tgt_schema_resp.text
+        tgt_schema_id = tgt_schema_resp.json()["id"]
+
+        # Create DatasetLink pinning these schemas
+        link_resp = await async_client.post(
+            "/api/v1/dataset-links/",
+            json={
+                "source_dataset_id": src_id,
+                "target_dataset_id": tgt_id,
+                "source_schema_id": src_schema_id,
+                "target_schema_id": tgt_schema_id,
+            },
+            headers=superuser_token_headers,
+        )
+        assert link_resp.status_code == 201, link_resp.text
+
+        # Try to delete pinned schema → 409
+        resp = await async_client.delete(
+            f"/api/v1/dataset-schemas/{src_schema_id}",
+            headers=superuser_token_headers,
+        )
+        assert resp.status_code == 409
+        assert resp.json()["error_code"] == errors.DATASET_SCHEMA_IN_USE
