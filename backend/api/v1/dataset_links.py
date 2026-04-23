@@ -12,8 +12,10 @@ from backend.core.errors import (
     DATASET_LINK_NOT_FOUND,
     DATASET_LINK_SELF_REFERENCE,
     DATASET_NOT_FOUND,
+    DATASET_SCHEMA_NOT_FOUND,
     ENTITY_NOT_DELETED,
     FORBIDDEN,
+    SCHEMA_DATASET_MISMATCH,
     UNAUTHORIZED,
     VERSION_CONFLICT,
     build_error_responses,
@@ -59,10 +61,12 @@ async def list_links(
     responses={
         **build_error_responses(
             DATASET_NOT_FOUND,
+            DATASET_SCHEMA_NOT_FOUND,
             DATASET_LINK_ALREADY_EXISTS,
             DATASET_LINK_SELF_REFERENCE,
             DATASET_LINK_LAYER_ORDER,
             DATASET_LINK_LAYER_MISSING,
+            SCHEMA_DATASET_MISMATCH,
             UNAUTHORIZED,
             FORBIDDEN,
         ),
@@ -98,7 +102,12 @@ async def get_link(
     dependencies=[Depends(get_current_superuser)],
     responses={
         **build_error_responses(
-            DATASET_LINK_NOT_FOUND, VERSION_CONFLICT, UNAUTHORIZED, FORBIDDEN
+            DATASET_LINK_NOT_FOUND,
+            DATASET_SCHEMA_NOT_FOUND,
+            SCHEMA_DATASET_MISMATCH,
+            VERSION_CONFLICT,
+            UNAUTHORIZED,
+            FORBIDDEN,
         ),
     },
 )
