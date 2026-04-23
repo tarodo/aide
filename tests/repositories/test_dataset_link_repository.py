@@ -232,3 +232,57 @@ async def test_list_with_compat_summary_reports_drift(
     assert row["target_latest_version"] == 1
     assert row["source_has_drift"] is True
     assert row["target_has_drift"] is False
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_isolates_versions_between_links(
+    transactional_session: AsyncSession,
+):
+    """Each link's latest-version values must reflect ONLY its own datasets,
+    not another link's. A regression in the MAX subquery's GROUP BY would
+    leak versions across unrelated dataset pairs."""
+    link_a, *_ = await _seed_linked_pair(
+        transactional_session, "iso_a", src_version=5, tgt_version=1
+    )
+    link_b, *_ = await _seed_linked_pair(
+        transactional_session, "iso_b", src_version=2, tgt_version=4
+    )
+
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    by_link = {r["dataset_link_id"]: r for r in rows}
+
+    assert link_a.id in by_link
+    assert link_b.id in by_link
+
+    a = by_link[link_a.id]
+    b = by_link[link_b.id]
+
+    # link_a has src_version=5, tgt_version=1
+    assert a["source_latest_version"] == 5
+    assert a["target_latest_version"] == 1
+
+    # link_b has src_version=2, tgt_version=4
+    assert b["source_latest_version"] == 2
+    assert b["target_latest_version"] == 4
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_excludes_soft_deleted(
+    transactional_session: AsyncSession,
+):
+    """Soft-deleted DatasetLinks must not appear in the result."""
+    from datetime import datetime, timezone
+
+    link, *_ = await _seed_linked_pair(
+        transactional_session, "soft_del", src_version=1, tgt_version=1
+    )
+    # Mark soft-deleted. Use naive datetime per CLAUDE.md quirk:
+    # SoftDeleteMetaDataMixin.deleted_at is TIMESTAMP WITHOUT TIME ZONE
+    link.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    await transactional_session.flush()
+
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    link_ids = {r["dataset_link_id"] for r in rows}
+    assert link.id not in link_ids
