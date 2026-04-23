@@ -1,4 +1,5 @@
 """End-to-end scenarios covering the lineage data-contract flow."""
+
 from __future__ import annotations
 
 from typing import AsyncGenerator
@@ -48,9 +49,7 @@ async def headers(async_client: AsyncClient, superuser: User) -> dict[str, str]:
 async def system(transactional_session: AsyncSession) -> System:
     kind = SystemKind(code="INT_LIN_K", name="Integ Lineage Kind")
     flavor = SystemFlavor(code="INT_LIN_F", name="Integ Lineage Flavor", kind=kind)
-    system = System(
-        code="INT_LIN_S", name="Integ Lineage System", flavor=flavor
-    )
+    system = System(code="INT_LIN_S", name="Integ Lineage System", flavor=flavor)
     transactional_session.add_all([kind, flavor, system])
     await transactional_session.commit()
     await transactional_session.refresh(system)
@@ -96,8 +95,10 @@ async def test_drift_detection_and_repin_e2e(
     r = await async_client.post(
         "/api/v1/dataset-links/",
         json={
-            "source_dataset_id": src_id, "target_dataset_id": tgt_id,
-            "source_schema_id": s1, "target_schema_id": t1,
+            "source_dataset_id": src_id,
+            "target_dataset_id": tgt_id,
+            "source_schema_id": s1,
+            "target_schema_id": t1,
         },
         headers=headers,
     )
