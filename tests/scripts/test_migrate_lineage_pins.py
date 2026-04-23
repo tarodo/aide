@@ -19,16 +19,14 @@ async def test_backfill_pins_is_noop_when_all_links_already_pinned(
 
 
 @pytest.mark.asyncio
-async def test_backfill_field_origin_runs_cleanly_when_nothing_to_backfill(
+async def test_backfill_field_origin_post_migration_b_noop(
     transactional_session: AsyncSession,
 ):
-    """At this stage the test DB has Migration A applied (is_tech still
-    present) but no rows with is_tech=True. The UPDATE runs with 0 rows
-    affected and the function returns True. The post-Migration-B rollback
-    branch is not exercised here — that requires running with is_tech
-    physically dropped, which only happens after Task 8."""
+    """After Migration B, fields.is_tech is dropped. The function catches
+    the ProgrammingError and returns False. This test validates the
+    graceful skip path (see fix for I1/I2 in the review)."""
     result = await backfill_field_origin(transactional_session)
-    assert result is True
+    assert result is False
 
 
 @pytest.mark.asyncio
