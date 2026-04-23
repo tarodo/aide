@@ -19,14 +19,16 @@ async def test_backfill_pins_is_noop_when_all_links_already_pinned(
 
 
 @pytest.mark.asyncio
-async def test_backfill_field_origin_noop_when_nothing_to_backfill(
+async def test_backfill_field_origin_runs_cleanly_when_nothing_to_backfill(
     transactional_session: AsyncSession,
 ):
-    """Running backfill against a DB with no is_tech=True rows is a no-op.
-    Once Migration B lands, is_tech is dropped and this test would fail with
-    a DB error — at that point the function's try/except swallows it."""
-    # No seeded data with is_tech=True → backfill no-ops.
-    await backfill_field_origin(transactional_session)
+    """At this stage the test DB has Migration A applied (is_tech still
+    present) but no rows with is_tech=True. The UPDATE runs with 0 rows
+    affected and the function returns True. The post-Migration-B rollback
+    branch is not exercised here — that requires running with is_tech
+    physically dropped, which only happens after Task 8."""
+    result = await backfill_field_origin(transactional_session)
+    assert result is True
 
 
 @pytest.mark.asyncio

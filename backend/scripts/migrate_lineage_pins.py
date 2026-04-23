@@ -63,16 +63,24 @@ async def backfill_dataset_link_pins(session: AsyncSession) -> list[tuple]:
     return unresolved
 
 
-async def backfill_field_origin(session: AsyncSession) -> None:
+async def backfill_field_origin(session: AsyncSession) -> bool:
     """Populate fields.origin from legacy is_tech column.
 
     Only runs meaningfully between Migration A (origin nullable) and
-    Migration B (is_tech dropped). Post-Migration-B the is_tech column
-    has been dropped from the fields table — the UPDATE will fail with
-    a DatabaseError which we swallow.
+    Migration B (is_tech dropped). Uses raw SQL because Field.is_tech
+    is no longer an ORM attribute (Task 4 dropped it from the model).
+
+    Post-Migration-B the is_tech column has been dropped from the fields
+    table — PostgreSQL raises ProgrammingError (UndefinedColumn), which
+    we treat as "nothing to backfill" and roll back silently.
+
+    Returns True if the UPDATE ran, False if we detected the post-B state
+    and skipped.
 
     Idempotent: only updates rows where is_tech=True and origin='mapped'.
     """
+    from sqlalchemy.exc import ProgrammingError
+
     try:
         await session.execute(
             text(
@@ -80,14 +88,30 @@ async def backfill_field_origin(session: AsyncSession) -> None:
                 "WHERE is_tech = TRUE AND origin = 'mapped'"
             )
         )
-    except Exception:
-        # Post-Migration-B: is_tech column no longer exists. Nothing to backfill.
+        return True
+    except ProgrammingError as exc:
+        # Post-Migration-B state: is_tech column dropped. Anything else
+        # should propagate.
+        err_text = str(getattr(exc, "orig", exc))
+        if "is_tech" not in err_text.lower():
+            raise
         await session.rollback()
+        print(
+            "fields.is_tech column not found — origin backfill skipped "
+            "(post-Migration-B state).",
+            flush=True,
+        )
+        return False
 
 
 async def main() -> int:
     async with AsyncSessionLocal() as session:
         unresolved = await backfill_dataset_link_pins(session)
+        # Persist link writes BEFORE attempting the field backfill.
+        # If the field step rolls back (post-Migration-B) it must not
+        # discard the link writes performed above.
+        await session.commit()
+
         await backfill_field_origin(session)
         await session.commit()
 
