@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models import System, SystemFlavor, SystemKind
 from backend.models.dataset import DatasetRdbms
 from backend.models.dataset_link import DatasetLink
+from backend.models.dataset_schema import DatasetSchema
 
 
 async def _make_system(session: AsyncSession, *, code_suffix: str) -> System:
@@ -42,7 +43,17 @@ async def test_dataset_link_create(transactional_session: AsyncSession):
     transactional_session.add_all([src, tgt])
     await transactional_session.flush()
 
-    link = DatasetLink(source_dataset_id=src.id, target_dataset_id=tgt.id)
+    src_schema = DatasetSchema(dataset_id=src.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=tgt.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     transactional_session.add(link)
     await transactional_session.flush()
     await transactional_session.refresh(link)
@@ -67,7 +78,16 @@ async def test_dataset_link_self_reference_rejected(
     transactional_session.add(ds)
     await transactional_session.flush()
 
-    link = DatasetLink(source_dataset_id=ds.id, target_dataset_id=ds.id)
+    schema = DatasetSchema(dataset_id=ds.id, version_num=1, schema={})
+    transactional_session.add(schema)
+    await transactional_session.flush()
+
+    link = DatasetLink(
+        source_dataset_id=ds.id,
+        target_dataset_id=ds.id,
+        source_schema_id=schema.id,
+        target_schema_id=schema.id,
+    )
     transactional_session.add(link)
     with pytest.raises(IntegrityError):
         await transactional_session.flush()
@@ -94,12 +114,28 @@ async def test_dataset_link_pair_unique_active(
     )
     transactional_session.add_all([a, b])
     await transactional_session.flush()
+
+    src_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=b.id,
+            source_schema_id=src_schema.id,
+            target_schema_id=tgt_schema.id,
+        )
     )
     await transactional_session.flush()
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=b.id,
+            source_schema_id=src_schema.id,
+            target_schema_id=tgt_schema.id,
+        )
     )
     with pytest.raises(IntegrityError):
         await transactional_session.flush()
@@ -128,7 +164,17 @@ async def test_dataset_link_pair_unique_ignores_soft_deleted(
     transactional_session.add_all([a, b])
     await transactional_session.flush()
 
-    first = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    src_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
+    first = DatasetLink(
+        source_dataset_id=a.id,
+        target_dataset_id=b.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     transactional_session.add(first)
     await transactional_session.flush()
 
@@ -136,7 +182,56 @@ async def test_dataset_link_pair_unique_ignores_soft_deleted(
     transactional_session.add(first)
     await transactional_session.flush()
 
-    second = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    second = DatasetLink(
+        source_dataset_id=a.id,
+        target_dataset_id=b.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     transactional_session.add(second)
     await transactional_session.flush()
     assert second.id != first.id
+
+
+@pytest.mark.asyncio
+async def test_dataset_schema_delete_blocked_by_active_pin(
+    transactional_session: AsyncSession,
+):
+    """RESTRICT FK blocks DatasetSchema delete when referenced by DatasetLink."""
+    from backend.models.dataset_schema import DatasetSchema
+
+    system = await _make_system(transactional_session, code_suffix="RESTRICT")
+    src = DatasetRdbms(
+        system_id=system.id,
+        object_name="restrict_src",
+        kind="rdbms",
+        schema_name="s",
+        table_name="src",
+    )
+    tgt = DatasetRdbms(
+        system_id=system.id,
+        object_name="restrict_tgt",
+        kind="rdbms",
+        schema_name="s",
+        table_name="tgt",
+    )
+    transactional_session.add_all([src, tgt])
+    await transactional_session.flush()
+
+    src_schema = DatasetSchema(dataset_id=src.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=tgt.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
+    transactional_session.add(link)
+    await transactional_session.flush()
+
+    await transactional_session.delete(src_schema)
+    with pytest.raises(IntegrityError):
+        await transactional_session.flush()
