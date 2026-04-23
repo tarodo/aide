@@ -41,10 +41,20 @@ async def test_has_active_links_for_dataset(transactional_session: AsyncSession)
     transactional_session.add_all([src, tgt])
     await transactional_session.flush()
 
+    src_schema = DatasetSchema(dataset_id=src.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=tgt.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
     repo = DatasetLinkRepository(transactional_session)
     assert await repo.has_active_links_for_dataset(src.id) is False
 
-    link = DatasetLink(source_dataset_id=src.id, target_dataset_id=tgt.id)
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     transactional_session.add(link)
     await transactional_session.flush()
 
@@ -72,10 +82,20 @@ async def test_get_active_between(transactional_session: AsyncSession):
     transactional_session.add_all([a, b])
     await transactional_session.flush()
 
+    a_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    b_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    transactional_session.add_all([a_schema, b_schema])
+    await transactional_session.flush()
+
     repo = DatasetLinkRepository(transactional_session)
     assert await repo.get_active_between(a.id, b.id) is None
 
-    link = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    link = DatasetLink(
+        source_dataset_id=a.id,
+        target_dataset_id=b.id,
+        source_schema_id=a_schema.id,
+        target_schema_id=b_schema.id,
+    )
     transactional_session.add(link)
     await transactional_session.flush()
 
@@ -109,14 +129,36 @@ async def test_list_by_source_and_target(transactional_session: AsyncSession):
     )
     transactional_session.add_all([a, b, c])
     await transactional_session.flush()
+
+    a_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    b_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    c_schema = DatasetSchema(dataset_id=c.id, version_num=1, schema={})
+    transactional_session.add_all([a_schema, b_schema, c_schema])
+    await transactional_session.flush()
+
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=b.id,
+            source_schema_id=a_schema.id,
+            target_schema_id=b_schema.id,
+        )
     )
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=c.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=c.id,
+            source_schema_id=a_schema.id,
+            target_schema_id=c_schema.id,
+        )
     )
     transactional_session.add(
-        DatasetLink(source_dataset_id=b.id, target_dataset_id=c.id)
+        DatasetLink(
+            source_dataset_id=b.id,
+            target_dataset_id=c.id,
+            source_schema_id=b_schema.id,
+            target_schema_id=c_schema.id,
+        )
     )
     await transactional_session.flush()
 
