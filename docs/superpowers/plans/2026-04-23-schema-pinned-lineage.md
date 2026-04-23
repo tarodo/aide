@@ -329,7 +329,7 @@ Overwrite:
 ```python
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from aide_schemas.mixins import MetaDataMixin, NoteMixin, VersionedUpdateMixin
 
@@ -347,12 +347,30 @@ class DatasetLinkCreate(DatasetLinkBase, NoteMixin):
 
 class DatasetLinkUpdate(VersionedUpdateMixin, NoteMixin):
     """DatasetLink update payload. Dataset IDs are immutable and absent here;
-    `extra='forbid'` rejects them with 422 if clients send them anyway."""
+    `extra='forbid'` rejects them with 422 if clients send them anyway.
+
+    Schema pin fields are Optional (None = unset/no change) but cannot be
+    explicitly null — the DB column is NOT NULL and unpinning isn't a valid
+    operation in the contract.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     source_schema_id: uuid.UUID | None = None
     target_schema_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def reject_explicit_null_pins(self) -> "DatasetLinkUpdate":
+        for field_name in ("source_schema_id", "target_schema_id"):
+            if (
+                field_name in self.model_fields_set
+                and getattr(self, field_name) is None
+            ):
+                raise ValueError(
+                    f"{field_name} cannot be explicitly null; "
+                    "omit the key to leave the pin unchanged"
+                )
+        return self
 
 
 class DatasetLinkRead(DatasetLinkBase, MetaDataMixin):
