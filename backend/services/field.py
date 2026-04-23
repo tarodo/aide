@@ -102,10 +102,18 @@ class FieldService(GenericService[Field, FieldCreate, FieldUpdate, FieldRead]):
             await self._validate_parent(uow, new_parent_id, new_dataset_id)
             await self._check_circular_reference(uow, db_obj.id, new_parent_id)
 
-        new_is_tech = update_data.get("is_tech", db_obj.is_tech)
-        if new_is_tech is False and db_obj.is_tech is True:
-            if await uow.field_links.count_by_target_field(db_obj.id) == 0:
-                raise AppException(errors.FIELD_NON_TECH_REQUIRES_SOURCE)
+        new_origin = update_data.get("origin", db_obj.origin)
+        if new_origin != db_obj.origin:
+            # Transition OUT of MAPPED — target cannot have active FieldLink rows.
+            if db_obj.origin == "mapped" and new_origin in ("tech", "deprecated"):
+                blockers = await uow.field_links.count_by_target_field(db_obj.id)
+                if blockers > 0:
+                    raise AppException(errors.FIELD_ORIGIN_CONFLICT)
+            # Transition INTO MAPPED — require an inbound FieldLink already exists.
+            if new_origin == "mapped" and db_obj.origin in ("tech", "deprecated"):
+                inbound = await uow.field_links.count_by_target_field(db_obj.id)
+                if inbound == 0:
+                    raise AppException(errors.FIELD_ORIGIN_CONFLICT)
 
         if (
             new_dataset_id != current_dataset_id
