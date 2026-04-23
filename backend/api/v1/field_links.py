@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, status
 from backend.api.dependencies import get_current_superuser, get_current_user
 from backend.core.errors import (
     DATASET_LINK_NOT_FOUND,
+    FIELD_BINDING_MISSING,
     FIELD_LINK_ALREADY_EXISTS,
     FIELD_LINK_NOT_FOUND,
     FIELD_LINK_SOURCE_DATASET_MISMATCH,
     FIELD_LINK_TARGET_DATASET_MISMATCH,
     FIELD_LINK_TARGET_OCCUPIED,
-    FIELD_NON_TECH_REQUIRES_SOURCE,
     FIELD_NOT_FOUND,
+    FIELD_ORIGIN_CONFLICT,
     FORBIDDEN,
     UNAUTHORIZED,
     VERSION_CONFLICT,
@@ -57,6 +58,8 @@ async def list_by_dataset_link(
             FIELD_LINK_SOURCE_DATASET_MISMATCH,
             FIELD_LINK_TARGET_DATASET_MISMATCH,
             FIELD_LINK_TARGET_OCCUPIED,
+            FIELD_ORIGIN_CONFLICT,
+            FIELD_BINDING_MISSING,
             UNAUTHORIZED,
             FORBIDDEN,
         ),
@@ -86,6 +89,8 @@ async def create_field_link(
             FIELD_LINK_SOURCE_DATASET_MISMATCH,
             FIELD_LINK_TARGET_DATASET_MISMATCH,
             FIELD_LINK_TARGET_OCCUPIED,
+            FIELD_ORIGIN_CONFLICT,
+            FIELD_BINDING_MISSING,
             UNAUTHORIZED,
             FORBIDDEN,
         ),
@@ -131,7 +136,6 @@ async def update_field_link(
     responses={
         **build_error_responses(
             FIELD_LINK_NOT_FOUND,
-            FIELD_NON_TECH_REQUIRES_SOURCE,
             UNAUTHORIZED,
             FORBIDDEN,
         ),

@@ -45,6 +45,25 @@ class FieldLinkService(
         if target_field.dataset_id != link.target_dataset_id:
             raise AppException(errors.FIELD_LINK_TARGET_DATASET_MISMATCH)
 
+        # Target origin must be MAPPED — TECH/DEPRECATED targets don't accept
+        # inbound FieldLinks (origin state machine lives on Field).
+        if target_field.origin != "mapped":
+            raise AppException(errors.FIELD_ORIGIN_CONFLICT)
+
+        # Source and target must have FieldBindings in the parent link's
+        # pinned schemas (schema-pinned lineage invariant).
+        src_binding = await uow.field_bindings.get_by_field_and_schema(
+            obj_in.source_field_id, link.source_schema_id
+        )
+        if src_binding is None:
+            raise AppException(errors.FIELD_BINDING_MISSING)
+
+        tgt_binding = await uow.field_bindings.get_by_field_and_schema(
+            obj_in.target_field_id, link.target_schema_id
+        )
+        if tgt_binding is None:
+            raise AppException(errors.FIELD_BINDING_MISSING)
+
         repo = cast(FieldLinkRepository, self._get_repository(uow.session))
         if await repo.get_by_target_in_link(link.id, target_field.id):
             raise AppException(errors.FIELD_LINK_TARGET_OCCUPIED)
@@ -60,14 +79,6 @@ class FieldLinkService(
             db_obj = await repo.get(obj_id)
             if db_obj is None:
                 raise AppException(errors.FIELD_LINK_NOT_FOUND)
-
-            target_field = await uow.fields.get(db_obj.target_field_id)
-            if (
-                target_field is not None
-                and not target_field.is_tech
-                and await repo.count_by_target_field(db_obj.target_field_id) == 1
-            ):
-                raise AppException(errors.FIELD_NON_TECH_REQUIRES_SOURCE)
 
             deleted = await repo.delete(db_obj=db_obj)
             return self.read_schema.model_validate(deleted)
