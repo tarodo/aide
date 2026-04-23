@@ -1,9 +1,12 @@
 import uuid
 from typing import cast
 
+from sqlalchemy import or_, select
+
 from backend.core import errors
 from backend.core.exceptions import AppException
 from backend.db.uow import UnitOfWork
+from backend.models.dataset_link import DatasetLink
 from backend.models.dataset_schema import DatasetSchema
 from backend.repositories.base import BaseRepository
 from backend.repositories.dataset_schema import DatasetSchemaRepository
@@ -108,3 +111,49 @@ class DatasetSchemaService(
             update_data["schema"] = update_data.pop("schema_")
 
         return await super().update(uow, obj_id, obj_in, updater_id)
+
+    async def _pre_delete(
+        self,
+        uow: UnitOfWork,
+        db_obj: DatasetSchema,
+        deleter_id: uuid.UUID | None,
+    ) -> None:
+        """Block deletion when the schema is pinned by an active DatasetLink.
+
+        The DB FK uses ON DELETE RESTRICT, which would raise an IntegrityError
+        at commit time. Catching this at the service layer yields a clean
+        AppException(DATASET_SCHEMA_IN_USE) → HTTP 409.
+        """
+        stmt = (
+            select(DatasetLink.id)
+            .where(
+                or_(
+                    DatasetLink.source_schema_id == db_obj.id,
+                    DatasetLink.target_schema_id == db_obj.id,
+                ),
+                DatasetLink.deleted_at.is_(None),
+            )
+            .limit(5)
+        )
+        result = await uow.session.execute(stmt)
+        blocking = [row[0] for row in result.all()]
+        if blocking:
+            raise AppException(errors.DATASET_SCHEMA_IN_USE)
+
+    async def delete(
+        self,
+        uow: UnitOfWork,
+        obj_id: uuid.UUID,
+        deleter_id: uuid.UUID | None = None,
+    ) -> DatasetSchemaRead:
+        """Hard-delete a dataset schema after checking for active DatasetLink pins."""
+        async with uow:
+            repo: BaseRepository[DatasetSchema] = self._get_repository(uow.session)
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+
+            await self._pre_delete(uow, db_obj, deleter_id)
+
+            deleted_obj = await repo.delete(db_obj=db_obj)
+            return self.read_schema.model_validate(deleted_obj)
