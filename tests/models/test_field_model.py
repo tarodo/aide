@@ -35,3 +35,10 @@ async def test_field_origin_accepts_all_states(transactional_session: AsyncSessi
         f = Field(dataset_id=ds.id, name=f"col_{origin}", origin=origin)
         transactional_session.add(f)
     await transactional_session.flush()
+
+    from sqlalchemy import select
+
+    stmt = select(Field.origin).where(Field.dataset_id == ds.id).order_by(Field.name)
+    result = await transactional_session.execute(stmt)
+    origins = sorted(result.scalars().all())
+    assert origins == ["deprecated", "mapped", "tech"]
