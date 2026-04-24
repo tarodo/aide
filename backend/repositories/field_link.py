@@ -47,13 +47,13 @@ class FieldLinkRepository(BaseRepository[FieldLink]):
     async def unmapped_non_tech_fields(
         self, target_dataset_id: uuid.UUID
     ) -> Sequence[Field]:
-        """Fields in the given dataset with is_tech=False and no inbound FieldLink."""
+        """Fields in the given dataset with origin='mapped' and no inbound FieldLink."""
         has_link = (
             select(self.model.id).where(self.model.target_field_id == Field.id).exists()
         )
         stmt = select(Field).where(
             Field.dataset_id == target_dataset_id,
-            Field.is_tech.is_(False),
+            Field.origin == "mapped",
             ~has_link,
         )
         result = await self._execute(stmt, method="unmapped_non_tech_fields")

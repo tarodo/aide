@@ -52,8 +52,8 @@ class FieldBindingService(
         creator_id: uuid.UUID | None,
     ) -> None:
         repo = cast(FieldBindingRepository, self._get_repository(uow.session))
-        if await repo.get_by_dataset_schema_and_field_id(
-            obj_in.dataset_schema_id, obj_in.field_id
+        if await repo.get_by_field_and_schema(
+            obj_in.field_id, obj_in.dataset_schema_id
         ):
             raise AppException(errors.FIELD_BINDING_FIELD_ID_ALREADY_EXISTS)
         if await repo.get_by_dataset_schema_and_position(
@@ -81,9 +81,7 @@ class FieldBindingService(
         new_position = update_data.get("position", db_obj.position)
 
         if new_schema_id != db_obj.dataset_schema_id or new_field_id != db_obj.field_id:
-            existing = await repo.get_by_dataset_schema_and_field_id(
-                new_schema_id, new_field_id
-            )
+            existing = await repo.get_by_field_and_schema(new_field_id, new_schema_id)
             if existing and existing.id != db_obj.id:
                 raise AppException(errors.FIELD_BINDING_FIELD_ID_ALREADY_EXISTS)
 

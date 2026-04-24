@@ -4,6 +4,7 @@ from backend.api.v1.utils.crud_router import create_crud_router
 from backend.core.errors import (
     DATASET_NOT_FOUND,
     DATASET_SCHEMA_ALREADY_EXISTS,
+    DATASET_SCHEMA_IN_USE,
     DATASET_SCHEMA_NOT_FOUND,
     VERSION_CONFLICT,
 )
@@ -31,7 +32,7 @@ crud_router = create_crud_router(
         VERSION_CONFLICT,
     ],
     get_one_error_codes=[DATASET_SCHEMA_NOT_FOUND],
-    delete_error_codes=[DATASET_SCHEMA_NOT_FOUND],
+    delete_error_codes=[DATASET_SCHEMA_NOT_FOUND, DATASET_SCHEMA_IN_USE],
     filter_model=DatasetSchemaFilter,
     sortable_fields=DATASET_SCHEMA_SORTABLE,
 )

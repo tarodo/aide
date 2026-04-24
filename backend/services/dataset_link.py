@@ -61,3 +61,39 @@ class DatasetLinkService(
         )
         if existing is not None:
             raise AppException(errors.DATASET_LINK_ALREADY_EXISTS)
+
+        # Validate each pinned schema belongs to the corresponding dataset.
+        src_schema = await uow.dataset_schemas.get(obj_in.source_schema_id)
+        if src_schema is None:
+            raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
+        if src_schema.dataset_id != obj_in.source_dataset_id:
+            raise AppException(errors.SCHEMA_DATASET_MISMATCH)
+
+        tgt_schema = await uow.dataset_schemas.get(obj_in.target_schema_id)
+        if tgt_schema is None:
+            raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
+        if tgt_schema.dataset_id != obj_in.target_dataset_id:
+            raise AppException(errors.SCHEMA_DATASET_MISMATCH)
+
+    async def _pre_update(
+        self,
+        uow: UnitOfWork,
+        db_obj: DatasetLink,
+        obj_in: DatasetLinkUpdate,
+        updater_id: uuid.UUID | None,
+    ) -> None:
+        update_data = obj_in.model_dump(exclude_unset=True)
+        new_src_schema_id = update_data.get("source_schema_id")
+        if new_src_schema_id is not None:
+            schema = await uow.dataset_schemas.get(new_src_schema_id)
+            if schema is None:
+                raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
+            if schema.dataset_id != db_obj.source_dataset_id:
+                raise AppException(errors.SCHEMA_DATASET_MISMATCH)
+        new_tgt_schema_id = update_data.get("target_schema_id")
+        if new_tgt_schema_id is not None:
+            schema = await uow.dataset_schemas.get(new_tgt_schema_id)
+            if schema is None:
+                raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
+            if schema.dataset_id != db_obj.target_dataset_id:
+                raise AppException(errors.SCHEMA_DATASET_MISMATCH)

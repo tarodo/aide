@@ -71,7 +71,7 @@ dev = [
 
 [[package]]
 name = "aide-schemas"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "schemas" }
 dependencies = [
     { name = "pydantic", extra = ["email"] },

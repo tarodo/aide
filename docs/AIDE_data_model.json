@@ -2233,18 +2233,18 @@
           "createdAt": 1712534400000
         },
         {
-          "id": "f_fld_is_tech",
-          "name": "is_tech",
+          "id": "f_fld_origin",
+          "name": "origin",
           "type": {
-            "id": "boolean",
-            "name": "boolean"
+            "id": "varchar",
+            "name": "varchar(20)"
           },
           "primaryKey": false,
           "unique": false,
           "nullable": false,
-          "default": "false",
+          "default": "mapped",
           "createdAt": 1712534400000,
-          "comments": "Technical field added by pipeline (vs mapped from a source column)"
+          "comments": "FieldOrigin lifecycle: mapped | tech | deprecated"
         },
         {
           "id": "f_fld_created_at",
@@ -3256,6 +3256,32 @@
           "nullable": false,
           "createdAt": 1712534400000,
           "comments": "FK to datasets.id (downstream)"
+        },
+        {
+          "id": "f_dl_source_schema_id",
+          "name": "source_schema_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to dataset_schemas.id ON DELETE RESTRICT (pinned source version)"
+        },
+        {
+          "id": "f_dl_target_schema_id",
+          "name": "target_schema_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to dataset_schemas.id ON DELETE RESTRICT (pinned target version)"
         },
         {
           "id": "f_dl_note",
@@ -4290,6 +4316,34 @@
       "targetTableId": "t_field_links",
       "sourceFieldId": "f_fld_id",
       "targetFieldId": "f_fl_target_field_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_dsc_dl_source",
+      "name": "dataset_schema_to_dataset_link_source_pin",
+      "sourceSchema": "public",
+      "sourceTableId": "t_dataset_schemas",
+      "targetSchema": "public",
+      "targetTableId": "t_dataset_links",
+      "sourceFieldId": "f_dsc_id",
+      "targetFieldId": "f_dl_source_schema_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_dsc_dl_target",
+      "name": "dataset_schema_to_dataset_link_target_pin",
+      "sourceSchema": "public",
+      "sourceTableId": "t_dataset_schemas",
+      "targetSchema": "public",
+      "targetTableId": "t_dataset_links",
+      "sourceFieldId": "f_dsc_id",
+      "targetFieldId": "f_dl_target_schema_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

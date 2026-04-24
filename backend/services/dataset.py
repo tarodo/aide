@@ -248,7 +248,7 @@ class DatasetService(
 
         Idempotent: existing field names on the dataset are skipped.
 
-        Each new Field is created with ``is_tech=True`` and ``extra`` holding the
+        Each new Field is created with ``origin="tech"`` and ``extra`` holding the
         resolved concrete data type as a pair of hints for downstream
         ``FieldBinding`` creation (Phase 3 work): ``extra["data_type_id"]`` is the
         stringified UUID of the resolved ``DataType`` row for the dataset's
@@ -257,7 +257,7 @@ class DatasetService(
 
         Validations bypass ``FieldService._pre_create`` on purpose: apply is a
         coarse-grained bulk operation, uniqueness is already enforced by the
-        ``is_tech`` skip + the root-name unique index, and per-field dataset
+        origin=="tech" skip + the root-name unique index, and per-field dataset
         existence checks are redundant here.
         """
         # Local import avoids a circular dependency: ``backend.models.field``
@@ -314,7 +314,7 @@ class DatasetService(
                 field = Field(
                     dataset_id=dataset_id,
                     name=tf.name,
-                    is_tech=True,
+                    origin="tech",
                     extra={
                         "data_type_id": str(data_type.id),
                         "tech_type_code": type_code,

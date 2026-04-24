@@ -23,9 +23,23 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
         nullable=False,
         index=True,
     )
+    source_schema_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dataset_schemas.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    target_schema_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("dataset_schemas.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
 
     source_dataset = relationship("Dataset", foreign_keys=[source_dataset_id])
     target_dataset = relationship("Dataset", foreign_keys=[target_dataset_id])
+    source_schema = relationship("DatasetSchema", foreign_keys=[source_schema_id])
+    target_schema = relationship("DatasetSchema", foreign_keys=[target_schema_id])
     field_links = relationship(
         "FieldLink",
         back_populates="dataset_link",
@@ -49,5 +63,6 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
     def __repr__(self) -> str:
         return (
             f"DatasetLink(id={self.id}, "
-            f"source={self.source_dataset_id}, target={self.target_dataset_id})"
+            f"source={self.source_dataset_id}, target={self.target_dataset_id}, "
+            f"src_schema={self.source_schema_id}, tgt_schema={self.target_schema_id})"
         )

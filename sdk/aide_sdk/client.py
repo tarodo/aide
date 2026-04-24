@@ -108,6 +108,7 @@ class AideClient:
         from aide_sdk.resources.field_classifications import (
             FieldClassificationsResource,
         )
+        from aide_sdk.resources.dataset_links import DatasetLinksResource
 
         self.systems = SystemsResource(self._http)
         self.datasets = DatasetsResource(self._http)
@@ -119,3 +120,4 @@ class AideClient:
         self.type_instances = TypeInstancesResource(self._http)
         self.crawl_runs = CrawlRunsResource(self._http)
         self.field_classifications = FieldClassificationsResource(self._http)
+        self.dataset_links = DatasetLinksResource(self._http)

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models import System, SystemFlavor, SystemKind
 from backend.models.dataset import DatasetRdbms
 from backend.models.dataset_link import DatasetLink
+from backend.models.dataset_schema import DatasetSchema
 from backend.repositories.dataset_link import DatasetLinkRepository
 
 
@@ -40,10 +41,20 @@ async def test_has_active_links_for_dataset(transactional_session: AsyncSession)
     transactional_session.add_all([src, tgt])
     await transactional_session.flush()
 
+    src_schema = DatasetSchema(dataset_id=src.id, version_num=1, schema={})
+    tgt_schema = DatasetSchema(dataset_id=tgt.id, version_num=1, schema={})
+    transactional_session.add_all([src_schema, tgt_schema])
+    await transactional_session.flush()
+
     repo = DatasetLinkRepository(transactional_session)
     assert await repo.has_active_links_for_dataset(src.id) is False
 
-    link = DatasetLink(source_dataset_id=src.id, target_dataset_id=tgt.id)
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schema.id,
+        target_schema_id=tgt_schema.id,
+    )
     transactional_session.add(link)
     await transactional_session.flush()
 
@@ -71,10 +82,20 @@ async def test_get_active_between(transactional_session: AsyncSession):
     transactional_session.add_all([a, b])
     await transactional_session.flush()
 
+    a_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    b_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    transactional_session.add_all([a_schema, b_schema])
+    await transactional_session.flush()
+
     repo = DatasetLinkRepository(transactional_session)
     assert await repo.get_active_between(a.id, b.id) is None
 
-    link = DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+    link = DatasetLink(
+        source_dataset_id=a.id,
+        target_dataset_id=b.id,
+        source_schema_id=a_schema.id,
+        target_schema_id=b_schema.id,
+    )
     transactional_session.add(link)
     await transactional_session.flush()
 
@@ -108,14 +129,36 @@ async def test_list_by_source_and_target(transactional_session: AsyncSession):
     )
     transactional_session.add_all([a, b, c])
     await transactional_session.flush()
+
+    a_schema = DatasetSchema(dataset_id=a.id, version_num=1, schema={})
+    b_schema = DatasetSchema(dataset_id=b.id, version_num=1, schema={})
+    c_schema = DatasetSchema(dataset_id=c.id, version_num=1, schema={})
+    transactional_session.add_all([a_schema, b_schema, c_schema])
+    await transactional_session.flush()
+
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=b.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=b.id,
+            source_schema_id=a_schema.id,
+            target_schema_id=b_schema.id,
+        )
     )
     transactional_session.add(
-        DatasetLink(source_dataset_id=a.id, target_dataset_id=c.id)
+        DatasetLink(
+            source_dataset_id=a.id,
+            target_dataset_id=c.id,
+            source_schema_id=a_schema.id,
+            target_schema_id=c_schema.id,
+        )
     )
     transactional_session.add(
-        DatasetLink(source_dataset_id=b.id, target_dataset_id=c.id)
+        DatasetLink(
+            source_dataset_id=b.id,
+            target_dataset_id=c.id,
+            source_schema_id=b_schema.id,
+            target_schema_id=c_schema.id,
+        )
     )
     await transactional_session.flush()
 
@@ -124,3 +167,122 @@ async def test_list_by_source_and_target(transactional_session: AsyncSession):
     upstream_of_c = await repo.list_by_target(c.id)
     assert len(downstream_of_a) == 2
     assert len(upstream_of_c) == 2
+
+
+async def _seed_linked_pair(
+    session: AsyncSession, name: str, src_version: int, tgt_version: int
+):
+    kind = SystemKind(code=f"DL_K_{name}", name=f"DL K {name}")
+    flavor = SystemFlavor(code=f"DL_F_{name}", name=f"DL F {name}", kind=kind)
+    system = System(code=f"DL_S_{name}", name=f"DL S {name}", flavor=flavor)
+    src = DatasetRdbms(
+        system=system,
+        object_name=f"{name}_src",
+        kind="rdbms",
+        schema_name="s",
+        table_name="src",
+    )
+    tgt = DatasetRdbms(
+        system=system,
+        object_name=f"{name}_tgt",
+        kind="rdbms",
+        schema_name="s",
+        table_name="tgt",
+    )
+    session.add_all([kind, flavor, system, src, tgt])
+    await session.flush()
+
+    src_schemas = [
+        DatasetSchema(dataset=src, version_num=v, schema={})
+        for v in range(1, src_version + 1)
+    ]
+    tgt_schemas = [
+        DatasetSchema(dataset=tgt, version_num=v, schema={})
+        for v in range(1, tgt_version + 1)
+    ]
+    session.add_all(src_schemas + tgt_schemas)
+    await session.flush()
+
+    link = DatasetLink(
+        source_dataset_id=src.id,
+        target_dataset_id=tgt.id,
+        source_schema_id=src_schemas[0].id,  # pinned v1 (old)
+        target_schema_id=tgt_schemas[0].id,
+    )
+    session.add(link)
+    await session.flush()
+    return link, src, tgt, src_schemas, tgt_schemas
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_reports_drift(
+    transactional_session: AsyncSession,
+):
+    link, src, tgt, src_schemas, tgt_schemas = await _seed_linked_pair(
+        transactional_session, "drift", src_version=3, tgt_version=1
+    )
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    target_rows = [r for r in rows if r["dataset_link_id"] == link.id]
+    assert len(target_rows) == 1
+    row = target_rows[0]
+    assert row["source_pinned_version"] == 1
+    assert row["source_latest_version"] == 3
+    assert row["target_pinned_version"] == 1
+    assert row["target_latest_version"] == 1
+    assert row["source_has_drift"] is True
+    assert row["target_has_drift"] is False
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_isolates_versions_between_links(
+    transactional_session: AsyncSession,
+):
+    """Each link's latest-version values must reflect ONLY its own datasets,
+    not another link's. A regression in the MAX subquery's GROUP BY would
+    leak versions across unrelated dataset pairs."""
+    link_a, *_ = await _seed_linked_pair(
+        transactional_session, "iso_a", src_version=5, tgt_version=1
+    )
+    link_b, *_ = await _seed_linked_pair(
+        transactional_session, "iso_b", src_version=2, tgt_version=4
+    )
+
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    by_link = {r["dataset_link_id"]: r for r in rows}
+
+    assert link_a.id in by_link
+    assert link_b.id in by_link
+
+    a = by_link[link_a.id]
+    b = by_link[link_b.id]
+
+    # link_a has src_version=5, tgt_version=1
+    assert a["source_latest_version"] == 5
+    assert a["target_latest_version"] == 1
+
+    # link_b has src_version=2, tgt_version=4
+    assert b["source_latest_version"] == 2
+    assert b["target_latest_version"] == 4
+
+
+@pytest.mark.asyncio
+async def test_list_with_compat_summary_excludes_soft_deleted(
+    transactional_session: AsyncSession,
+):
+    """Soft-deleted DatasetLinks must not appear in the result."""
+    from datetime import datetime, timezone
+
+    link, *_ = await _seed_linked_pair(
+        transactional_session, "soft_del", src_version=1, tgt_version=1
+    )
+    # Mark soft-deleted. Use naive datetime per CLAUDE.md quirk:
+    # SoftDeleteMetaDataMixin.deleted_at is TIMESTAMP WITHOUT TIME ZONE
+    link.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    await transactional_session.flush()
+
+    repo = DatasetLinkRepository(transactional_session)
+    rows = await repo.list_with_compat_summary()
+    link_ids = {r["dataset_link_id"] for r in rows}
+    assert link.id not in link_ids

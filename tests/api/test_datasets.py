@@ -1,3 +1,4 @@
+import uuid
 from typing import AsyncGenerator
 
 import pytest
@@ -9,7 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core import errors
 from backend.core.security import get_password_hash
 from backend.main import app
-from backend.models import System, SystemFlavor, SystemKind, User
+from backend.models import (
+    DataType,
+    FieldBinding,
+    System,
+    SystemFlavor,
+    SystemKind,
+    TypeInstance,
+    User,
+)
 
 
 async def _create_dataset(
@@ -40,15 +49,53 @@ async def _create_field(
     headers: dict,
     dataset_id: str,
     name: str,
-    is_tech: bool = False,
+    origin: str = "mapped",
 ) -> str:
     resp = await async_client.post(
         "/api/v1/fields/",
-        json={"dataset_id": dataset_id, "name": name, "is_tech": is_tech},
+        json={"dataset_id": dataset_id, "name": name, "origin": origin},
         headers=headers,
     )
     assert resp.status_code == status.HTTP_201_CREATED, resp.text
     return resp.json()["id"]
+
+
+async def _create_dataset_schema(
+    async_client: AsyncClient,
+    headers: dict,
+    dataset_id: str,
+    version_num: int = 1,
+) -> str:
+    resp = await async_client.post(
+        "/api/v1/dataset-schemas/",
+        json={
+            "dataset_id": dataset_id,
+            "version_num": version_num,
+            "schema": {},
+        },
+        headers=headers,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED, resp.text
+    return resp.json()["id"]
+
+
+async def _seed_binding(
+    session: AsyncSession,
+    field_id: str,
+    schema_id: str,
+    type_instance_id,
+    position: int,
+) -> None:
+    """Insert a FieldBinding row directly for lineage-pinned-schema setup."""
+    binding = FieldBinding(
+        field_id=uuid.UUID(field_id),
+        dataset_schema_id=uuid.UUID(schema_id),
+        position=position,
+        is_nullable=True,
+        type_instance_id=type_instance_id,
+    )
+    session.add(binding)
+    await session.commit()
 
 
 @pytest_asyncio.fixture
@@ -82,6 +129,30 @@ async def test_system(transactional_session: AsyncSession) -> System:
     transactional_session.add_all([kind, flavor, system])
     await transactional_session.commit()
     return system
+
+
+@pytest_asyncio.fixture
+async def type_instance(
+    transactional_session: AsyncSession, test_system: System
+) -> TypeInstance:
+    """A shared TypeInstance for seeding FieldBinding rows."""
+    data_type = DataType(
+        system_flavor_id=test_system.flavor_id,
+        code=f"T_DS_{uuid.uuid4().hex[:6].upper()}",
+        params_schema={},
+    )
+    transactional_session.add(data_type)
+    await transactional_session.flush()
+    ti = TypeInstance(
+        data_type_id=data_type.id,
+        type_params={},
+        parent_id=None,
+        slot=None,
+    )
+    transactional_session.add(ti)
+    await transactional_session.commit()
+    await transactional_session.refresh(ti)
+    return ti
 
 
 @pytest.mark.asyncio
@@ -345,14 +416,33 @@ class TestDatasetAPI:
         c = await _create_dataset(
             async_client, superuser_token_headers, test_system.id, "ud_c", "core"
         )
+        a_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, a
+        )
+        b_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, b
+        )
+        c_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, c
+        )
         await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": a, "target_dataset_id": b},
+            json={
+                "source_dataset_id": a,
+                "target_dataset_id": b,
+                "source_schema_id": a_schema,
+                "target_schema_id": b_schema,
+            },
             headers=superuser_token_headers,
         )
         await async_client.post(
             "/api/v1/dataset-links/",
-            json={"source_dataset_id": b, "target_dataset_id": c},
+            json={
+                "source_dataset_id": b,
+                "target_dataset_id": c,
+                "source_schema_id": b_schema,
+                "target_schema_id": c_schema,
+            },
             headers=superuser_token_headers,
         )
 
@@ -370,6 +460,8 @@ class TestDatasetAPI:
         async_client: AsyncClient,
         superuser_token_headers: dict,
         test_system: System,
+        transactional_session: AsyncSession,
+        type_instance: TypeInstance,
     ):
         src = await _create_dataset(
             async_client, superuser_token_headers, test_system.id, "um_s", "source"
@@ -381,13 +473,26 @@ class TestDatasetAPI:
         f1 = await _create_field(async_client, superuser_token_headers, tgt, "a")
         await _create_field(async_client, superuser_token_headers, tgt, "b")
         await _create_field(
-            async_client, superuser_token_headers, tgt, "etl_ts", is_tech=True
+            async_client, superuser_token_headers, tgt, "etl_ts", origin="tech"
         )
         sf = await _create_field(async_client, superuser_token_headers, src, "a")
+        src_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, src
+        )
+        tgt_schema = await _create_dataset_schema(
+            async_client, superuser_token_headers, tgt
+        )
+        await _seed_binding(transactional_session, sf, src_schema, type_instance.id, 1)
+        await _seed_binding(transactional_session, f1, tgt_schema, type_instance.id, 1)
         link_id = (
             await async_client.post(
                 "/api/v1/dataset-links/",
-                json={"source_dataset_id": src, "target_dataset_id": tgt},
+                json={
+                    "source_dataset_id": src,
+                    "target_dataset_id": tgt,
+                    "source_schema_id": src_schema,
+                    "target_schema_id": tgt_schema,
+                },
                 headers=superuser_token_headers,
             )
         ).json()["id"]
