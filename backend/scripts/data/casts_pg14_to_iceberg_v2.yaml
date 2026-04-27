@@ -1,0 +1,93 @@
+mappings:
+  - source: {flavor: postgres14, code: bigint}
+    target: {flavor: iceberg_v2, code: long}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: integer}
+    target: {flavor: iceberg_v2, code: int}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: smallint}
+    target: {flavor: iceberg_v2, code: int}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: text}
+    target: {flavor: iceberg_v2, code: string}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: varchar}
+    target: {flavor: iceberg_v2, code: string}
+    safety: safe
+    params: {}
+  - source: {flavor: postgres14, code: char}
+    target: {flavor: iceberg_v2, code: string}
+    safety: safe
+    params: {}
+  - source: {flavor: postgres14, code: numeric}
+    target: {flavor: iceberg_v2, code: decimal}
+    safety: safe
+    params: {precision: "@precision", scale: "@scale"}
+  - source: {flavor: postgres14, code: decimal}
+    target: {flavor: iceberg_v2, code: decimal}
+    safety: implicit
+    params: {precision: "@precision", scale: "@scale"}
+  - source: {flavor: postgres14, code: real}
+    target: {flavor: iceberg_v2, code: float}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: double}
+    target: {flavor: iceberg_v2, code: double}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: boolean}
+    target: {flavor: iceberg_v2, code: boolean}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: uuid}
+    target: {flavor: iceberg_v2, code: uuid}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: date}
+    target: {flavor: iceberg_v2, code: date}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: time}
+    target: {flavor: iceberg_v2, code: time}
+    safety: safe
+    params: {}
+  - source: {flavor: postgres14, code: timestamp}
+    target: {flavor: iceberg_v2, code: timestamp}
+    safety: safe
+    params: {}
+  - source: {flavor: postgres14, code: timestamptz}
+    target: {flavor: iceberg_v2, code: timestamptz}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: bytea}
+    target: {flavor: iceberg_v2, code: binary}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: array}
+    target: {flavor: iceberg_v2, code: list}
+    safety: safe
+    params: {}
+  - source: {flavor: postgres14, code: json}
+    target: {flavor: iceberg_v2, code: string}
+    safety: unsafe
+    params: {}
+  - source: {flavor: postgres14, code: jsonb}
+    target: {flavor: iceberg_v2, code: string}
+    safety: unsafe
+    params: {}
+  - source: {flavor: postgres14, code: smallserial}
+    target: {flavor: iceberg_v2, code: int}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: serial}
+    target: {flavor: iceberg_v2, code: int}
+    safety: implicit
+    params: {}
+  - source: {flavor: postgres14, code: bigserial}
+    target: {flavor: iceberg_v2, code: long}
+    safety: implicit
+    params: {}
