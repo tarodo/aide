@@ -22,6 +22,7 @@ from backend.api.v1 import field_links as v1_field_links
 from backend.api.v1 import tech_field_templates as v1_tech_field_templates
 from backend.api.v1 import type_instances as v1_type_instances
 from backend.api.v1 import fields as v1_fields
+from backend.api.v1 import lake_sync as v1_lake_sync
 from backend.api.v1 import login as v1_login
 from backend.api.v1 import system_flavors as v1_system_flavors
 from backend.api.v1 import system_kinds as v1_system_kinds
@@ -268,6 +269,12 @@ app.include_router(
     v1_crawl_runs.router,
     prefix=f"{api_v1_prefix}/crawl-runs",
     tags=["Crawl Runs"],
+)
+
+app.include_router(
+    v1_lake_sync.router,
+    prefix=api_v1_prefix,
+    tags=["Lake Sync"],
 )
 
 

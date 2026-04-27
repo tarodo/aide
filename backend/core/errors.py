@@ -156,7 +156,7 @@ ERROR_MAP = {
         "The requested dataset was not found.",
     ),
     DATASET_ALREADY_EXISTS: (
-        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
         "A dataset with this system and object name already exists.",
     ),
     INVALID_DATASET_KIND: (
