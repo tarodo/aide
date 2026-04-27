@@ -20,3 +20,21 @@ mappings:
   - flavor: postgres14
     type_code: UUID
     data_type_code: uuid
+  - flavor: iceberg_v2
+    type_code: TIMESTAMP
+    data_type_code: timestamp
+  - flavor: iceberg_v2
+    type_code: STRING
+    data_type_code: string
+  - flavor: iceberg_v2
+    type_code: BIGINT
+    data_type_code: long
+  - flavor: iceberg_v2
+    type_code: INTEGER
+    data_type_code: int
+  - flavor: iceberg_v2
+    type_code: BOOLEAN
+    data_type_code: boolean
+  - flavor: iceberg_v2
+    type_code: UUID
+    data_type_code: uuid
