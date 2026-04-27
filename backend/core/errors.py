@@ -81,6 +81,10 @@ TECH_FIELD_TEMPLATE_LAYER_MISMATCH = "TECH_FIELD_TEMPLATE_LAYER_MISMATCH"
 TECH_FIELD_TEMPLATE_FIELD_NOT_FOUND = "TECH_FIELD_TEMPLATE_FIELD_NOT_FOUND"
 TECH_FIELD_TEMPLATE_FIELD_ALREADY_EXISTS = "TECH_FIELD_TEMPLATE_FIELD_ALREADY_EXISTS"
 TECH_TYPE_CODE_NOT_RESOLVABLE = "TECH_TYPE_CODE_NOT_RESOLVABLE"
+LAKE_SYNC_NO_SOURCE_SCHEMA = "LAKE_SYNC_NO_SOURCE_SCHEMA"
+LAKE_SYNC_TARGET_FLAVOR_MISMATCH = "LAKE_SYNC_TARGET_FLAVOR_MISMATCH"
+LAKE_SYNC_UNKNOWN_OVERRIDE_FIELD = "LAKE_SYNC_UNKNOWN_OVERRIDE_FIELD"
+LAKE_SYNC_AMBIGUOUS_CAST = "LAKE_SYNC_AMBIGUOUS_CAST"
 
 ErrorInfo = Tuple[int, str]
 
@@ -354,6 +358,22 @@ ERROR_MAP = {
     TECH_TYPE_CODE_NOT_RESOLVABLE: (
         status.HTTP_400_BAD_REQUEST,
         "Cannot resolve abstract type_code to a concrete data type for this dataset flavor.",
+    ),
+    LAKE_SYNC_NO_SOURCE_SCHEMA: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "Source dataset has no schema with field bindings.",
+    ),
+    LAKE_SYNC_TARGET_FLAVOR_MISMATCH: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "Target system flavor must be 'iceberg_v2'.",
+    ),
+    LAKE_SYNC_UNKNOWN_OVERRIDE_FIELD: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "Override references a field that does not exist on the source dataset.",
+    ),
+    LAKE_SYNC_AMBIGUOUS_CAST: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "Multiple cast rules match for a field; supply an explicit override.",
     ),
 }
 
