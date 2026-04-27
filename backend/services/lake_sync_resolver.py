@@ -159,6 +159,10 @@ def resolve_target_ti(
     if len(rules) > 1:
         raise AppException(
             errors.LAKE_SYNC_AMBIGUOUS_CAST,
+            details={
+                "field": field_name,
+                "candidates": [target_dt.code for target_dt, _meta in rules],
+            },
         )
 
     target_dt, rule_meta = rules[0]

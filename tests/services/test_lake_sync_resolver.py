@@ -205,6 +205,10 @@ def test_resolve_multiple_rules_raises_ambiguous() -> None:
             warnings=[],
         )
     assert exc.value.error_code == errors.LAKE_SYNC_AMBIGUOUS_CAST
+    assert exc.value.details == {
+        "field": "amount",
+        "candidates": ["decimal", "string"],
+    }
 
 
 def test_resolve_override_skips_rules() -> None:

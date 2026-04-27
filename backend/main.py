@@ -94,7 +94,8 @@ async def app_exception_handler(request: Request, exc: AppException):
             error_code=error_code,
             detail=detail,
             request_id=ctx.get("request_id"),
-        ).model_dump(),
+            details=exc.details,
+        ).model_dump(exclude_none=True),
     )
 
 
