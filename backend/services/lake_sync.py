@@ -72,10 +72,10 @@ class LakeSyncService:
 
         # 2. Validate target system + flavor.
         target_system = await session.get(System, request.target_system_id)
-        if target_system is None:
+        if target_system is None or target_system.deleted_at is not None:
             raise AppException(errors.SYSTEM_NOT_FOUND)
         target_flavor = await session.get(SystemFlavor, target_system.flavor_id)
-        if target_flavor is None:
+        if target_flavor is None or target_flavor.deleted_at is not None:
             raise AppException(errors.SYSTEM_FLAVOR_NOT_FOUND)
         if target_flavor.code != "iceberg_v2":
             raise AppException(errors.LAKE_SYNC_TARGET_FLAVOR_MISMATCH)
