@@ -151,15 +151,6 @@ async def test_create_renames_schema_underscore_to_schema(
     assert db_obj.schema == {"columns": [{"name": "id"}]}
 
 
-@pytest.mark.xfail(
-    reason=(
-        "DatasetSchemaService.update renames schema_ -> schema in a local dict "
-        "but then delegates to super().update(obj_in=...) which re-dumps obj_in "
-        "from scratch — the rename is dead code. Bug in "
-        "backend/services/dataset_schema.py:109-113."
-    ),
-    strict=True,
-)
 @pytest.mark.asyncio
 async def test_update_renames_schema_underscore_to_schema(
     transactional_session: AsyncSession,

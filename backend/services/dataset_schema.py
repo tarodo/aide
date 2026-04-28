@@ -105,12 +105,41 @@ class DatasetSchemaService(
         obj_in: DatasetSchemaUpdate,
         updater_id: uuid.UUID | None = None,
     ) -> DatasetSchemaRead:
-        """Update an existing object."""
+        """Update an existing object.
+
+        Overrides the generic update to rename the Pydantic alias `schema_`
+        (BaseModel.schema clash) to the SA column name `schema`. We can't
+        delegate to ``super().update()`` because it re-dumps ``obj_in`` and
+        loses the rename — see the symmetric handling in ``create()``.
+        """
         update_data = obj_in.model_dump(exclude_unset=True)
         if "schema_" in update_data:
             update_data["schema"] = update_data.pop("schema_")
+        client_row_version = update_data.pop("row_version", None)
 
-        return await super().update(uow, obj_id, obj_in, updater_id)
+        async with uow:
+            repo: BaseRepository[DatasetSchema] = self._get_repository(uow.session)
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+
+            if client_row_version is not None and hasattr(db_obj, "row_version"):
+                if db_obj.row_version != client_row_version:
+                    raise AppException(errors.VERSION_CONFLICT)
+
+            await self._pre_update(uow, db_obj, obj_in, updater_id)
+
+            for field, value in update_data.items():
+                setattr(db_obj, field, value)
+
+            if hasattr(db_obj, "row_version"):
+                db_obj.row_version += 1
+
+            if updater_id and hasattr(db_obj, "updated_by"):
+                setattr(db_obj, "updated_by", updater_id)
+
+            updated_obj = await repo.update(db_obj=db_obj)
+            return self.read_schema.model_validate(updated_obj)
 
     async def _pre_delete(
         self,
