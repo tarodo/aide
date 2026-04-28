@@ -10,6 +10,7 @@ from backend.models.dataset_link import DatasetLink
 from backend.models.field import Field
 from backend.models.field_binding import FieldBinding
 from backend.models.field_link import FieldLink
+from backend.models.field_link import FieldLink as FieldLinkModel
 from backend.schemas.field_link import FieldLinkCreate, FieldLinkRead
 from backend.services.field_link import FieldLinkService
 
@@ -354,3 +355,153 @@ class TestFieldLinkService:
         with patch.object(service, "_get_repository", return_value=repo):
             await service.delete(uow=uow, obj_id=fl.id)
         repo.delete.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_not_found_raises(service: FieldLinkService):
+    uow = _MockUoW()
+    repo = _MockRepo()
+    repo.get.return_value = None
+
+    with pytest.raises(AppException) as exc:
+        with patch.object(service, "_get_repository", return_value=repo):
+            await service.delete(uow=uow, obj_id=uuid.uuid4())
+    assert exc.value.error_code == errors.FIELD_LINK_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_empty_returns_empty(service: FieldLinkService):
+    uow = _MockUoW()
+    out = await service.bulk_create(uow=uow, items=[])
+    assert out == []
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_happy_path(service: FieldLinkService):
+    src_id, tgt_id = uuid.uuid4(), uuid.uuid4()
+    link = _link(src_id, tgt_id)
+    sf, tf = _field(src_id), _field(tgt_id)
+
+    uow = _MockUoW()
+    uow.dataset_links.get = AsyncMock(return_value=link)
+    # source then target lookup
+    uow.fields.get = AsyncMock(side_effect=[sf, tf])
+    uow.field_bindings.get_by_field_and_schema = AsyncMock(
+        side_effect=[
+            _binding(sf.id, link.source_schema_id),
+            _binding(tf.id, link.target_schema_id),
+        ]
+    )
+
+    repo = _MockRepo()
+    created_obj = FieldLinkModel(
+        id=uuid.uuid4(),
+        dataset_link_id=link.id,
+        source_field_id=sf.id,
+        target_field_id=tf.id,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+        row_version=1,
+    )
+    repo.create_many = AsyncMock(return_value=[created_obj])
+
+    item = FieldLinkCreate(
+        dataset_link_id=link.id,
+        source_field_id=sf.id,
+        target_field_id=tf.id,
+    )
+
+    with patch.object(service, "_get_repository", return_value=repo):
+        out = await service.bulk_create(uow=uow, items=[item], creator_id=uuid.uuid4())
+    assert len(out) == 1
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_target_origin_not_mapped_raises(
+    service: FieldLinkService,
+):
+    src_id, tgt_id = uuid.uuid4(), uuid.uuid4()
+    link = _link(src_id, tgt_id)
+    sf = _field(src_id)
+    tf = _field(tgt_id, origin="tech")
+
+    uow = _MockUoW()
+    uow.dataset_links.get = AsyncMock(return_value=link)
+    uow.fields.get = AsyncMock(side_effect=[sf, tf])
+
+    item = FieldLinkCreate(
+        dataset_link_id=link.id,
+        source_field_id=sf.id,
+        target_field_id=tf.id,
+    )
+    with pytest.raises(AppException) as exc:
+        with patch.object(service, "_get_repository", return_value=_MockRepo()):
+            await service.bulk_create(uow=uow, items=[item])
+    assert exc.value.error_code == errors.FIELD_ORIGIN_CONFLICT
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_dataset_link_missing(service: FieldLinkService):
+    uow = _MockUoW()
+    uow.dataset_links.get = AsyncMock(return_value=None)
+    item = FieldLinkCreate(
+        dataset_link_id=uuid.uuid4(),
+        source_field_id=uuid.uuid4(),
+        target_field_id=uuid.uuid4(),
+    )
+    with pytest.raises(AppException) as exc:
+        with patch.object(service, "_get_repository", return_value=_MockRepo()):
+            await service.bulk_create(uow=uow, items=[item])
+    assert exc.value.error_code == errors.DATASET_LINK_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_source_dataset_mismatch(service: FieldLinkService):
+    src_id, tgt_id = uuid.uuid4(), uuid.uuid4()
+    link = _link(src_id, tgt_id)
+    sf_wrong = _field(uuid.uuid4())  # not in link.source_dataset_id
+    tf = _field(tgt_id)
+
+    uow = _MockUoW()
+    uow.dataset_links.get = AsyncMock(return_value=link)
+    uow.fields.get = AsyncMock(side_effect=[sf_wrong, tf])
+
+    item = FieldLinkCreate(
+        dataset_link_id=link.id,
+        source_field_id=sf_wrong.id,
+        target_field_id=tf.id,
+    )
+    with pytest.raises(AppException) as exc:
+        with patch.object(service, "_get_repository", return_value=_MockRepo()):
+            await service.bulk_create(uow=uow, items=[item])
+    assert exc.value.error_code == errors.FIELD_LINK_SOURCE_DATASET_MISMATCH
+
+
+@pytest.mark.asyncio
+async def test_bulk_create_target_occupied(service: FieldLinkService):
+    src_id, tgt_id = uuid.uuid4(), uuid.uuid4()
+    link = _link(src_id, tgt_id)
+    sf, tf = _field(src_id), _field(tgt_id)
+
+    uow = _MockUoW()
+    uow.dataset_links.get = AsyncMock(return_value=link)
+    uow.fields.get = AsyncMock(side_effect=[sf, tf])
+    uow.field_bindings.get_by_field_and_schema = AsyncMock(
+        side_effect=[
+            _binding(sf.id, link.source_schema_id),
+            _binding(tf.id, link.target_schema_id),
+        ]
+    )
+
+    repo = _MockRepo()
+    repo.get_by_target_in_link = AsyncMock(return_value=object())  # occupied
+
+    item = FieldLinkCreate(
+        dataset_link_id=link.id,
+        source_field_id=sf.id,
+        target_field_id=tf.id,
+    )
+    with pytest.raises(AppException) as exc:
+        with patch.object(service, "_get_repository", return_value=repo):
+            await service.bulk_create(uow=uow, items=[item])
+    assert exc.value.error_code == errors.FIELD_LINK_TARGET_OCCUPIED

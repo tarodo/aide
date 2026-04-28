@@ -121,6 +121,8 @@ After changing deps (`uv sync`) or adding a new local workspace package, rebuild
 
 SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
 
+Scope a coverage run: `PYTEST_ARGS="--cov=backend.services.X --cov-report=term-missing tests/services/test_X.py" make test-docker`. Use this when writing new tests to verify branch coverage. Note: very narrow `--cov` paths (e.g. a single module) can reproducibly segfault asyncpg in this Docker test runner — fall back to `--cov=backend` if you hit a segfault.
+
 ### Alembic migrations
 
 After `make alembic-gen`, review the generated file. Auto-generate picks up pre-existing schema drift (nullability mismatches, missing indexes). Strip unrelated operations before committing — keep each migration focused on one model change.
