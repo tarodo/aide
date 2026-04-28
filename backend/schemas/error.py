@@ -2,6 +2,8 @@
 Pydantic schemas for standardized error responses.
 """
 
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -13,3 +15,4 @@ class ErrorResponse(BaseModel):
     error_code: str
     detail: str
     request_id: str | None = None
+    details: dict[str, Any] | None = None

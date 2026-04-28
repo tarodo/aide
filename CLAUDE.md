@@ -71,6 +71,18 @@ status: MyStatus
 
 `deleted_at` and other `SoftDeleteMetaDataMixin` timestamps are `TIMESTAMP WITHOUT TIME ZONE`. When setting them manually (e.g. in tests to trigger soft-delete branches), use naive datetimes: `datetime.now(timezone.utc).replace(tzinfo=None)`. Aware datetimes are rejected by asyncpg.
 
+### Soft-delete coverage by mixin
+
+Soft-delete varies per model. `SoftDeleteMetaDataMixin` adds `deleted_at` (e.g. `System`, `SystemFlavor`, `Dataset`, `DataType`); `MetaDataMixin` does not (e.g. `TechFieldTemplate`, `Field`, `FieldBinding`). When resolving an entity by id and rejecting "not found", check the mixin: soft-delete-capable models need `if X is None or X.deleted_at is not None`.
+
+### Schema re-exports
+
+Files in `backend/schemas/` are re-export shims of `aide_schemas`. Use the alias form `from aide_schemas.X import Y as Y` (no `__all__`, no docstring). mypy/ruff treat the alias form as explicit re-export. Sample: `backend/schemas/cast_rule.py`.
+
+### Error responses
+
+`AppException(error_code, details: dict | None = None)` — pass `details` for structured per-error payloads. The exception handler surfaces `details` under a top-level key in the response body alongside `error_code` / `detail`. Example: `LAKE_SYNC_AMBIGUOUS_CAST` carries `{field, candidates}`.
+
 ### Package layout
 
 Root `pyproject.toml` is the backend package (no separate `backend/pyproject.toml`). Add backend deps to the root file.
@@ -100,6 +112,8 @@ Tests run via `make test-docker` in Docker, not locally. Test structure mirrors 
 Narrow scope: `PYTEST_ARGS="-v tests/path/test_file.py" make test-docker` (passes args to pytest inside the container).
 
 Test layer patterns: **API/repo tests** use the `transactional_session` fixture from `tests/conftest.py` (real DB, rolls back per-test). **Service tests** use mocked UoW — see `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`.
+
+API tests with auth: use `httpx.AsyncClient` with `ASGITransport(app=app)` (sync `TestClient` won't authenticate). Build a `superuser` fixture (creates a `User`, hashes password) and a `headers` fixture that POSTs `/api/v1/login/` with form data and returns `{"Authorization": f"Bearer {token}"}`. Pattern sample: `tests/api/test_dataset_links.py`.
 
 Test helper duplication: `_make_system(session, code_suffix)` and `_create_dataset(...)` / `_create_field(...)` are currently inlined in multiple test files. No shared `seeded_system` fixture. When adding a 3rd copy of one of these helpers, consider promoting to `tests/conftest.py` or `tests/_helpers.py`.
 
@@ -144,3 +158,10 @@ Data types are pre-loaded per flavor from YAML files in `backend/scripts/data/`.
 - Lineage-pin Migration B (`add_lineage_pins_b_finalize`) downgrade is **unsafe** once `DEPRECATED` fields exist — `deprecated` maps back to `is_tech=False` (mapped), violating the "mapped target needs source" invariant. Hold Migration B until the forward direction is confirmed stable.
 - Route ordering in `backend/api/v1/dataset_links.py`: the `/compat` (bulk) route must be declared **before** `/{obj_id}` variants so FastAPI does not interpret `compat` as a UUID path parameter.
 - Lockstep bump of `aide-schemas`, `aide-sdk`, `aide-crawler` at any breaking schema change. No dual-support transitional acceptance of old field names (`is_tech` removed, not deprecated in place).
+- Lake-sync (`POST /datasets/{id}/lake-sync`) is atomic: any failure rolls back the whole UoW; partial target chains never observed. Re-running with the same target returns 409 `DATASET_ALREADY_EXISTS`; recreate by deleting `DatasetLink` first (RESTRICT FK on schema pins), then the target `Dataset`.
+- `LAKE_SYNC_AMBIGUOUS_CAST` carries `details={"field": ..., "candidates": [...]}` via `AppException.details` (added in this phase). The endpoint's response body includes a top-level `details` key when populated — the SDK contract relies on it. Remediate ambiguity by adding the field to `request.overrides`.
+- Lake-sync overrides are leaf-only. For `array<X>` source, `override.data_type_code="list"` produces `list<X-resolved>`; the inner element type cannot be overridden in MVP — it comes from the source-resolved cast rule.
+- `tech_type_resolver.yaml` is loaded at backend module-load time via `TechTypeResolver.from_yaml(...)` in `backend/services/dataset.py` — **not** DB-seeded. Adding a flavor branch (e.g. `iceberg_v2`) requires a backend restart, not a re-seed.
+- Iceberg type catalog (`iceberg_v2.yaml`) is canonical to Apache Iceberg v2 spec. v3-only types (`unknown`, `variant`, `geometry`, `geography`, `timestamp_ns`, `timestamptz_ns`) belong in a future `iceberg_v3` flavor, not `iceberg_v2`.
+- Slot rename `array.item → list.element` lives in `_SLOT_RENAMES_BY_TARGET_CODE` constant in `backend/services/lake_sync_resolver.py`. Only known cross-flavor child-slot rename in v2; add new entries here when target aggregate types diverge.
+- Lake-sync's source-side `TypeInstance` tree eager-load is depth-3 (`backend/services/lake_sync.py:_load_bindings`). Source trees nested deeper than 3 levels (e.g. `array<struct<list<...>>>`) trigger `MissingGreenlet`. Acceptable for current sources (depth ≤ 2). Future deepening requires a recursive eager-load or CTE refactor.

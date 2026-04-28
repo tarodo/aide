@@ -1,0 +1,33 @@
+kind:
+  code: hive
+  name: Hive Metastore Lake
+flavor:
+  code: iceberg_v2
+  name: Apache Iceberg
+  vendor: Apache Software Foundation
+  versions: ["2"]
+types:
+  - {code: boolean,     params_schema: {}, render_template: boolean}
+  - {code: int,         params_schema: {}, render_template: int}
+  - {code: long,        params_schema: {}, render_template: long}
+  - {code: float,       params_schema: {}, render_template: float}
+  - {code: double,      params_schema: {}, render_template: double}
+  - code: decimal
+    params_schema:
+      precision: {type: int, required: true,  default: null, min: 1,  max: 38}
+      scale:     {type: int, required: true,  default: null, min: 0,  max: 38}
+    render_template: "decimal({precision},{scale})"
+  - {code: date,        params_schema: {}, render_template: date}
+  - {code: time,        params_schema: {}, render_template: time}
+  - {code: timestamp,   params_schema: {}, render_template: timestamp}
+  - {code: timestamptz, params_schema: {}, render_template: timestamptz}
+  - {code: string,      params_schema: {}, render_template: string}
+  - {code: uuid,        params_schema: {}, render_template: uuid}
+  - {code: binary,      params_schema: {}, render_template: binary}
+  - code: fixed
+    params_schema:
+      length: {type: int, required: true, default: null, min: 1}
+    render_template: "fixed({length})"
+  - {code: list,   params_schema: {}, render_template: null}
+  - {code: map,    params_schema: {}, render_template: null}
+  - {code: struct, params_schema: {}, render_template: null}
