@@ -215,6 +215,9 @@ class LakeSyncService:
             mapped_count += 1
 
         # 13. Tech fields (if requested).
+        base_tech_position = (
+            max((b.position for b in source_bindings.values()), default=-1) + 1
+        )
         tech_count = 0
         if tech_template is not None:
             tpl_fields = (
@@ -266,7 +269,7 @@ class LakeSyncService:
                 tech_binding = FieldBinding(
                     field_id=tech_field.id,
                     dataset_schema_id=target_schema.id,
-                    position=mapped_count + tf.order,
+                    position=base_tech_position + tf.order,
                     is_nullable=True,
                     type_instance_id=ti.id,
                 )

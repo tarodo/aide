@@ -412,3 +412,117 @@ async def test_lake_sync_with_tech_template(
     origins = sorted([f.origin for f in target_fields])
     # 3 mapped + 2 tech.
     assert origins == ["mapped", "mapped", "mapped", "tech", "tech"]
+
+
+@pytest.mark.asyncio
+async def test_lake_sync_override_unknown_data_type(
+    async_client: AsyncClient, headers: dict, transactional_session: AsyncSession
+) -> None:
+    await _seed_pg_and_iceberg(transactional_session)
+    src_system = await _create_pg_system(transactional_session)
+    lake_system = await _create_lake_system(transactional_session)
+    ds, _, _ = await _make_source_dataset(transactional_session, src_system)
+
+    resp = await async_client.post(
+        f"/api/v1/datasets/{ds.id}/lake-sync",
+        headers=headers,
+        json={
+            "target_system_id": str(lake_system.id),
+            "target_layer": "core",
+            "db_name": "lake",
+            "table_name": "users",
+            "catalog_uri": "thrift://hms:9083",
+            "overrides": {"id": {"data_type_code": "nonexistent_iceberg_type"}},
+        },
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error_code"] == "DATA_TYPE_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_lake_sync_ambiguous_cast_returns_candidates(
+    async_client: AsyncClient, headers: dict, transactional_session: AsyncSession
+) -> None:
+    """When >1 cast rules exist for a source DT, response carries candidates."""
+    from backend.models.cast_rule import CastRule
+    from backend.models.data_type import DataType
+
+    await _seed_pg_and_iceberg(transactional_session)
+    src_system = await _create_pg_system(transactional_session)
+    lake_system = await _create_lake_system(transactional_session)
+    ds, _, _ = await _make_source_dataset(transactional_session, src_system)
+
+    # Inject a second cast rule for pg14.bigint → iceberg_v2.string,
+    # alongside the seeded pg14.bigint → iceberg_v2.long.
+    pg_flavor = (
+        (
+            await transactional_session.execute(
+                select(SystemFlavor).where(SystemFlavor.code == "postgres14")
+            )
+        )
+        .scalars()
+        .first()
+    )
+    ice_flavor = (
+        (
+            await transactional_session.execute(
+                select(SystemFlavor).where(SystemFlavor.code == "iceberg_v2")
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    pg_bigint = (
+        (
+            await transactional_session.execute(
+                select(DataType).where(
+                    DataType.system_flavor_id == pg_flavor.id,
+                    DataType.code == "bigint",
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+    ice_string = (
+        (
+            await transactional_session.execute(
+                select(DataType).where(
+                    DataType.system_flavor_id == ice_flavor.id,
+                    DataType.code == "string",
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    transactional_session.add(
+        CastRule(
+            source_data_type_id=pg_bigint.id,
+            target_data_type_id=ice_string.id,
+            param_mapping={},
+            safety="unsafe",
+        )
+    )
+    await transactional_session.flush()
+
+    resp = await async_client.post(
+        f"/api/v1/datasets/{ds.id}/lake-sync",
+        headers=headers,
+        json={
+            "target_system_id": str(lake_system.id),
+            "target_layer": "core",
+            "db_name": "lake",
+            "table_name": "users",
+            "catalog_uri": "thrift://hms:9083",
+        },
+    )
+    assert resp.status_code == 422, resp.text
+    body = resp.json()
+    assert body["error_code"] == "LAKE_SYNC_AMBIGUOUS_CAST"
+    assert "details" in body
+    assert body["details"]["field"] == "id"
+    # Order is rule-discovery order; both candidates must appear.
+    assert set(body["details"]["candidates"]) == {"long", "string"}
