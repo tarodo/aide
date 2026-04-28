@@ -18,8 +18,12 @@ class DatasetSchema(Base, MetaDataMixin):
         nullable=False,
     )
     version_num: Mapped[int] = mapped_column(Integer, nullable=False)
-    schema: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    schema: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
+    extra: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
 
     dataset = relationship("Dataset")
 

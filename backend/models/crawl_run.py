@@ -33,8 +33,12 @@ class CrawlRun(Base, MetaDataMixin):
         DateTime(timezone=True), nullable=True
     )
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    summary: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    diff_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    summary: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
+    diff_payload: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     system = relationship("System", foreign_keys=[system_id])

@@ -18,7 +18,9 @@ class TypeInstance(Base, MetaDataMixin):
         nullable=False,
         index=True,
     )
-    type_params: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    type_params: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("type_instances.id", ondelete="CASCADE"),

@@ -25,7 +25,9 @@ class Field(Base, MetaDataMixin):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     path: Mapped[str | None] = mapped_column(Text, nullable=True)
-    extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    extra: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB(none_as_null=True), nullable=True
+    )
     origin: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="mapped"
     )
