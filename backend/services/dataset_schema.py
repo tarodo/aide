@@ -1,6 +1,7 @@
 import uuid
 from typing import cast
 
+import structlog
 from sqlalchemy import or_, select
 
 from backend.core import errors
@@ -16,6 +17,8 @@ from backend.schemas.dataset_schema import (
     DatasetSchemaUpdate,
 )
 from backend.services.base import GenericService
+
+logger = structlog.get_logger(__name__)
 
 
 class DatasetSchemaService(
@@ -111,6 +114,10 @@ class DatasetSchemaService(
         (BaseModel.schema clash) to the SA column name `schema`. We can't
         delegate to ``super().update()`` because it re-dumps ``obj_in`` and
         loses the rename — see the symmetric handling in ``create()``.
+
+        Note: this duplicates the base class update flow. If
+        ``GenericService.update`` evolves (new hooks, different lock
+        semantics), this override must be updated in lockstep.
         """
         update_data = obj_in.model_dump(exclude_unset=True)
         if "schema_" in update_data:
@@ -139,6 +146,12 @@ class DatasetSchemaService(
                 setattr(db_obj, "updated_by", updater_id)
 
             updated_obj = await repo.update(db_obj=db_obj)
+            logger.info(
+                "entity.updated",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(updater_id) if updater_id else None,
+            )
             return self.read_schema.model_validate(updated_obj)
 
     async def _pre_delete(
