@@ -1,6 +1,7 @@
 import uuid
 from typing import cast
 
+import structlog
 from sqlalchemy import or_, select
 
 from backend.core import errors
@@ -16,6 +17,8 @@ from backend.schemas.dataset_schema import (
     DatasetSchemaUpdate,
 )
 from backend.services.base import GenericService
+
+logger = structlog.get_logger(__name__)
 
 
 class DatasetSchemaService(
@@ -105,12 +108,51 @@ class DatasetSchemaService(
         obj_in: DatasetSchemaUpdate,
         updater_id: uuid.UUID | None = None,
     ) -> DatasetSchemaRead:
-        """Update an existing object."""
+        """Update an existing object.
+
+        Overrides the generic update to rename the Pydantic alias `schema_`
+        (BaseModel.schema clash) to the SA column name `schema`. We can't
+        delegate to ``super().update()`` because it re-dumps ``obj_in`` and
+        loses the rename — see the symmetric handling in ``create()``.
+
+        Note: this duplicates the base class update flow. If
+        ``GenericService.update`` evolves (new hooks, different lock
+        semantics), this override must be updated in lockstep.
+        """
         update_data = obj_in.model_dump(exclude_unset=True)
         if "schema_" in update_data:
             update_data["schema"] = update_data.pop("schema_")
+        client_row_version = update_data.pop("row_version", None)
 
-        return await super().update(uow, obj_id, obj_in, updater_id)
+        async with uow:
+            repo: BaseRepository[DatasetSchema] = self._get_repository(uow.session)
+            db_obj = await repo.get(obj_id)
+            if not db_obj:
+                raise AppException(self.not_found_error_code)
+
+            if client_row_version is not None and hasattr(db_obj, "row_version"):
+                if db_obj.row_version != client_row_version:
+                    raise AppException(errors.VERSION_CONFLICT)
+
+            await self._pre_update(uow, db_obj, obj_in, updater_id)
+
+            for field, value in update_data.items():
+                setattr(db_obj, field, value)
+
+            if hasattr(db_obj, "row_version"):
+                db_obj.row_version += 1
+
+            if updater_id and hasattr(db_obj, "updated_by"):
+                setattr(db_obj, "updated_by", updater_id)
+
+            updated_obj = await repo.update(db_obj=db_obj)
+            logger.info(
+                "entity.updated",
+                entity=self._entity_name,
+                entity_id=str(obj_id),
+                user_id=str(updater_id) if updater_id else None,
+            )
+            return self.read_schema.model_validate(updated_obj)
 
     async def _pre_delete(
         self,

@@ -10,7 +10,6 @@ from backend.models.dataset_link import DatasetLink
 from backend.models.field import Field
 from backend.models.field_binding import FieldBinding
 from backend.models.field_link import FieldLink
-from backend.models.field_link import FieldLink as FieldLinkModel
 from backend.schemas.field_link import FieldLinkCreate, FieldLinkRead
 from backend.services.field_link import FieldLinkService
 
@@ -394,7 +393,7 @@ async def test_bulk_create_happy_path(service: FieldLinkService):
     )
 
     repo = _MockRepo()
-    created_obj = FieldLinkModel(
+    created_obj = FieldLink(
         id=uuid.uuid4(),
         dataset_link_id=link.id,
         source_field_id=sf.id,

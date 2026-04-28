@@ -17,9 +17,7 @@ from backend.models.tech_field_template import (
 )
 from backend.services.lake_sync import LakeSyncService
 
-# Re-use API-test helpers via direct import (kept inline per CLAUDE.md guidance —
-# promote to tests/_helpers.py if a 3rd copy is needed).
-from tests.api.test_lake_sync import (
+from tests._helpers import (
     _create_lake_system,
     _create_pg_system,
     _make_source_dataset,
