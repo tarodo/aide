@@ -109,6 +109,7 @@ class AideClient:
             FieldClassificationsResource,
         )
         from aide_sdk.resources.dataset_links import DatasetLinksResource
+        from aide_sdk.resources.lake_sync import LakeSyncResource
 
         self.systems = SystemsResource(self._http)
         self.datasets = DatasetsResource(self._http)
@@ -121,3 +122,4 @@ class AideClient:
         self.crawl_runs = CrawlRunsResource(self._http)
         self.field_classifications = FieldClassificationsResource(self._http)
         self.dataset_links = DatasetLinksResource(self._http)
+        self.lake_sync = LakeSyncResource(self._http)
