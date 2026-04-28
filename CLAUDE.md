@@ -71,6 +71,18 @@ status: MyStatus
 
 `deleted_at` and other `SoftDeleteMetaDataMixin` timestamps are `TIMESTAMP WITHOUT TIME ZONE`. When setting them manually (e.g. in tests to trigger soft-delete branches), use naive datetimes: `datetime.now(timezone.utc).replace(tzinfo=None)`. Aware datetimes are rejected by asyncpg.
 
+### Soft-delete coverage by mixin
+
+Soft-delete varies per model. `SoftDeleteMetaDataMixin` adds `deleted_at` (e.g. `System`, `SystemFlavor`, `Dataset`, `DataType`); `MetaDataMixin` does not (e.g. `TechFieldTemplate`, `Field`, `FieldBinding`). When resolving an entity by id and rejecting "not found", check the mixin: soft-delete-capable models need `if X is None or X.deleted_at is not None`.
+
+### Schema re-exports
+
+Files in `backend/schemas/` are re-export shims of `aide_schemas`. Use the alias form `from aide_schemas.X import Y as Y` (no `__all__`, no docstring). mypy/ruff treat the alias form as explicit re-export. Sample: `backend/schemas/cast_rule.py`.
+
+### Error responses
+
+`AppException(error_code, details: dict | None = None)` — pass `details` for structured per-error payloads. The exception handler surfaces `details` under a top-level key in the response body alongside `error_code` / `detail`. Example: `LAKE_SYNC_AMBIGUOUS_CAST` carries `{field, candidates}`.
+
 ### Package layout
 
 Root `pyproject.toml` is the backend package (no separate `backend/pyproject.toml`). Add backend deps to the root file.
@@ -100,6 +112,8 @@ Tests run via `make test-docker` in Docker, not locally. Test structure mirrors 
 Narrow scope: `PYTEST_ARGS="-v tests/path/test_file.py" make test-docker` (passes args to pytest inside the container).
 
 Test layer patterns: **API/repo tests** use the `transactional_session` fixture from `tests/conftest.py` (real DB, rolls back per-test). **Service tests** use mocked UoW — see `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`.
+
+API tests with auth: use `httpx.AsyncClient` with `ASGITransport(app=app)` (sync `TestClient` won't authenticate). Build a `superuser` fixture (creates a `User`, hashes password) and a `headers` fixture that POSTs `/api/v1/login/` with form data and returns `{"Authorization": f"Bearer {token}"}`. Pattern sample: `tests/api/test_dataset_links.py`.
 
 Test helper duplication: `_make_system(session, code_suffix)` and `_create_dataset(...)` / `_create_field(...)` are currently inlined in multiple test files. No shared `seeded_system` fixture. When adding a 3rd copy of one of these helpers, consider promoting to `tests/conftest.py` or `tests/_helpers.py`.
 
