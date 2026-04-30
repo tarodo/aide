@@ -97,3 +97,24 @@ class DatasetLinkService(
                 raise AppException(errors.DATASET_SCHEMA_NOT_FOUND)
             if schema.dataset_id != db_obj.target_dataset_id:
                 raise AppException(errors.SCHEMA_DATASET_MISMATCH)
+
+        if "engine_id" in update_data:
+            new_engine_id = update_data["engine_id"]
+            if new_engine_id is None:
+                # detach is unconditionally allowed
+                pass
+            else:
+                from backend.services.engine_compatibility import assert_compatible
+
+                engine = await uow.engines.get(new_engine_id)
+                if engine is None:
+                    raise AppException(errors.ENGINE_NOT_FOUND)
+                source = await uow.datasets.get(db_obj.source_dataset_id)
+                target = await uow.datasets.get(db_obj.target_dataset_id)
+                if source is None or target is None:
+                    raise AppException(errors.DATASET_NOT_FOUND)
+                assert_compatible(
+                    role=engine.role,
+                    source_kind=source.kind,
+                    target_kind=target.kind,
+                )
