@@ -127,3 +127,38 @@ async def test_delete_rejects_when_in_use(monkeypatch):
     with pytest.raises(AppException) as exc:
         await service.delete(uow=uow, obj_id=db_obj.id)
     assert exc.value.error_code == errors.ENGINE_IN_USE
+
+
+@pytest.mark.asyncio
+async def test_create_persists_note_field(monkeypatch):
+    service = EngineService()
+    uow = _mk_uow()
+    repo = MagicMock()
+    repo.get_by_code = AsyncMock(return_value=None)
+
+    captured: list = []
+
+    async def _fake_create(*, obj_in):
+        captured.append(obj_in)
+        obj_in.id = uuid.uuid4()
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        obj_in.created_at = now
+        obj_in.updated_at = now
+        obj_in.row_version = 1
+        return obj_in
+
+    repo.create = AsyncMock(side_effect=_fake_create)
+    uow.engines = repo
+    monkeypatch.setattr(service, "_get_repository", lambda _: repo)
+
+    payload = EngineSparkCreate(
+        kind="spark",
+        code="spark-note",
+        name="Spark with note",
+        version="3.x",
+        note="hand-written reason",
+    )
+    await service.create(uow=uow, obj_in=payload)
+    assert captured[0].note == "hand-written reason"

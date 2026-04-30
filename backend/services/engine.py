@@ -66,7 +66,6 @@ class EngineService(
             await self._pre_create(uow, obj_in, creator_id)
             repo = cast(EngineRepository, self._get_repository(uow.session))
             data = obj_in.model_dump()
-            data.pop("note", None)
             db_obj = model_class(**data)
             if creator_id:
                 db_obj.created_by = creator_id
