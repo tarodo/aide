@@ -16,6 +16,7 @@ from backend.api.v1 import data_types as v1_data_types
 from backend.api.v1 import datasets as v1_datasets
 from backend.api.v1 import dataset_links as v1_dataset_links
 from backend.api.v1 import dataset_schemas as v1_dataset_schemas
+from backend.api.v1 import engines as v1_engines
 from backend.api.v1 import field_bindings as v1_field_bindings
 from backend.api.v1 import field_classifications as v1_field_classifications
 from backend.api.v1 import field_links as v1_field_links
@@ -275,6 +276,12 @@ app.include_router(
     v1_lake_sync.router,
     prefix=api_v1_prefix,
     tags=["Lake Sync"],
+)
+
+app.include_router(
+    v1_engines.router,
+    prefix=f"{api_v1_prefix}/engines",
+    tags=["Engines"],
 )
 
 
