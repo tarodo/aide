@@ -19,16 +19,15 @@ class DatasetLinkCreate(DatasetLinkBase, NoteMixin):
 class DatasetLinkUpdate(VersionedUpdateMixin, NoteMixin):
     """DatasetLink update payload. Dataset IDs are immutable and absent here;
     `extra='forbid'` rejects them with 422 if clients send them anyway.
-
-    Schema pin fields are Optional (None = unset/no change) but cannot be
-    explicitly null — the DB column is NOT NULL and unpinning isn't a valid
-    operation in the contract.
+    Schema pin fields stay non-null (per existing contract). `engine_id` is
+    explicitly nullable: clients can set or clear the engine pin.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     source_schema_id: uuid.UUID | None = None
     target_schema_id: uuid.UUID | None = None
+    engine_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def reject_explicit_null_pins(self) -> "DatasetLinkUpdate":
@@ -46,3 +45,4 @@ class DatasetLinkUpdate(VersionedUpdateMixin, NoteMixin):
 
 class DatasetLinkRead(DatasetLinkBase, MetaDataMixin):
     model_config = ConfigDict(from_attributes=True)
+    engine_id: uuid.UUID | None = None
