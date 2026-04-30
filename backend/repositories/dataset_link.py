@@ -39,6 +39,17 @@ class DatasetLinkRepository(SoftDeleteRepository[DatasetLink]):
         result = await self._execute(stmt, method="has_active_links_for_dataset")
         return result.scalar() is not None
 
+    async def has_active_links_for_engine(self, engine_id: uuid.UUID) -> bool:
+        from backend.models.dataset_link import DatasetLink as _DL
+
+        stmt = (
+            select(func.count())
+            .select_from(_DL)
+            .where(_DL.engine_id == engine_id, _DL.deleted_at.is_(None))
+        )
+        result = await self.session.execute(stmt)
+        return (result.scalar_one() or 0) > 0
+
     async def list_by_source(
         self, source_dataset_id: uuid.UUID
     ) -> Sequence[DatasetLink]:
