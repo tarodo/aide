@@ -13,6 +13,13 @@ from .dataset import (
 )
 from .dataset_link import DatasetLink as DatasetLink
 from .dataset_schema import DatasetSchema as DatasetSchema
+from .engine import (
+    Engine as Engine,
+    EngineDebezium as EngineDebezium,
+    EngineImpala as EngineImpala,
+    EngineOgg as EngineOgg,
+    EngineSpark as EngineSpark,
+)
 from .field import Field as Field
 from .field_binding import FieldBinding as FieldBinding
 from .field_classification import FieldClassification as FieldClassification
@@ -55,6 +62,11 @@ __all__ = [
     "DatasetSftp",
     "DatasetHive",
     "DatasetLink",
+    "Engine",
+    "EngineDebezium",
+    "EngineImpala",
+    "EngineOgg",
+    "EngineSpark",
     "CastRule",
     "CastSafety",
     "Field",

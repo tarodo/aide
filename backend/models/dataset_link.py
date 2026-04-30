@@ -35,6 +35,12 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
         nullable=False,
         index=True,
     )
+    engine_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("engines.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
 
     source_dataset = relationship("Dataset", foreign_keys=[source_dataset_id])
     target_dataset = relationship("Dataset", foreign_keys=[target_dataset_id])
@@ -45,6 +51,7 @@ class DatasetLink(Base, SoftDeleteMetaDataMixin):
         back_populates="dataset_link",
         cascade="all, delete-orphan",
     )
+    engine = relationship("Engine")
 
     __table_args__ = (
         Index(
