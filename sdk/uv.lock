@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "aide-schemas"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "../schemas" }
 dependencies = [
     { name = "pydantic", extra = ["email"] },
@@ -15,7 +15,7 @@ requires-dist = [{ name = "pydantic", extras = ["email"], specifier = ">=2.0.0" 
 
 [[package]]
 name = "aide-sdk"
-version = "0.2.0"
+version = "0.3.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aide-schemas" },
