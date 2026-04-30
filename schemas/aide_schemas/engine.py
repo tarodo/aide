@@ -28,8 +28,10 @@ class _CdcEnvelopeMixin(BaseModel):
     envelope_template: dict[str, Any]
     topic_routing: dict[str, Any] | None = None
 
+
+class _CdcEnvelopeCreateMixin(_CdcEnvelopeMixin):
     @model_validator(mode="after")
-    def _require_after_path(self) -> "_CdcEnvelopeMixin":
+    def _require_after_path(self) -> "_CdcEnvelopeCreateMixin":
         if "after_path" not in self.envelope_template:
             raise ValueError("envelope_template must include 'after_path'")
         return self
@@ -40,7 +42,7 @@ class _ComputeOptsMixin(BaseModel):
 
 
 # Debezium ---------------------------------------------------------------
-class EngineDebeziumCreate(_EngineBase, _CdcEnvelopeMixin, NoteMixin):
+class EngineDebeziumCreate(_EngineBase, _CdcEnvelopeCreateMixin, NoteMixin):
     kind: Literal["debezium"] = "debezium"
     role: Literal["cdc"] = "cdc"
     version: Literal["2.x", "1.x"]
@@ -51,7 +53,6 @@ class EngineDebeziumRead(_EngineBase, _CdcEnvelopeMixin, MetaDataMixin):
     kind: Literal["debezium"]
     role: Literal["cdc"]
     version: str
-    deleted_at: Any | None = None
 
 
 class EngineDebeziumUpdate(VersionedUpdateMixin, NoteMixin):
@@ -64,7 +65,7 @@ class EngineDebeziumUpdate(VersionedUpdateMixin, NoteMixin):
 
 
 # OGG --------------------------------------------------------------------
-class EngineOggCreate(_EngineBase, _CdcEnvelopeMixin, NoteMixin):
+class EngineOggCreate(_EngineBase, _CdcEnvelopeCreateMixin, NoteMixin):
     kind: Literal["ogg"] = "ogg"
     role: Literal["cdc"] = "cdc"
     version: Literal["21c", "19c"]
@@ -75,7 +76,6 @@ class EngineOggRead(_EngineBase, _CdcEnvelopeMixin, MetaDataMixin):
     kind: Literal["ogg"]
     role: Literal["cdc"]
     version: str
-    deleted_at: Any | None = None
 
 
 class EngineOggUpdate(VersionedUpdateMixin, NoteMixin):
@@ -99,7 +99,6 @@ class EngineSparkRead(_EngineBase, _ComputeOptsMixin, MetaDataMixin):
     kind: Literal["spark"]
     role: Literal["compute"]
     version: str
-    deleted_at: Any | None = None
 
 
 class EngineSparkUpdate(VersionedUpdateMixin, NoteMixin):
@@ -122,7 +121,6 @@ class EngineImpalaRead(_EngineBase, _ComputeOptsMixin, MetaDataMixin):
     kind: Literal["impala"]
     role: Literal["compute"]
     version: str
-    deleted_at: Any | None = None
 
 
 class EngineImpalaUpdate(VersionedUpdateMixin, NoteMixin):

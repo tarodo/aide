@@ -63,3 +63,10 @@ def test_discriminated_union_dispatches_on_kind():
     assert obj.role == "compute"
     # exercise validate_engine_read so the test surface matches the plan
     assert callable(validate_engine_read)
+
+
+def test_validate_engine_read_rejects_unknown_kind():
+    from types import SimpleNamespace
+
+    with pytest.raises(ValueError):
+        validate_engine_read(SimpleNamespace(kind="not-a-real-kind"))
