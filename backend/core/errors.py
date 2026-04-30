@@ -85,6 +85,14 @@ LAKE_SYNC_NO_SOURCE_SCHEMA = "LAKE_SYNC_NO_SOURCE_SCHEMA"
 LAKE_SYNC_TARGET_FLAVOR_MISMATCH = "LAKE_SYNC_TARGET_FLAVOR_MISMATCH"
 LAKE_SYNC_UNKNOWN_OVERRIDE_FIELD = "LAKE_SYNC_UNKNOWN_OVERRIDE_FIELD"
 LAKE_SYNC_AMBIGUOUS_CAST = "LAKE_SYNC_AMBIGUOUS_CAST"
+ENGINE_NOT_FOUND = "ENGINE_NOT_FOUND"
+ENGINE_IN_USE = "ENGINE_IN_USE"
+ENGINE_INCOMPATIBLE_LINK = "ENGINE_INCOMPATIBLE_LINK"
+ENGINE_NOT_ATTACHED = "ENGINE_NOT_ATTACHED"
+ENGINE_NOT_RENDERABLE = "ENGINE_NOT_RENDERABLE"
+ENGINE_KIND_IMMUTABLE = "ENGINE_KIND_IMMUTABLE"
+ENGINE_VERSION_INVALID = "ENGINE_VERSION_INVALID"
+ENGINE_CODE_ALREADY_EXISTS = "ENGINE_CODE_ALREADY_EXISTS"
 
 ErrorInfo = Tuple[int, str]
 
@@ -374,6 +382,38 @@ ERROR_MAP = {
     LAKE_SYNC_AMBIGUOUS_CAST: (
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         "Multiple cast rules match for a field; supply an explicit override.",
+    ),
+    ENGINE_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        "The requested engine was not found.",
+    ),
+    ENGINE_IN_USE: (
+        status.HTTP_409_CONFLICT,
+        "Cannot delete engine while a DatasetLink references it.",
+    ),
+    ENGINE_INCOMPATIBLE_LINK: (
+        status.HTTP_409_CONFLICT,
+        "Engine is not compatible with this dataset link's source/target kinds.",
+    ),
+    ENGINE_NOT_ATTACHED: (
+        status.HTTP_409_CONFLICT,
+        "Dataset link has no engine attached; cannot render SQL.",
+    ),
+    ENGINE_NOT_RENDERABLE: (
+        status.HTTP_409_CONFLICT,
+        "Engine role does not support SQL rendering (CDC engines describe envelopes).",
+    ),
+    ENGINE_KIND_IMMUTABLE: (
+        status.HTTP_409_CONFLICT,
+        "Engine kind cannot be changed after creation.",
+    ),
+    ENGINE_VERSION_INVALID: (
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        "Engine version is not in the supported whitelist for this kind.",
+    ),
+    ENGINE_CODE_ALREADY_EXISTS: (
+        status.HTTP_409_CONFLICT,
+        "An engine with this code already exists.",
     ),
 }
 

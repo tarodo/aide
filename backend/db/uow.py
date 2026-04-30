@@ -10,6 +10,7 @@ from backend.repositories.dataset import DatasetRepository
 from backend.repositories.dataset_link import DatasetLinkRepository
 from backend.db.session import AsyncSessionLocal
 from backend.repositories.data_type import DataTypeRepository
+from backend.repositories.engine import EngineRepository
 from backend.repositories.field import FieldRepository
 from backend.repositories.field_binding import FieldBindingRepository
 from backend.repositories.field_classification import (
@@ -53,6 +54,7 @@ class UnitOfWork:
         self.type_instances = TypeInstanceRepository(self.session)
         self.tech_field_templates = TechFieldTemplateRepository(self.session)
         self.tech_field_template_fields = TechFieldTemplateFieldRepository(self.session)
+        self.engines = EngineRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

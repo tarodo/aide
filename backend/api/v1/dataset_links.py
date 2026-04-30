@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, status
 from aide_schemas.pagination import Page as SchemaPage
 from backend.api.dependencies import get_current_superuser, get_current_user
 from backend.api.filter_sort import FilterSortParams, get_filter_sort_dependency
+from aide_schemas.engine import RenderResult
 from backend.core.errors import (
     DATASET_LINK_ALREADY_EXISTS,
     DATASET_LINK_LAYER_MISSING,
@@ -14,6 +15,10 @@ from backend.core.errors import (
     DATASET_LINK_SELF_REFERENCE,
     DATASET_NOT_FOUND,
     DATASET_SCHEMA_NOT_FOUND,
+    ENGINE_INCOMPATIBLE_LINK,
+    ENGINE_NOT_ATTACHED,
+    ENGINE_NOT_FOUND,
+    ENGINE_NOT_RENDERABLE,
     ENTITY_NOT_DELETED,
     FORBIDDEN,
     SCHEMA_DATASET_MISMATCH,
@@ -139,6 +144,31 @@ async def get_link_compat(
     return await service.compat_report(uow=uow, dataset_link_id=obj_id)
 
 
+@router.post(
+    "/{obj_id}/render-sql",
+    response_model=RenderResult,
+    responses={
+        **build_error_responses(
+            DATASET_LINK_NOT_FOUND,
+            ENGINE_NOT_FOUND,
+            ENGINE_NOT_ATTACHED,
+            ENGINE_NOT_RENDERABLE,
+            DATASET_NOT_FOUND,
+            UNAUTHORIZED,
+            FORBIDDEN,
+        ),
+    },
+)
+async def render_link_sql(
+    obj_id: uuid.UUID,
+    uow: UnitOfWork = Depends(UnitOfWork),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    from backend.services.engine_render_service import EngineRenderService
+
+    return await EngineRenderService().render_sql(uow=uow, dataset_link_id=obj_id)
+
+
 @router.get(
     "/{obj_id}",
     response_model=DatasetLinkRead,
@@ -163,6 +193,8 @@ async def get_link(
             DATASET_LINK_NOT_FOUND,
             DATASET_SCHEMA_NOT_FOUND,
             SCHEMA_DATASET_MISMATCH,
+            ENGINE_NOT_FOUND,
+            ENGINE_INCOMPATIBLE_LINK,
             VERSION_CONFLICT,
             UNAUTHORIZED,
             FORBIDDEN,

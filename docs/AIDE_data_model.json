@@ -3284,6 +3284,19 @@
           "comments": "FK to dataset_schemas.id ON DELETE RESTRICT (pinned target version)"
         },
         {
+          "id": "f_dl_engine_id",
+          "name": "engine_id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "FK to engines.id ON DELETE RESTRICT (optional pipeline driver)"
+        },
+        {
           "id": "f_dl_note",
           "name": "note",
           "type": {
@@ -3407,6 +3420,15 @@
           "unique": false,
           "fieldIds": [
             "f_dl_target_dataset_id"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_dl_engine_id",
+          "name": "ix_dataset_links_engine_id",
+          "unique": false,
+          "fieldIds": [
+            "f_dl_engine_id"
           ],
           "createdAt": 1712534400000
         }
@@ -3926,6 +3948,410 @@
       "createdAt": 1712534400000,
       "order": 22,
       "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_engines",
+      "name": "engines",
+      "schema": "public",
+      "x": 1700,
+      "y": -1300,
+      "fields": [
+        {
+          "id": "f_eng_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_code",
+          "name": "code",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(255)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_name",
+          "name": "name",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_kind",
+          "name": "kind",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(64)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "Polymorphic discriminator: debezium / ogg / spark / impala"
+        },
+        {
+          "id": "f_eng_role",
+          "name": "role",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(16)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "EngineRole: cdc / compute (CHECK ck_engines_role)"
+        },
+        {
+          "id": "f_eng_version",
+          "name": "version",
+          "type": {
+            "id": "varchar",
+            "name": "varchar(64)"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_created_at",
+          "name": "created_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_updated_at",
+          "name": "updated_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_created_by",
+          "name": "created_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_updated_by",
+          "name": "updated_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_note",
+          "name": "note",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_deleted_at",
+          "name": "deleted_at",
+          "type": {
+            "id": "timestamp",
+            "name": "timestamp"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_deleted_by",
+          "name": "deleted_by",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "f_eng_row_version",
+          "name": "row_version",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "default": "1",
+          "createdAt": 1712534400000
+        }
+      ],
+      "indexes": [
+        {
+          "id": "ix_eng_code_active",
+          "name": "uq_engines_code_active",
+          "unique": true,
+          "fieldIds": [
+            "f_eng_code"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_eng_kind",
+          "name": "ix_engines_kind",
+          "unique": false,
+          "fieldIds": [
+            "f_eng_kind"
+          ],
+          "createdAt": 1712534400000
+        },
+        {
+          "id": "ix_eng_role",
+          "name": "ix_engines_role",
+          "unique": false,
+          "fieldIds": [
+            "f_eng_role"
+          ],
+          "createdAt": 1712534400000
+        }
+      ],
+      "color": "#9ee0d4",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 23,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_engine_debezium",
+      "name": "engine_debezium",
+      "schema": "public",
+      "x": 1300,
+      "y": -1000,
+      "fields": [
+        {
+          "id": "f_engdb_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to engines.id (joined inheritance)"
+        },
+        {
+          "id": "f_engdb_envelope_template",
+          "name": "envelope_template",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "CDC envelope shape (e.g. {before, after, op, ts_ms})"
+        },
+        {
+          "id": "f_engdb_topic_routing",
+          "name": "topic_routing",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "Optional topic-naming rules"
+        }
+      ],
+      "indexes": [],
+      "color": "#9ee0d4",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 24,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_engine_ogg",
+      "name": "engine_ogg",
+      "schema": "public",
+      "x": 1700,
+      "y": -1000,
+      "fields": [
+        {
+          "id": "f_engogg_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to engines.id (joined inheritance)"
+        },
+        {
+          "id": "f_engogg_envelope_template",
+          "name": "envelope_template",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "CDC envelope shape (Oracle GoldenGate)"
+        },
+        {
+          "id": "f_engogg_topic_routing",
+          "name": "topic_routing",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "Optional topic-naming rules"
+        }
+      ],
+      "indexes": [],
+      "color": "#9ee0d4",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 25,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_engine_spark",
+      "name": "engine_spark",
+      "schema": "public",
+      "x": 2100,
+      "y": -1000,
+      "fields": [
+        {
+          "id": "f_engsp_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to engines.id (joined inheritance)"
+        },
+        {
+          "id": "f_engsp_runtime_opts",
+          "name": "runtime_opts",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "Optional engine runtime options (dialect / config hints)"
+        }
+      ],
+      "indexes": [],
+      "color": "#9ee0d4",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 26,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "t_engine_impala",
+      "name": "engine_impala",
+      "schema": "public",
+      "x": 2500,
+      "y": -1000,
+      "fields": [
+        {
+          "id": "f_engim_id",
+          "name": "id",
+          "type": {
+            "id": "uuid",
+            "name": "uuid"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1712534400000,
+          "comments": "FK to engines.id (joined inheritance)"
+        },
+        {
+          "id": "f_engim_runtime_opts",
+          "name": "runtime_opts",
+          "type": {
+            "id": "jsonb",
+            "name": "jsonb"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1712534400000,
+          "comments": "Optional engine runtime options (dialect / config hints)"
+        }
+      ],
+      "indexes": [],
+      "color": "#9ee0d4",
+      "isView": false,
+      "createdAt": 1712534400000,
+      "order": 27,
+      "diagramId": "w0gac180t7j1"
     }
   ],
   "relationships": [
@@ -4358,6 +4784,76 @@
       "targetTableId": "t_tech_field_template_fields",
       "sourceFieldId": "f_tft_id",
       "targetFieldId": "f_tftf_template_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "many",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_eng_engdb",
+      "name": "engine_to_debezium",
+      "sourceSchema": "public",
+      "sourceTableId": "t_engines",
+      "targetSchema": "public",
+      "targetTableId": "t_engine_debezium",
+      "sourceFieldId": "f_eng_id",
+      "targetFieldId": "f_engdb_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_eng_engogg",
+      "name": "engine_to_ogg",
+      "sourceSchema": "public",
+      "sourceTableId": "t_engines",
+      "targetSchema": "public",
+      "targetTableId": "t_engine_ogg",
+      "sourceFieldId": "f_eng_id",
+      "targetFieldId": "f_engogg_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_eng_engspark",
+      "name": "engine_to_spark",
+      "sourceSchema": "public",
+      "sourceTableId": "t_engines",
+      "targetSchema": "public",
+      "targetTableId": "t_engine_spark",
+      "sourceFieldId": "f_eng_id",
+      "targetFieldId": "f_engsp_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_eng_engimpala",
+      "name": "engine_to_impala",
+      "sourceSchema": "public",
+      "sourceTableId": "t_engines",
+      "targetSchema": "public",
+      "targetTableId": "t_engine_impala",
+      "sourceFieldId": "f_eng_id",
+      "targetFieldId": "f_engim_id",
+      "sourceCardinality": "one",
+      "targetCardinality": "one",
+      "createdAt": 1712534400000,
+      "diagramId": "w0gac180t7j1"
+    },
+    {
+      "id": "rel_eng_dl",
+      "name": "engine_to_dataset_link",
+      "sourceSchema": "public",
+      "sourceTableId": "t_engines",
+      "targetSchema": "public",
+      "targetTableId": "t_dataset_links",
+      "sourceFieldId": "f_eng_id",
+      "targetFieldId": "f_dl_engine_id",
       "sourceCardinality": "one",
       "targetCardinality": "many",
       "createdAt": 1712534400000,

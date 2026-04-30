@@ -224,3 +224,17 @@ class TechFieldTemplateFilter(BaseFilter):
 
 
 TECH_FIELD_TEMPLATE_SORTABLE = {"code", "name", "layer", "created_at"}
+
+
+# ── Engine ───────────────────────────────────────────────────────────────
+class EngineFilter(BaseFilter):
+    code: str | None = None
+    code__like: str | None = None
+    name__like: str | None = None
+    kind: str | None = None
+    kind__in: str | None = None
+    role: str | None = None
+    version: str | None = None
+
+
+ENGINE_SORTABLE = {"code", "name", "kind", "role", "created_at", "updated_at"}

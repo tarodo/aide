@@ -139,6 +139,7 @@ fine and do not need to be backfilled.
 | 017 | [Tech-Field Templates — Detached Presets with Abstract Type Codes](adr-017-tech-field-templates.md) | Accepted |
 | 018 | [Schema-Pinned Lineage and Field Lifecycle Enum](adr-018-schema-pinned-lineage.md) | Accepted |
 | 019 | [Lake-Sync — Provisioning Lake Targets from Source Datasets](adr-019-lake-sync.md) | Accepted |
+| 020 | [Engines as Pipeline-Driver Entity](adr-020-engines-as-pipeline-driver.md) | Accepted |
 
 Keep this table sorted by ADR number and update it in the same commit that
 adds or changes an ADR.

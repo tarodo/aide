@@ -8,6 +8,7 @@ from aide_schemas.dataset_link import (
     DatasetLinkRead,
     DatasetLinkUpdate,
 )
+from aide_schemas.engine import RenderResult
 from aide_schemas.lineage_compat import (
     DatasetLinkCompatReport,
     DatasetLinkCompatSummary,
@@ -47,3 +48,7 @@ class DatasetLinksResource(
             params["system_id"] = str(system_id)
         data = await self._http.get(f"{self._path}/compat", params=params)
         return Page[DatasetLinkCompatSummary].model_validate(data)
+
+    async def render_sql(self, obj_id: UUID) -> RenderResult:
+        data = await self._http.post(f"{self._path}/{obj_id}/render-sql")
+        return RenderResult.model_validate(data)
