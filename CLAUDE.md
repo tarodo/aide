@@ -1,169 +1,89 @@
 # AIDE Metastore
 
+Contract-first metadata registry: FastAPI backend + shared Pydantic DTOs + async SDK + RDBMS crawler. Package manager `uv`, Python ≥ 3.13.
+
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `make up` | Start app + DB via Docker Compose |
-| `make stop` | Stop Docker Compose services |
-| `make run` | Run uvicorn locally (port 8001) |
-| `make check` | Lint + type-check (ruff, black --check, mypy) |
-| `make format` | Auto-format (black + ruff --fix) |
-| `make test-docker` | Run tests in Docker (pytest + coverage) |
-| `make alembic-gen` | Auto-generate migration from model changes |
-| `make alembic-head` | Apply migrations to head |
-| `uv run python -m backend.scripts.seed_data_types --file backend/scripts/data/postgres14.yaml` | Seed PG14 data types |
+| `make up` / `make stop` | Compose: app on :8000 + DB; runs migrations and superuser bootstrap |
+| `make run` | Local uvicorn on :8001 (reads `.env`) |
+| `make check` | ruff + black --check + mypy (red by design — see Gotchas) |
+| `make format` | black + ruff --fix; run after every code change |
+| `make test-docker` | Backend tests in Docker — the only supported way (see Testing) |
+| `make build-test` | Rebuild test image after `uv sync` or a new workspace package |
+| `make alembic-gen MSG="..."` | Autogenerate migration; review before commit |
+| `make alembic-head` | Apply migrations |
+| `make seed-data-types` | Seed postgres14 types; other flavors: `docker compose run --rm app python -m backend.scripts.seed_data_types --file backend/scripts/data/iceberg_v2.yaml` |
+| `cd sdk && uv run pytest tests/`, `cd crawler && uv run pytest tests/` | SDK / crawler tests, no DB |
 
-Package manager: `uv`. Python ≥ 3.13.
+Makefile has a `%:` catch-all: a misspelled target exits 0 with no output — check the target name when a step prints nothing.
 
 ## Architecture
 
-Monorepo with 4 packages wired via `[tool.uv.sources]` in root pyproject.toml:
-- `backend/` — FastAPI metastore (depends on aide-schemas)
-- `schemas/` — shared Pydantic DTOs (`aide-schemas`, zero backend deps)
-- `sdk/` — async REST client (`aide-sdk`, depends on aide-schemas)
-- `crawler/` — RDBMS metadata crawler CLI (`aide-crawler`, depends on aide-sdk)
+Monorepo of 4 packages wired via `[tool.uv.sources]`; dependency direction `schemas ← backend` and `schemas ← sdk ← crawler`:
+- `backend/` — FastAPI metastore. Root `pyproject.toml` *is* the backend package (no `backend/pyproject.toml`).
+- `schemas/` — `aide-schemas`, shared Pydantic DTOs, zero backend deps.
+- `sdk/` — `aide-sdk`, async httpx client. `crawler/` — `aide-crawler`, RDBMS crawler CLI.
 
-Layered async FastAPI app in `backend/`:
+Request flow: `api/v1` router → `services` → `db/uow.py` (UnitOfWork) → `repositories` → `models`. Why: ADR-001..005 in `docs/adr/`.
 
-```
-backend/
-├── api/v1/          # FastAPI routers (REST endpoints)
-├── services/        # Business logic (GenericService base)
-├── repositories/    # DB access (BaseRepository generic CRUD)
-├── models/          # SQLAlchemy 2.0 async ORM
-├── schemas/         # Re-exports from aide-schemas (backward compat)
-├── core/            # Config, auth, errors
-├── db/              # Session, UoW pattern
-└── alembic/         # Migrations
-```
+Entities share one stem across layers: `models/x.py`, `repositories/x.py`, `services/x.py`, `schemas/aide_schemas/x.py` + shim `backend/schemas/x.py`, `api/v1/xs.py`, `sdk/aide_sdk/resources/xs.py`. Cross-cutting flows that break the stem rule:
 
-Request flow: Router → Service → UoW → Repository → Model.
+| Flow | Modules |
+|------|---------|
+| Compat pre-flight | `services/dataset_link_compat.py`, DTOs `lineage_compat.py`, routes in `api/v1/dataset_links.py` (ADR-018) |
+| Lake-sync | `services/lake_sync.py`, `lake_sync_resolver.py`, `core/tech_type_resolver.py` (ADR-019) |
+| Engines / render-sql | `services/engine.py`, `engine_compatibility.py`, `engine_render_service.py`, `engine_render/`, `envelope_resolver.py` (ADR-020) |
+| List filters | `api/filter_sort.py` + `backend/schemas/filters.py` (backend-only, not in aide_schemas) (ADR-014) |
 
-New entities follow this pattern: add model, repository, service, schemas (in `schemas/aide_schemas/` + re-export in `backend/schemas/`), router, then wire in `main.py`.
+### Adding an entity
+1. Model; update `docs/AIDE_data_model.json` (ChartDB ER diagram) in the same commit.
+2. Repository; register it as an attribute in `UnitOfWork.__aenter__` (`backend/db/uow.py`) and mirror it on `_MockUnitOfWork` in service tests.
+3. DTOs in `schemas/aide_schemas/`; shim in `backend/schemas/` as `from aide_schemas.x import Y as Y` (alias form = explicit re-export for mypy/ruff).
+4. Service, router, `include_router` in `backend/main.py`, SDK resource.
+5. Error codes: constant + `ERROR_MAP` entry in `backend/core/errors.py` + the route's `*_error_codes` list. An unmapped code is served as 500.
+6. Land a Pydantic `*Base` field and its SA column in the same commit — polymorphic create does `model_class(**obj_in.model_dump())`.
 
 ## Environment
 
-Copy `.env.example` → `.env` and `db.env.example` → `db.env` before first run. Key vars: `DATABASE_URL`, `JWT_SECRET_KEY`.
+Three env files, each copied from its `*.example`: `.env` (local `make run`, alembic, pytest), `backend.env` (compose `app`), `db.env` (compose `db` / `db-test`). Key vars: `DATABASE_URL`, `JWT_SECRET_KEY`. `make up` fails at project load when `backend.env` or `db.env` is missing.
 
 ## Conventions
 
-### Enum fields
+- Enum-like columns are `String(N)` validated by one `str, enum.Enum` shared by model and Pydantic schema (ADR-010). PostgreSQL native enums are out.
+- `deleted_at` and other mixin timestamps are naive UTC: `datetime.now(timezone.utc).replace(tzinfo=None)`; asyncpg rejects aware values (ADR-006).
+- Soft-delete is per mixin: models with `SoftDeleteMetaDataMixin` need `if x is None or x.deleted_at is not None` on lookup; `MetaDataMixin` models only `is None`. Check the model's mixin, not the entity name.
+- Every `*Update` DTO requires `row_version` (optimistic lock, ADR-009); polymorphic updates (datasets, engines) also require `kind`. GET first, echo both back.
+- Auth defaults differ by router style: `create_crud_router` = public reads, any active user writes, superuser delete/restore. Hand-written routers (e.g. `api/v1/datasets.py`) add `Depends(get_current_superuser)` on writes explicitly — follow the router you are editing.
+- Declare static sub-routes (`/compat`, `/tree`) before `/{obj_id}` in a router.
+- Breaking DTO change = lockstep version bump of `aide-schemas`, `aide-sdk`, `aide-crawler`; old field names are removed outright.
+- ADRs: `docs/adr/adr-NNN-kebab-title.md`; update the index in `docs/adr/README.md` in the same commit. Write one when choosing between reasonable alternatives or when the *why* is non-obvious from code.
+- Commits: Conventional Commits, imperative subject ≤ 72 chars, body states the *why* for `fix` / `refactor`. No AI attribution trailers or footers.
 
-Enum-like fields are stored as `varchar` in PostgreSQL. Validation happens at the application level via Python `str, enum.Enum` and Pydantic schemas. Do **not** use PostgreSQL native `CREATE TYPE ... AS ENUM`.
+## Testing
 
-**Pattern:**
-```python
-# models/example.py
-class MyStatus(str, enum.Enum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+- Backend tests run only via `make test-docker` (port 5433). Bare `uv run pytest` / `make test-local` run `alembic upgrade head` + `downgrade base` against the `.env` `DATABASE_URL` — that wipes the dev DB.
+- Every migration needs a working `downgrade()`: the session fixture downgrades to base at teardown, and a broken one poisons `aide_test` for the next run.
+- Narrow scope: `PYTEST_ARGS="-v tests/api/test_x.py" make test-docker`. Coverage: `PYTEST_ARGS="--cov=backend --cov-report=term-missing tests/services/test_x.py" make test-docker` (a very narrow `--cov` path can segfault asyncpg — widen to `--cov=backend`).
+- Another checkout holding `aide-db-test-1` on 5433 blocks the run: `docker stop aide-db-test-1` (a worktree names it `<dir>-db-test-1`).
+- API tests: `httpx.AsyncClient(transport=ASGITransport(app=app))` with per-file `superuser` + `superuser_token_headers` fixtures (sample: `tests/api/test_dataset_links.py`). The sync `client` fixture cannot authenticate. Routers take `Depends(UnitOfWork)` so the autouse `transactional_session` override applies.
+- Service tests: mocked UoW — `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`. Lake-sync helpers live in `tests/_helpers.py`.
+- Login is rate-limited 5/min per IP and the limiter resets per test: reuse the headers fixture instead of logging in in a loop.
+- Async access to a relationship without `selectinload` raises `MissingGreenlet`; no model sets `lazy=`, so eager-load explicitly in test queries.
 
-status: Mapped[str] = mapped_column(String(20), nullable=False)
+## Gotchas
 
-# schemas/example.py — use the same enum for Pydantic validation
-status: MyStatus
-```
-
-**Rationale:** Native PG enums require painful migrations (`ALTER TYPE` cannot run inside a transaction, values cannot be removed). String columns with app-level validation are simpler to evolve.
-
-### Timestamp columns (soft-delete mixin)
-
-`deleted_at` and other `SoftDeleteMetaDataMixin` timestamps are `TIMESTAMP WITHOUT TIME ZONE`. When setting them manually (e.g. in tests to trigger soft-delete branches), use naive datetimes: `datetime.now(timezone.utc).replace(tzinfo=None)`. Aware datetimes are rejected by asyncpg.
-
-### Soft-delete coverage by mixin
-
-Soft-delete varies per model. `SoftDeleteMetaDataMixin` adds `deleted_at` (e.g. `System`, `SystemFlavor`, `Dataset`, `DataType`); `MetaDataMixin` does not (e.g. `TechFieldTemplate`, `Field`, `FieldBinding`). When resolving an entity by id and rejecting "not found", check the mixin: soft-delete-capable models need `if X is None or X.deleted_at is not None`.
-
-### Schema re-exports
-
-Files in `backend/schemas/` are re-export shims of `aide_schemas`. Use the alias form `from aide_schemas.X import Y as Y` (no `__all__`, no docstring). mypy/ruff treat the alias form as explicit re-export. Sample: `backend/schemas/cast_rule.py`.
-
-### Error responses
-
-`AppException(error_code, details: dict | None = None)` — pass `details` for structured per-error payloads. The exception handler surfaces `details` under a top-level key in the response body alongside `error_code` / `detail`. Example: `LAKE_SYNC_AMBIGUOUS_CAST` carries `{field, candidates}`.
-
-### Package layout
-
-Root `pyproject.toml` is the backend package (no separate `backend/pyproject.toml`). Add backend deps to the root file.
-
-### Data model documentation
-
-When adding or modifying SQLAlchemy models, update `docs/AIDE_data_model.json` (ChartDB format) to keep the ER diagram in sync. Add/update tables, fields, and relationships matching the model changes.
-
-### Architecture Decision Records (ADRs)
-
-Architectural decisions live in `docs/adr/`. Filename convention: `adr-NNN-kebab-title.md` (three-digit, zero-padded number; lowercase kebab-case title). See `docs/adr/README.md` for the full template, status values, and the index of existing ADRs. Write one when picking between reasonable alternatives or when the *why* is non-obvious from the code; update the index table in the same commit.
-
-### Formatting
-
-Run `make format` after code changes. This runs `black` + `ruff check --fix`. Fix any remaining ruff errors manually.
-
-### Commit messages
-
-Generate commit messages via the `caveman:caveman-commit` skill. Conventional Commits, imperative subject ≤50 chars, body only for non-obvious *why*. No AI attribution trailers.
-
-### Testing
-
-Tests run via `make test-docker` in Docker, not locally. Test structure mirrors `backend/`: `tests/api/`, `tests/services/`, `tests/repositories/`, `tests/models/`.
-
-`make test-docker` binds port 5433. If another repo/worktree already runs `aide-db-test-1` on 5433, stop it first: `docker stop aide-db-test-1`. Only one test DB instance at a time.
-
-Narrow scope: `PYTEST_ARGS="-v tests/path/test_file.py" make test-docker` (passes args to pytest inside the container).
-
-Test layer patterns: **API/repo tests** use the `transactional_session` fixture from `tests/conftest.py` (real DB, rolls back per-test). **Service tests** use mocked UoW — see `_MockUnitOfWork` / `_MockRepository` in `tests/services/test_system_kind_service.py`.
-
-API tests with auth: use `httpx.AsyncClient` with `ASGITransport(app=app)` (sync `TestClient` won't authenticate). Build a `superuser` fixture (creates a `User`, hashes password) and a `headers` fixture that POSTs `/api/v1/login/` with form data and returns `{"Authorization": f"Bearer {token}"}`. Pattern sample: `tests/api/test_dataset_links.py`.
-
-Test helper duplication: `_make_system(session, code_suffix)` and `_create_dataset(...)` / `_create_field(...)` are currently inlined in multiple test files. No shared `seeded_system` fixture. When adding a 3rd copy of one of these helpers, consider promoting to `tests/conftest.py` or `tests/_helpers.py`.
-
-After changing deps (`uv sync`) or adding a new local workspace package, rebuild the test image: `docker compose build test`. Otherwise `make test-docker` fails with `ModuleNotFoundError`.
-
-SDK and crawler tests run standalone: `cd sdk && uv run pytest tests/` and `cd crawler && uv run pytest tests/` — no DB needed.
-
-Scope a coverage run: `PYTEST_ARGS="--cov=backend.services.X --cov-report=term-missing tests/services/test_X.py" make test-docker`. Use this when writing new tests to verify branch coverage. Note: very narrow `--cov` paths (e.g. a single module) can reproducibly segfault asyncpg in this Docker test runner — fall back to `--cov=backend` if you hit a segfault.
-
-### Alembic migrations
-
-After `make alembic-gen`, review the generated file. Auto-generate picks up pre-existing schema drift (nullability mismatches, missing indexes). Strip unrelated operations before committing — keep each migration focused on one model change.
-
-### Local package CLI scripts
-
-For packages with `[project.scripts]` (e.g. `crawler/`), add hatchling build-system so `uv` installs the entry point:
-
-```toml
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["package_name"]
-```
-
-### Data type seeding
-
-Data types are pre-loaded per flavor from YAML files in `backend/scripts/data/`. Flavor `code` = min supported version; `versions` lists all compatible versions. Re-run `seed_data_types.py` after editing a YAML — it is idempotent. Removing a type from YAML does NOT delete the row (protects existing `TypeInstance` FKs); prune manually if required.
-
-### Known quirks
-
-- `BaseResource.list` shadows the `list` builtin inside the SDK class scope — use `typing.List[X]` (not `list[X]`) for type annotations on methods of `sdk/aide_sdk/resources/base.py`.
-- Pre-existing mypy errors in `backend/scripts/_seed_core.py` (yaml stubs) and `sdk/aide_sdk/resources/datasets.py` (type assignment) are unrelated to most work — ignore when evaluating your diff.
-- SQLAlchemy `flush()` on PG populates server-generated columns (id, timestamps, row_version) via RETURNING — no explicit `refresh()` needed for `add_all` + `flush` batch inserts.
-- SQLAlchemy mapper config triggers on first flush, not lazily — forward-ref relationships (`relationship("UnbornClass", ...)`) fail with `InvalidRequestError` at write time. Both sides of a back-populating relationship must exist in the same commit.
-- `make alembic-gen` binds port 5432. If user's `aide-db-1` runs on 5432, stop it first: `docker stop aide-db-1`; restart after with `docker start aide-db-1`.
-- `get_filter_sort_dependency(filter_model, sortable, default)` asserts at route-registration: `filter_model=None` breaks. Always provide a Pydantic filter class. `sortable` must be `set[str]` (not tuple) to match the signature.
-- Pydantic `*Base` field added before the matching SA column breaks polymorphic create via `DatasetService.create` (`model_class(**obj_in.model_dump())` → `TypeError` on unknown kwarg). Land schema field and column in the same commit.
-- Async tests touching lazy relationships (`row.children`, `row.fields`) raise `MissingGreenlet`. Use `selectinload(Parent.children)` in the test query when the relationship isn't `lazy="selectin"` in the model.
-- New modules with `import yaml` need `# type: ignore[import-untyped]` — PyYAML has no stubs. Matches existing pattern in `backend/scripts/_seed_core.py`.
-- After re-pin of `DatasetLink`, the compat report may show `source_unbound` / `target_unbound` for `FieldLink` rows whose fields have no binding in the new pinned schemas. Expected — operator deletes them as part of the pin transition.
-- `Field.origin` transitions are atomic with `FieldLink` create/delete in a single UoW. `PATCH /fields/{id}` with `origin: "deprecated"` while the field still has an active inbound `FieldLink` returns `409 FIELD_ORIGIN_CONFLICT`.
-- Lineage-pin Migration B (`add_lineage_pins_b_finalize`) downgrade is **unsafe** once `DEPRECATED` fields exist — `deprecated` maps back to `is_tech=False` (mapped), violating the "mapped target needs source" invariant. Hold Migration B until the forward direction is confirmed stable.
-- Route ordering in `backend/api/v1/dataset_links.py`: the `/compat` (bulk) route must be declared **before** `/{obj_id}` variants so FastAPI does not interpret `compat` as a UUID path parameter.
-- Lockstep bump of `aide-schemas`, `aide-sdk`, `aide-crawler` at any breaking schema change. No dual-support transitional acceptance of old field names (`is_tech` removed, not deprecated in place).
-- Lake-sync (`POST /datasets/{id}/lake-sync`) is atomic: any failure rolls back the whole UoW; partial target chains never observed. Re-running with the same target returns 409 `DATASET_ALREADY_EXISTS`; recreate by deleting `DatasetLink` first (RESTRICT FK on schema pins), then the target `Dataset`.
-- `LAKE_SYNC_AMBIGUOUS_CAST` carries `details={"field": ..., "candidates": [...]}` via `AppException.details` (added in this phase). The endpoint's response body includes a top-level `details` key when populated — the SDK contract relies on it. Remediate ambiguity by adding the field to `request.overrides`.
-- Lake-sync overrides are leaf-only. For `array<X>` source, `override.data_type_code="list"` produces `list<X-resolved>`; the inner element type cannot be overridden in MVP — it comes from the source-resolved cast rule.
-- `tech_type_resolver.yaml` is loaded at backend module-load time via `TechTypeResolver.from_yaml(...)` in `backend/services/dataset.py` — **not** DB-seeded. Adding a flavor branch (e.g. `iceberg_v2`) requires a backend restart, not a re-seed.
-- Iceberg type catalog (`iceberg_v2.yaml`) is canonical to Apache Iceberg v2 spec. v3-only types (`unknown`, `variant`, `geometry`, `geography`, `timestamp_ns`, `timestamptz_ns`) belong in a future `iceberg_v3` flavor, not `iceberg_v2`.
-- Slot rename `array.item → list.element` lives in `_SLOT_RENAMES_BY_TARGET_CODE` constant in `backend/services/lake_sync_resolver.py`. Only known cross-flavor child-slot rename in v2; add new entries here when target aggregate types diverge.
-- Lake-sync's source-side `TypeInstance` tree eager-load is depth-3 (`backend/services/lake_sync.py:_load_bindings`). Source trees nested deeper than 3 levels (e.g. `array<struct<list<...>>>`) trigger `MissingGreenlet`. Acceptable for current sources (depth ≤ 2). Future deepening requires a recursive eager-load or CTE refactor.
+- `make check` is red by design: 2 pre-existing mypy errors (`backend/scripts/_seed_core.py:8`, `sdk/aide_sdk/resources/datasets.py:9`). Ignore them when evaluating your diff.
+- `import yaml` needs `# type: ignore[import-untyped]` (sample: `backend/core/tech_type_resolver.py`).
+- `AsyncSessionLocal` has `autoflush=False`: after `session.add()` call `await session.flush()` before a query expects the row (`BaseRepository.create/update` flush for you).
+- `UnitOfWork` is not re-entrant — `__aexit__` commits and closes. Inside `async with uow:` call `_impl`-style helpers that take the entered uow.
+- `make alembic-gen` starts the compose `db` on 5432 (stop a foreign `aide-db-1` first) and picks up pre-existing drift — strip unrelated ops so each migration is one model change.
+- Seeding order: `seed_data_types` for postgres14 **and** iceberg_v2 → `seed_cast_rules` → `seed_tech_templates` (LookupError otherwise). `seed_tech_templates` inserts only — existing template fields keep old values. Removing a type from a YAML never deletes the row (protects `TypeInstance` FKs).
+- `tech_type_resolver.yaml` loads at backend import time: edit → restart, not re-seed.
+- `get_filter_sort_dependency(filter_model, sortable_fields: set[str], default_sort)` — always pass a filter class; `filter_model=None` breaks route registration. Filter fields use `__like/__in/__gte/__lte`; `__in` is a comma-separated string.
+- SDK: `BaseResource.list` shadows the builtin — use `typing.List[X]` in that file. `BaseResource.update` sends PUT while `datasets`, `engines`, `dataset_links`, `field_links`, `tech_field_templates` routes are PATCH-only (405). `AideApiError` drops the response `details` payload.
+- Crawler `GENERIC_TYPE_MAP` is an isinstance-ordered chain — insert SA subclasses before their parent; dialect types go in `DIALECT_TYPE_MAP` keyed by `(dialect, ClassName)`.
+- Root `.venv` contains only `aide-schemas`: run `aide-crawler` and SDK/crawler tests from `crawler/` / `sdk/` (own `uv.lock`).
+- `DatasetSchema.schema` is `schema_` in Pydantic (JSON key `schema`); `DatasetSchemaService` hand-renames it in create/update.
+- Eager-load depth is fixed: lake-sync source `TypeInstance` tree = 3, `/fields/tree` = 5. Deeper nesting → `MissingGreenlet` → 500 (ADR-019).
